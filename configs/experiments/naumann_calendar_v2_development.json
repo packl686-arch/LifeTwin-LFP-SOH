@@ -1,0 +1,72 @@
+{
+  "experiment_id": "naumann_calendar_v2_development_bakeoff_v1",
+  "design_status": "isolated_post_hoc_development_diagnostic",
+  "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "dataset_snapshot_id": "celljar_5c9601a027751c84ee8346f7c0ab9c6851330202_cycle_summary_6d4fd8d102ce9605c2c9bff86662b03201ae85411af583e23f3315b52bf81bc5",
+  "label_version": "published_condition_mean_capacity_retention_v1",
+  "evidence_role": "reused_naumann_development_model_family_bakeoff_only",
+  "runner_scope": "naumann_reuse_development_only",
+  "scenarios": [
+    {
+      "name": "v2_unseen_temperature_level",
+      "kind": "leave_one_temperature_level_out",
+      "training_history_policy": "global_landmark_prefix",
+      "comparison_family": "unseen_temperature_level"
+    },
+    {
+      "name": "v2_soc_interpolation_at_40c",
+      "kind": "fixed_condition_holdout",
+      "training_history_policy": "global_landmark_prefix",
+      "comparison_family": "soc_interpolation_at_40c",
+      "fold_id": "40c_intermediate_soc_v2_development",
+      "target_condition_ids": [
+        "NAUMANN_CAL_T40_SOC12.5",
+        "NAUMANN_CAL_T40_SOC37.5",
+        "NAUMANN_CAL_T40_SOC62.5",
+        "NAUMANN_CAL_T40_SOC87.5"
+      ]
+    }
+  ],
+  "prefix_checkups": [5, 8, 10, 14],
+  "primary_prefix_checkups": 10,
+  "training_history_policy": "global_landmark_prefix",
+  "methods": [
+    "target_prefix_only_sqrt_time_v1",
+    "target_prefix_only_power_law_v1",
+    "target_prefix_only_sqrt_plus_linear_v1",
+    "hierarchical_power_law_prefix_update_v2"
+  ],
+  "primary_candidate": "hierarchical_power_law_prefix_update_v2",
+  "baseline_method": "target_prefix_only_sqrt_time_v1",
+  "model": {
+    "time_unit": "day",
+    "minimum_training_conditions": 6,
+    "robust_loss_scale_pp": 0.25,
+    "power_exponent_bounds": [0.05, 1.5],
+    "stress_surface_ridge": 1.0,
+    "parameter_scale_floors": [0.1, 0.05],
+    "observation_scale_floor_pp": 0.1,
+    "sqrt_linear_time_scale_days": 365.0
+  },
+  "diagnostics": {
+    "bootstrap_unit": "condition",
+    "bootstrap_resamples": 10000,
+    "random_seed": 20260719,
+    "confidence_level": 0.95,
+    "inference_role": "descriptive_resampling_only",
+    "shared_fold_dependence_adjusted": false
+  },
+  "development_gate": {
+    "decision_rule": "primary_candidate_bootstrap_upper_ci_below_zero_in_both_scenarios",
+    "confirmation_status": "blocked_pending_independent_dataset",
+    "current_dataset_relationship": "reused_and_outcomes_already_inspected"
+  },
+  "prohibited_claims": [
+    "confirmatory_superiority_on_naumann_reuse",
+    "independent_external_validation",
+    "individual_cell_variability",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

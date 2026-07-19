@@ -1,0 +1,93 @@
+{
+  "experiment_id": "naumann_calendar_v3_activation_offset_development_v1",
+  "base_experiment_id": "naumann_calendar_v2_development_bakeoff_v1",
+  "design_status": "isolated_post_hoc_mechanism_development_diagnostic",
+  "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "dataset_snapshot_id": "celljar_5c9601a027751c84ee8346f7c0ab9c6851330202_cycle_summary_6d4fd8d102ce9605c2c9bff86662b03201ae85411af583e23f3315b52bf81bc5",
+  "label_version": "published_condition_mean_capacity_retention_v1",
+  "evidence_role": "reused_naumann_low_soc_mechanism_development_only",
+  "runner_scope": "naumann_reuse_activation_offset_development_only",
+  "scenarios": [
+    {
+      "name": "v3_unseen_temperature_level",
+      "kind": "leave_one_temperature_level_out",
+      "training_history_policy": "global_landmark_prefix"
+    },
+    {
+      "name": "v3_soc_interpolation_at_40c",
+      "kind": "fixed_condition_holdout",
+      "training_history_policy": "global_landmark_prefix",
+      "fold_id": "40c_intermediate_soc_v3_activation_development",
+      "target_condition_ids": [
+        "NAUMANN_CAL_T40_SOC12.5",
+        "NAUMANN_CAL_T40_SOC37.5",
+        "NAUMANN_CAL_T40_SOC62.5",
+        "NAUMANN_CAL_T40_SOC87.5"
+      ]
+    }
+  ],
+  "prefix_checkups": [5, 8, 10, 14],
+  "primary_prefix_checkups": 10,
+  "training_history_policy": "global_landmark_prefix",
+  "methods": [
+    "target_prefix_only_sqrt_time_v1",
+    "hierarchical_power_law_prefix_update_v2",
+    "target_prefix_activation_offset_power_tau7_v1",
+    "hierarchical_activation_offset_power_tau7_v3",
+    "mechanism_gated_target_activation_offset_hybrid_v1",
+    "mechanism_gated_hierarchical_activation_offset_hybrid_v1"
+  ],
+  "primary_candidate": "mechanism_gated_target_activation_offset_hybrid_v1",
+  "primary_comparator": "hierarchical_power_law_prefix_update_v2",
+  "model": {
+    "time_unit": "day",
+    "minimum_training_conditions": 6,
+    "robust_loss_scale_pp": 0.25,
+    "power_exponent_bounds": [0.05, 1.5],
+    "stress_surface_ridge": 1.0,
+    "base_parameter_scale_floors": [0.1, 0.05],
+    "activation_parameter_scale_floors": [0.1, 0.05, 0.1],
+    "observation_scale_floor_pp": 0.1,
+    "activation_timescale_days": 7.0,
+    "activation_offset_bounds_pp": [0.0, 10.0],
+    "activation_formula": "exp(log_amplitude)*t^time_exponent-activation_offset*(1-exp(-t/tau))"
+  },
+  "mechanism_gate": {
+    "minimum_positive_time_observations": 7,
+    "negative_loss_threshold_pp": 0.0,
+    "requires_both_readiness_and_negative_loss": true,
+    "fallback_method": "hierarchical_power_law_prefix_update_v2",
+    "target_future_outcomes_used": false
+  },
+  "timescale_sensitivity": {
+    "prefix_checkups": 10,
+    "timescale_days": [3.0, 5.0, 7.0, 10.0, 14.0, 20.0, 30.0],
+    "core_robustness_timescale_days": [3.0, 5.0, 7.0, 10.0, 14.0],
+    "selection_status": "post_hoc_fixed_after_phase7_failure_audit",
+    "primary_timescale_days": 7.0,
+    "future_outcomes_used_for_timescale_selection": true,
+    "formal_hyperparameter_selection_claim_allowed": false
+  },
+  "diagnostics": {
+    "bootstrap_unit": "condition",
+    "bootstrap_resamples": 10000,
+    "random_seed": 20260719,
+    "confidence_level": 0.95,
+    "inference_role": "descriptive_resampling_only",
+    "shared_fold_dependence_adjusted": false
+  },
+  "development_gate": {
+    "confirmation_status": "blocked_pending_independent_dataset",
+    "current_dataset_relationship": "reused_and_outcomes_already_inspected",
+    "decision_role": "mechanism_development_diagnostic_only"
+  },
+  "prohibited_claims": [
+    "confirmatory_superiority_on_naumann_reuse",
+    "preregistered_tau_selection",
+    "general_low_soc_mechanism_validation",
+    "independent_external_validation",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

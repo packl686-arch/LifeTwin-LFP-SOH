@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "release_id": "lifetwin_public_competition_v0.9.0",
+  "release_date": "2026-07-19",
+  "author": "Jincheng Liu",
+  "scope": "Retrospective public-data research prototype for competition review",
+  "maximum_file_size_bytes": 5000000,
+  "frozen_files_sha256": {
+    "data/interim/naumann_calendar_observations.csv": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "configs/experiments/naumann_calendar_v3_activation_development.json": "664b82ea2441b4de8d1666267a900ec240eefac87ebf6baf10d648b0385d7c5b",
+    "src/lifetwin/models/calendar_v2.py": "7120a33a8bb64bb6d2287936a761817d1270e40d3d38f5cfe06992462ff6b97e",
+    "src/lifetwin/models/calendar_v3_activation.py": "4b83d38020651df656d9d1e69646631d355ded5ae9119a36b431bda872015d29",
+    "src/lifetwin/experiments/calendar_v3_activation_development.py": "142d82f996293be18a151bfbe26f66eb31f37bd1e16b064c092159b8e7da019c",
+    "scripts/run_calendar_v3_activation_development.py": "f1b1a40923350f45ac74ff36dfa657baea9573b914ced3313f13099c23abc32a",
+    "showcase/analyze_phase8_results.py": "1b3e392f037db0c0429a2342b7267788412b2ccad47a304e99d918253e06336a",
+    "showcase/results/comparison_summary.csv": "a4ee3a2ddd1749d796d53ba815489c24eab8dabfe66ba212bf861ec90ef29dd6",
+    "showcase/results/tau_sensitivity_summary.csv": "0bb66649cd84ef633e0fa1511097d8172f46caf918d6b30d33311c4f7b5bb441",
+    "showcase/results/target_diagnostics.csv": "15f9660c4b916c09449746612202b051a55542c413e01ae8494b35811121635c",
+    "docs/assets/phase8_results.png": "c73b8d560e162452e618bf959aad965bf613b14735f89b48f40549b9f7d60fb8",
+    "reports/calendar_v3_activation_development_2026-07-19.md": "7333cb1d31c1dbe5b777db2f5591723c51162746fb14f4c3749a7ccb54af06ad"
+  },
+  "forbidden_release_globs": [
+    "artifacts/**",
+    "data/raw/**",
+    "data/processed/**",
+    "tmp/**",
+    ".tmp/**",
+    "references/source_samples/**",
+    "**/*.parquet",
+    "**/*.zip",
+    "**/*.7z",
+    "**/*.eml",
+    "**/*.msg",
+    ".env",
+    "**/.env",
+    "**/*.pem",
+    "**/*license*request*"
+  ],
+  "upstream_data": {
+    "dataset": "Naumann LFP/graphite calendar-aging data",
+    "dataset_doi": "10.17632/kxh42bfgtj.1",
+    "related_paper_doi": "10.1016/j.est.2018.01.019",
+    "license": "CC-BY-4.0",
+    "included_representation": "Normalized condition-mean trajectory table"
+  },
+  "claim_boundary": [
+    "No Hithium internal data are included",
+    "Results are retrospective development results on public data",
+    "The primary tau value is post-hoc",
+    "Independent long-duration LFP validation remains pending",
+    "No 15-25 year product-accuracy claim is permitted"
+  ]
+}

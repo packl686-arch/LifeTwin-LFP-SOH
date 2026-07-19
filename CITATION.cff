@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use or discuss LifeTwin, please cite this repository and the upstream datasets and papers listed in docs/references.md."
+title: "LifeTwin: Evidence-First Long-Horizon SOH Digital Twin for LFP Energy Storage"
+type: software
+authors:
+  - family-names: Liu
+    given-names: Jincheng
+version: 0.9.0
+date-released: 2026-07-19
+keywords:
+  - battery state of health
+  - lithium iron phosphate
+  - calendar aging
+  - digital twin
+  - uncertainty quantification
+

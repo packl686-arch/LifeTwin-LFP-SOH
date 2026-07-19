@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifetwin-lfp-soh"
+version = "0.9.0"
+description = "Evidence-first long-horizon SOH digital twin for LFP energy storage"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Jincheng Liu" }]
+dependencies = [
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "scipy>=1.14",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.12,<0.13",
+]
+showcase = [
+  "matplotlib>=3.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -p no:cacheprovider"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+

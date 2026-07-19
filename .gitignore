@@ -1,0 +1,34 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Generated runs and local scratch space
+artifacts/
+tmp/
+.tmp/
+.pytest-tmp-*/
+.pytest_tmp_*/
+pytest-cache-files-*/
+
+# Raw or large datasets are never committed. The single allowlisted table below
+# is a normalized derivative of the CC BY 4.0 Naumann calendar-aging dataset.
+data/raw/
+data/processed/
+data/interim/*
+!data/interim/README.md
+!data/interim/naumann_calendar_observations.csv
+
+# Local editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
