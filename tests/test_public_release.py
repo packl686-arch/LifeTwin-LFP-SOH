@@ -13,6 +13,10 @@ from lifetwin.experiments.calendar_v3_activation_development import (
     TEMPERATURE_SCENARIO,
 )
 from lifetwin.models.calendar_v3_activation import activation_mechanism_gate
+from scripts.reproduce_public_release import (
+    NUMERIC_ABSOLUTE_TOLERANCE,
+    NUMERIC_RELATIVE_TOLERANCE,
+)
 from scripts.verify_public_release import verify
 
 
@@ -73,10 +77,18 @@ def test_phase8_public_reproduction(completed_run: tuple) -> None:
     ].set_index("scenario")
     assert primary.loc[
         TEMPERATURE_SCENARIO, "candidate_trajectory_iae_pp_mean"
-    ] == pytest.approx(0.36622558367548513, abs=1e-8)
+    ] == pytest.approx(
+        0.36622558367548513,
+        abs=NUMERIC_ABSOLUTE_TOLERANCE,
+        rel=NUMERIC_RELATIVE_TOLERANCE,
+    )
     assert primary.loc[
         SOC_SCENARIO, "candidate_trajectory_iae_pp_mean"
-    ] == pytest.approx(0.20968832280689345, abs=1e-8)
+    ] == pytest.approx(
+        0.20968832280689345,
+        abs=NUMERIC_ABSOLUTE_TOLERANCE,
+        rel=NUMERIC_RELATIVE_TOLERANCE,
+    )
     assert not primary[
         "descriptive_strict_superiority_criterion_met"
     ].any()

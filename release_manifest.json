@@ -55,7 +55,7 @@
     "tests/test_phase1_adversarial_audit.py": "74c9bd7cbb57e9e187290ad6ab348855eba4dc710f6c5e86e436c31971440e98",
     "tests/test_prediction_scoring_integrity.py": "f9311d8d085f11c44a1448283e537ba4f18efa3e37e6d0c221fae2b328519310",
     "tests/test_calendar_v3_gate_fallback.py": "43ae6e9fd7a121da4078e46e8b1ac85dce92634b29ec64da508c8193b3bd503c",
-    "tests/test_public_release.py": "cf82856d6696d01768cb7210216d61781750506fc5de17a31761b7ad05f8e6a4",
+    "tests/test_public_release.py": "f62bc772e7f7891d20a8857362c7f73a681e886e93beb432dd36bc9285fdfbc0",
     "tests/test_reproduction_entrypoint.py": "1fac4572f8608a07d31f184ac56ecdba8cf92bf4ffeb94867ce4dd930cb59e1d"
   },
   "forbidden_release_globs": [
