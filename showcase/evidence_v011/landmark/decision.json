@@ -1,0 +1,99 @@
+{
+  "status": "retrospective_signal_only_confirmation_blocked",
+  "experiment_id": "naumann_calendar_landmark_readiness_locked_diagnostic_v1",
+  "protocol_sha256": "4ceaa821095b9be99b5711c85c89fec290cb24f578c64628dbc8d357059dff58",
+  "dataset_relationship": "reused_and_outcomes_already_inspected",
+  "common_support": {
+    "policy": "fixed_checkup_index_closed_interval",
+    "start_checkup_index": 14,
+    "end_checkup_index": 34
+  },
+  "landmark_decisions": [
+    {
+      "prefix_checkups": 5,
+      "all_scenarios_present": true,
+      "all_scenarios_mean_improvement_met": false,
+      "no_condition_regressions_met": true,
+      "unique_improved_condition_count": 0,
+      "unique_improved_condition_ids": [],
+      "minimum_unique_improved_conditions_met": false,
+      "retrospective_signal_criterion_met": false
+    },
+    {
+      "prefix_checkups": 8,
+      "all_scenarios_present": true,
+      "all_scenarios_mean_improvement_met": true,
+      "no_condition_regressions_met": false,
+      "unique_improved_condition_count": 1,
+      "unique_improved_condition_ids": [
+        "NAUMANN_CAL_T40_SOC12.5"
+      ],
+      "minimum_unique_improved_conditions_met": true,
+      "retrospective_signal_criterion_met": false
+    },
+    {
+      "prefix_checkups": 10,
+      "all_scenarios_present": true,
+      "all_scenarios_mean_improvement_met": true,
+      "no_condition_regressions_met": true,
+      "unique_improved_condition_count": 3,
+      "unique_improved_condition_ids": [
+        "NAUMANN_CAL_T25_SOC0",
+        "NAUMANN_CAL_T40_SOC0",
+        "NAUMANN_CAL_T40_SOC12.5"
+      ],
+      "minimum_unique_improved_conditions_met": true,
+      "retrospective_signal_criterion_met": true
+    },
+    {
+      "prefix_checkups": 14,
+      "all_scenarios_present": true,
+      "all_scenarios_mean_improvement_met": true,
+      "no_condition_regressions_met": false,
+      "unique_improved_condition_count": 2,
+      "unique_improved_condition_ids": [
+        "NAUMANN_CAL_T25_SOC0",
+        "NAUMANN_CAL_T40_SOC12.5"
+      ],
+      "minimum_unique_improved_conditions_met": true,
+      "retrospective_signal_criterion_met": false
+    }
+  ],
+  "retrospective_signal_landmark": 10,
+  "confirmed_earliest_landmark": null,
+  "confirmation_status": "blocked_reused_outcomes",
+  "model_validation_status": "not_confirmed",
+  "reason": "Naumann outcomes were inspected during model development. This layer can locate a locked retrospective signal, but only a separately frozen independent-dataset protocol can confirm an earliest landmark.",
+  "prohibited_claims": [
+    "confirmed_earliest_landmark_on_naumann_reuse",
+    "confirmatory_superiority_on_naumann_reuse",
+    "independent_external_validation",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ],
+  "authoritative_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+  "regenerated_v3_prediction_sha256": "4c8aec8137a6bf22b366e4b4b51e3954f634c0a67331e64bcc6b0375a934a3bb",
+  "v3_config_sha256": "86d5e1450403c81bdb8f857adc9f6b933ef9e5d1d8db75624074889915b3d26e",
+  "prediction_input_accepted_from_caller": false,
+  "provenance": {
+    "observations_path": "data/interim/naumann_calendar_observations.csv",
+    "observations_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "v3_config_path": "configs/experiments/naumann_calendar_v3_activation_development.json",
+    "v3_config_file_sha256": "664b82ea2441b4de8d1666267a900ec240eefac87ebf6baf10d648b0385d7c5b",
+    "protocol_path": "configs/experiments/naumann_calendar_landmark_readiness.json",
+    "protocol_file_sha256": "a652142f1d14ea6184b78abd66116d07108b4d1dca4dd9ba94ced21cd2fa2a5d"
+  },
+  "artifacts": {
+    "common_support_metrics": {
+      "path": "showcase/evidence_v011/landmark/common_support_metrics.csv",
+      "row_count": 168,
+      "sha256": "ac2251a0a63c23ba6c777434a4e93a87c32dbedd869ed10b72b77f9708186140"
+    },
+    "landmark_summary": {
+      "path": "showcase/evidence_v011/landmark/landmark_summary.csv",
+      "row_count": 8,
+      "sha256": "22d85b74a5480615542c49c4f9c6512e46daecdb4d1cc017ec96c50ea420cc92"
+    }
+  }
+}

@@ -6,3 +6,6 @@
 *.gif binary
 *.pdf binary
 *.parquet binary
+
+# Preserve the upstream Geisbauer CSV byte-for-byte for its published hash.
+data/external/geisbauer_2022/LFP_Data.csv -text whitespace=cr-at-eol

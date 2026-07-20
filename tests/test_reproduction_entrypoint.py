@@ -24,6 +24,7 @@ from scripts.reproduce_public_release import (
     _command_environment,
     _csv_semantically_equal,
     _inspect_phase1_audit,
+    _inspect_v011_group,
     _locked_versions,
     _paired_sha256_columns_valid,
     _phase1_csv_semantic_comparison,
@@ -705,3 +706,37 @@ def test_phase1_audit_summary_and_file_inventory(writable_root: Path) -> None:
     generated_failure_table.write_text("drifted\n", encoding="utf-8")
     with pytest.raises(ReproductionError, match="reproduction mismatch"):
         _inspect_phase1_audit(audit_root, writable_root)
+
+
+def test_v011_evidence_reproduction_preserves_claim_guards(
+    writable_root: Path,
+) -> None:
+    generated_root = writable_root / "generated_v011"
+    shutil.copytree(PROJECT_ROOT / "showcase/evidence_v011", generated_root)
+
+    for group in ("landmark", "v4", "geisbauer"):
+        result = _inspect_v011_group(
+            PROJECT_ROOT,
+            generated_root / group,
+            group,
+        )
+        assert result["status"] == "passed"
+        assert result["semantic_content_equal"] is True
+        assert result["claim_guard_passed"] is True
+        assert all(
+            row["semantic_content_equal"]
+            for row in result["core_csv_comparisons"]
+        )
+
+    external_path = generated_root / "geisbauer/result.json"
+    external = json.loads(external_path.read_text(encoding="utf-8"))
+    external["descriptive_signal_status"] = (
+        "primary_candidate_mean_improvement_observed"
+    )
+    external_path.write_text(json.dumps(external), encoding="utf-8")
+    with pytest.raises(ReproductionError, match="semantics changed"):
+        _inspect_v011_group(
+            PROJECT_ROOT,
+            generated_root / "geisbauer",
+            "geisbauer",
+        )

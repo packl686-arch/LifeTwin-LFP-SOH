@@ -17,8 +17,9 @@ tmp/
 .pytest_tmp_*/
 pytest-cache-files-*/
 
-# Raw or large datasets are never committed. The single allowlisted table below
-# is a normalized derivative of the CC BY 4.0 Naumann calendar-aging dataset.
+# Raw or large datasets are never committed. The allowlisted interim table is a
+# normalized derivative of the CC BY 4.0 Naumann calendar-aging dataset. The
+# separately documented 2.7 KB Geisbauer CSV under data/external is also CC BY 4.0.
 data/raw/
 data/processed/
 data/interim/*
@@ -31,4 +32,3 @@ data/interim/*
 .DS_Store
 Thumbs.db
 *.log
-

@@ -30,6 +30,49 @@ REPRODUCTION_CONSTRAINTS = Path("requirements/reproduction.txt")
 PHASE8_CONFIG = Path(
     "configs/experiments/naumann_calendar_v3_activation_development.json"
 )
+LANDMARK_RUNNER = Path("scripts/run_calendar_landmark_readiness.py")
+LANDMARK_CONFIG = Path(
+    "configs/experiments/naumann_calendar_landmark_readiness.json"
+)
+V4_RUNNER = Path("scripts/run_calendar_v4_hybrid_development.py")
+V4_CONFIG = Path(
+    "configs/experiments/naumann_calendar_v4_hybrid_development.json"
+)
+GEISBAUER_RUNNER = Path("scripts/run_geisbauer_external_stress.py")
+GEISBAUER_CONFIG = Path(
+    "configs/experiments/geisbauer_lfp_calendar_external_stress.json"
+)
+GEISBAUER_INPUT = Path("data/external/geisbauer_2022/LFP_Data.csv")
+V011_PUBLISHED_ROOT = Path("showcase/evidence_v011")
+V011_RESULT_FILES = {
+    "landmark": "decision.json",
+    "v4": "result.json",
+    "geisbauer": "result.json",
+}
+V011_CORE_CSVS = {
+    "landmark": (
+        "common_support_metrics.csv",
+        "landmark_summary.csv",
+    ),
+    "v4": (
+        "calibration_condition_scores.csv",
+        "calibration_quantiles.csv",
+        "condition_metrics.csv",
+        "condition_splits.csv",
+    ),
+    "geisbauer": (
+        "condition_summary.csv",
+        "comparison_summary.csv",
+    ),
+}
+V011_VOLATILE_SHA256_COLUMNS = {
+    ("landmark", "common_support_metrics.csv"): frozenset(
+        {"training_state_sha256", "prediction_state_sha256"}
+    ),
+    ("v4", "calibration_condition_scores.csv"): frozenset(
+        {"training_state_sha256", "calibration_prediction_state_sha256"}
+    ),
+}
 CORE_PHASE8_CSVS = (
     "comparison_summary.csv",
     "tau_sensitivity_summary.csv",
@@ -374,8 +417,15 @@ def _preflight(project_root: Path, mode: str) -> dict[str, object]:
         PHASE8_RUNNER,
         PHASE8_ANALYZER,
         PHASE1_AUDIT_RUNNER,
+        LANDMARK_RUNNER,
+        V4_RUNNER,
+        GEISBAUER_RUNNER,
         PHASE8_INPUT,
         PHASE8_CONFIG,
+        LANDMARK_CONFIG,
+        V4_CONFIG,
+        GEISBAUER_CONFIG,
+        GEISBAUER_INPUT,
         REPRODUCTION_CONSTRAINTS,
     )
     missing_paths = [
@@ -1551,6 +1601,182 @@ def _compare_core_csvs(
     return comparisons
 
 
+def _normalized_v011_result(payload: dict[str, object], group: str) -> dict[str, object]:
+    normalized = json.loads(json.dumps(payload, allow_nan=False))
+    normalized.pop("provenance", None)
+    normalized.pop("artifacts", None)
+    if group == "landmark":
+        normalized.pop("regenerated_v3_prediction_sha256", None)
+    elif group == "v4":
+        normalized.pop("prediction_pack_sha256", None)
+    elif group == "geisbauer":
+        firewall = normalized.get("future_label_firewall")
+        if isinstance(firewall, dict):
+            firewall.pop("label_free_prediction_sha256", None)
+    else:
+        raise ReproductionError(f"Unknown V0.11 evidence group: {group}")
+    return normalized
+
+
+def _compare_v011_core_csvs(
+    project_root: Path,
+    generated_root: Path,
+    group: str,
+) -> list[dict[str, object]]:
+    manifest = json.loads(
+        (project_root / "release_manifest.json").read_text(encoding="utf-8")
+    )
+    frozen = manifest["frozen_files_sha256"]
+    comparisons: list[dict[str, object]] = []
+    for filename in V011_CORE_CSVS[group]:
+        published_relative = (
+            V011_PUBLISHED_ROOT / group / filename
+        ).as_posix()
+        published = project_root / published_relative
+        generated = generated_root / filename
+        if published_relative not in frozen:
+            raise ReproductionError(
+                f"V0.11 evidence CSV is not frozen: {published_relative}"
+            )
+        if not published.is_file() or not generated.is_file():
+            raise ReproductionError(
+                f"Missing published or generated V0.11 CSV: {published_relative}"
+            )
+        expected_sha256 = str(frozen[published_relative])
+        published_sha256 = _sha256(published)
+        generated_sha256 = _sha256(generated)
+        volatile_sha256_columns = V011_VOLATILE_SHA256_COLUMNS.get(
+            (group, filename), frozenset()
+        )
+        semantically_equal = _csv_semantically_equal(
+            _csv_content(published),
+            _csv_content(generated),
+            volatile_sha256_columns=volatile_sha256_columns,
+        )
+        passed = published_sha256 == expected_sha256 and semantically_equal
+        comparison = {
+            "path": published_relative,
+            "generated_path": (
+                Path("evidence_v011") / group / filename
+            ).as_posix(),
+            "expected_release_sha256": expected_sha256,
+            "published_sha256": published_sha256,
+            "generated_sha256": generated_sha256,
+            "generated_sha_matches_release": generated_sha256
+            == expected_sha256,
+            "semantic_content_equal": semantically_equal,
+            "byte_equal": generated.read_bytes() == published.read_bytes(),
+            "numeric_tolerance": {
+                "relative": NUMERIC_RELATIVE_TOLERANCE,
+                "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
+            },
+            "cross_platform_volatile_sha256_columns": sorted(
+                volatile_sha256_columns
+            ),
+            "status": "passed" if passed else "failed",
+        }
+        comparisons.append(comparison)
+        if not passed:
+            raise ReproductionError(
+                "V0.11 CSV reproduction mismatch: "
+                + json.dumps(comparison, ensure_ascii=False, sort_keys=True)
+            )
+    return comparisons
+
+
+def _inspect_v011_group(
+    project_root: Path,
+    generated_root: Path,
+    group: str,
+) -> dict[str, object]:
+    manifest = json.loads(
+        (project_root / "release_manifest.json").read_text(encoding="utf-8")
+    )
+    try:
+        result_filename = V011_RESULT_FILES[group]
+    except KeyError as exc:
+        raise ReproductionError(f"Unknown V0.11 evidence group: {group}") from exc
+    published_relative = (
+        V011_PUBLISHED_ROOT / group / result_filename
+    ).as_posix()
+    published_path = project_root / published_relative
+    generated_path = generated_root / result_filename
+    if published_relative not in manifest["frozen_files_sha256"]:
+        raise ReproductionError(
+            f"V0.11 result JSON is not frozen: {published_relative}"
+        )
+    if not published_path.is_file() or not generated_path.is_file():
+        raise ReproductionError(
+            f"Missing published or generated V0.11 result: {group}"
+        )
+    expected_sha256 = str(manifest["frozen_files_sha256"][published_relative])
+    published_sha256 = _sha256(published_path)
+    if published_sha256 != expected_sha256:
+        raise ReproductionError(
+            f"Published V0.11 result hash mismatch: {published_relative}"
+        )
+    published = json.loads(published_path.read_text(encoding="utf-8"))
+    generated = json.loads(generated_path.read_text(encoding="utf-8"))
+    semantic_content_equal = _json_semantically_equal(
+        _normalized_v011_result(published, group),
+        _normalized_v011_result(generated, group),
+    )
+    if not semantic_content_equal:
+        raise ReproductionError(
+            f"V0.11 result semantics changed for evidence group: {group}"
+        )
+
+    if group == "landmark":
+        guarded = (
+            generated.get("status")
+            == "retrospective_signal_only_confirmation_blocked"
+            and generated.get("retrospective_signal_landmark") == 10
+            and generated.get("confirmed_earliest_landmark") is None
+            and generated.get("model_validation_status") == "not_confirmed"
+        )
+    elif group == "v4":
+        confirmation = generated.get("confirmation", {})
+        calibration = generated.get("calibration", {})
+        guarded = (
+            generated.get("status")
+            == "retrospective_hybrid_diagnostic_complete_not_confirmed"
+            and confirmation.get("status") == "not_confirmed"
+            and confirmation.get("15_to_25_year_claim_allowed") is False
+            and calibration.get("operational_issued_trajectory_count") == 0
+        )
+    else:
+        decision = generated.get("decision", {})
+        gate = generated.get("mechanism_gate", {})
+        comparison = generated.get("primary_comparison", {})
+        guarded = (
+            generated.get("model_validation_status") == "not_confirmed"
+            and generated.get("descriptive_signal_status")
+            == "primary_candidate_did_not_outperform_comparator"
+            and gate.get("gate_ready_physical_cell_count") == 0
+            and gate.get("fallback_physical_cell_count") == 15
+            and float(comparison.get("mean_paired_delta_iae_pp", -1.0)) > 0.0
+            and decision.get("independent_long_term_validation_claim_allowed")
+            is False
+        )
+    if not guarded:
+        raise ReproductionError(
+            f"V0.11 claim guard failed for evidence group: {group}"
+        )
+    return {
+        "status": "passed",
+        "group": group,
+        "published_result": published_relative,
+        "expected_release_sha256": expected_sha256,
+        "published_sha256": published_sha256,
+        "generated_sha256": _sha256(generated_path),
+        "semantic_content_equal": semantic_content_equal,
+        "claim_guard_passed": True,
+        "core_csv_comparisons": _compare_v011_core_csvs(
+            project_root, generated_root, group
+        ),
+    }
+
+
 def _inspect_png(path: Path) -> dict[str, object]:
     payload = path.read_bytes() if path.is_file() else b""
     if len(payload) < 24 or payload[:8] != b"\x89PNG\r\n\x1a\n":
@@ -1727,6 +1953,10 @@ def reproduce(
             "status": "skipped_by_mode",
             "mode": mode,
         }
+        v011_evidence: dict[str, object] = {
+            "status": "skipped_by_mode",
+            "mode": mode,
+        }
 
         if mode in {"experiment", "full"}:
             phase8 = _run_command(
@@ -1769,6 +1999,83 @@ def reproduce(
                 for key in ("command", "returncode", "elapsed_seconds")
             }
             figure = _inspect_png(staging / "showcase/phase8_results.png")
+
+            evidence_root = staging / "evidence_v011"
+            landmark = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / LANDMARK_RUNNER),
+                    "--observations",
+                    str(project_root / PHASE8_INPUT),
+                    "--v3-config",
+                    str(project_root / PHASE8_CONFIG),
+                    "--protocol",
+                    str(project_root / LANDMARK_CONFIG),
+                    "--output-dir",
+                    str(evidence_root / "landmark"),
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(staging, "landmark", landmark)
+            command_summaries["landmark"] = {
+                key: landmark[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+
+            v4 = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / V4_RUNNER),
+                    "--input",
+                    str(project_root / PHASE8_INPUT),
+                    "--config",
+                    str(project_root / V4_CONFIG),
+                    "--output-dir",
+                    str(evidence_root / "v4"),
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(staging, "v4", v4)
+            command_summaries["v4"] = {
+                key: v4[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+
+            geisbauer = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / GEISBAUER_RUNNER),
+                    "--source",
+                    str(project_root / PHASE8_INPUT),
+                    "--target",
+                    str(project_root / GEISBAUER_INPUT),
+                    "--protocol",
+                    str(project_root / GEISBAUER_CONFIG),
+                    "--output-dir",
+                    str(evidence_root / "geisbauer"),
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(staging, "geisbauer", geisbauer)
+            command_summaries["geisbauer"] = {
+                key: geisbauer[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+            v011_evidence = {
+                "status": "passed",
+                "landmark": _inspect_v011_group(
+                    project_root, evidence_root / "landmark", "landmark"
+                ),
+                "v4": _inspect_v011_group(
+                    project_root, evidence_root / "v4", "v4"
+                ),
+                "geisbauer": _inspect_v011_group(
+                    project_root, evidence_root / "geisbauer", "geisbauer"
+                ),
+            }
 
         if mode == "full":
             audit = _run_command(
@@ -1824,7 +2131,7 @@ def reproduce(
             if scratch_path.exists():
                 _rmtree(scratch_path)
         summary: dict[str, object] = {
-            "schema_version": 2,
+            "schema_version": 3,
             "status": "passed",
             "mode": mode,
             "atomic_publish": True,
@@ -1839,6 +2146,7 @@ def reproduce(
             if figure is not None
             else {"status": "skipped_by_mode", "mode": mode},
             "phase1_adversarial_audit": phase1_audit,
+            "evidence_v011": v011_evidence,
             "pytest": pytest_result,
             "commands": command_summaries,
         }
@@ -1870,8 +2178,8 @@ def main() -> int:
         choices=("full", "experiment", "tests"),
         default="full",
         help=(
-            "full runs Phase 8, the Phase 1 adversarial audit, the headless "
-            "figure, and pytest"
+            "full runs Phase 8, the V0.11 landmark/V4/external evidence, the "
+            "Phase 1 adversarial audit, the headless figure, and pytest"
         ),
     )
     parser.add_argument(

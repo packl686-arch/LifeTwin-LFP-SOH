@@ -1,4 +1,4 @@
-# Exact direct dependencies used to regenerate the v0.10.0 public evidence.
+# Exact direct dependencies used to regenerate the v0.11.0 public evidence.
 numpy==2.5.1
 pandas==3.0.3
 scipy==1.18.0

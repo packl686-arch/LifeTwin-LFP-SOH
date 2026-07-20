@@ -1,0 +1,189 @@
+{
+  "status": "accelerated_external_stress_screen_complete_long_term_confirmation_blocked",
+  "execution_status": "completed",
+  "experiment_id": "geisbauer_lfp_calendar_external_stress_screen_v1",
+  "design_status": "retrospective_protocol_frozen_after_public_outcome_access",
+  "model_validation_status": "not_confirmed",
+  "config_sha256": "4dcd0a9ceaa3b2806fb2b39d2c684a5e2d77ba266da8c4caa85cf8e48a29d8de",
+  "source_dataset": {
+    "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+    "statistical_unit": "temperature_soc_condition_mean_trajectory",
+    "condition_count": 17,
+    "maximum_observed_days": 885.0416666666665,
+    "outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb"
+  },
+  "target_dataset": {
+    "dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+    "evidence_role": "accelerated_external_stress_check",
+    "statistical_unit": "individual_physical_cell_trajectory",
+    "physical_cell_count": 15,
+    "condition_count": 3,
+    "maximum_observed_days": 120.0,
+    "outcome_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54"
+  },
+  "protocol": {
+    "target_prefix_days": [
+      0,
+      39,
+      59
+    ],
+    "target_scoring_days": [
+      84,
+      120
+    ],
+    "methods": [
+      "target_prefix_persistence_day59_v1",
+      "target_prefix_only_sqrt_time_v1",
+      "hierarchical_power_law_prefix_update_v2",
+      "mechanism_gated_hierarchical_activation_offset_hybrid_v1"
+    ],
+    "primary_candidate": "mechanism_gated_hierarchical_activation_offset_hybrid_v1",
+    "primary_comparator": "target_prefix_only_sqrt_time_v1",
+    "pass_fail_threshold_defined": false,
+    "target_future_outcomes_used_for_prediction": false,
+    "outcomes_were_public_before_protocol_freeze": true
+  },
+  "mechanism_gate": {
+    "gate_ready_physical_cell_count": 0,
+    "fallback_physical_cell_count": 15,
+    "activation_mechanism_tested": false,
+    "reason": "The locked day-0/39/59 prefix has only two positive-time points, below the seven-point specialist gate."
+  },
+  "primary_comparison": {
+    "scope": "all_cells",
+    "physical_cell_count": 15,
+    "candidate_method": "mechanism_gated_hierarchical_activation_offset_hybrid_v1",
+    "comparator_method": "target_prefix_only_sqrt_time_v1",
+    "candidate_trajectory_iae_pp_mean": 3.9734505829651314,
+    "comparator_trajectory_iae_pp_mean": 3.8852146643430436,
+    "mean_paired_delta_iae_pp": 0.08823591862208821,
+    "candidate_better_cell_count": 8,
+    "candidate_worse_cell_count": 7,
+    "candidate_equal_cell_count": 0
+  },
+  "descriptive_signal_status": "primary_candidate_did_not_outperform_comparator",
+  "decision": {
+    "long_term_confirmation_status": "blocked_target_horizon_120_days",
+    "independent_long_term_validation_claim_allowed": false,
+    "formal_uncertainty_calibration_allowed": false,
+    "reason": "The target cohort is independent and cell-level, but all cells are stored at 60 C for only 120 days across three SOC conditions. It is an accelerated transfer stress screen, not long-term confirmation."
+  },
+  "future_label_firewall": {
+    "label_free_prediction_sha256": "41032721d9256d4e09fa471b2d9268221d90f33b0f502fd9aca1e4080c979555",
+    "prediction_pack_independently_replayed_before_scoring": true,
+    "future_target_outcomes_in_prediction_state": false
+  },
+  "prohibited_claims": [
+    "outcome_blind_external_validation",
+    "independent_long_term_validation",
+    "activation_mechanism_confirmation",
+    "formal_uncertainty_calibration",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ],
+  "provenance": {
+    "source_path": "data/interim/naumann_calendar_observations.csv",
+    "source_input_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "source_canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "target_path": "data/external/geisbauer_2022/LFP_Data.csv",
+    "target_input_file_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+    "target_canonical_observations_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54",
+    "target_adapter_audit": {
+      "status": "passed",
+      "dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+      "observation_count": 75,
+      "physical_cell_count": 15,
+      "condition_count": 3,
+      "checkups_per_cell": [
+        5
+      ],
+      "temperature_levels_c": [
+        60.0
+      ],
+      "storage_soc_levels": [
+        0.2,
+        0.5,
+        1.0
+      ],
+      "elapsed_days": [
+        0,
+        39,
+        59,
+        84,
+        120
+      ],
+      "canonical_output_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54",
+      "source": {
+        "doi": "10.5281/zenodo.6685365",
+        "url": "https://zenodo.org/records/6685365",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "version": "v3",
+        "archive_name": "Experimental Calendar Ageing Data for Lithium-Ion Battery Chemistries.zip",
+        "archive_size_bytes": 79545,
+        "archive_md5": "2dae24f63fd0abcb08a8809f4156bcad",
+        "archive_sha256": "327ab07a89b3eb68ef422817f4bd75f50ab6fed399d458381c3b9f1d984fe155",
+        "member": "Experimental Calendar Ageing Data for Lithium-Ion Battery Chemistries/CSV Format/LFP_Data.csv",
+        "member_size_bytes": 2752,
+        "member_md5": "b8b7219ba9146da6d76c779f4d8c2e75",
+        "member_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+        "input_kind": "extracted_csv",
+        "provided_path": "data/external/geisbauer_2022/LFP_Data.csv",
+        "provided_size_bytes": 2752,
+        "provided_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+        "archive_hash_verified": false,
+        "member_hash_verified": true
+      },
+      "guardrails": {
+        "evidence_role": "accelerated_external_stress_check",
+        "statistical_unit": "individual_physical_cell_trajectory",
+        "long_term_validation_eligible": false,
+        "confirmation_claim_allowed": false,
+        "row_level_split_prohibited": true,
+        "aggregate_cells_before_scoring": false
+      },
+      "warning": "This is a 120-day, 60 C accelerated external stress check with only three SOC conditions. It is never long-term external validation."
+    },
+    "protocol_path": "configs/experiments/geisbauer_lfp_calendar_external_stress.json",
+    "protocol_file_sha256": "5ba003ad0cf7093acb817b1e93f01f083a97508efe500588bb090a0acde1f03f",
+    "source_sha256": {
+      "scripts/run_geisbauer_external_stress.py": "dff8c89f7de3841d72c50d9079f55d4249d682833e5dcd7b81db5e93a874fca4",
+      "src/lifetwin/data/naumann.py": "3397745fc0b7adee4f12072cebf2a12cf90a272f5db4ae2b073649d24e141aab",
+      "src/lifetwin/data/geisbauer_calendar.py": "d63f935eaa3066ca9743f8c529939c23064c7c18e056f475ad35b8dc2bfebbe0",
+      "src/lifetwin/models/calendar_v2.py": "7120a33a8bb64bb6d2287936a761817d1270e40d3d38f5cfe06992462ff6b97e",
+      "src/lifetwin/models/calendar_v3_activation.py": "2121accfa57799197d6fdcb563efd081a02e013366bc2e396296af9ce1af4e6b",
+      "src/lifetwin/experiments/geisbauer_external_stress.py": "b9fc17ac8559a53e865dadf04769cd3d12743cdda1327a2d2f090812a4cffecf"
+    },
+    "source_tree_sha256": "2521e2ad55c166ca329668b8bb4a4dfe91ec677192ac821b7676f5b1bc9bc13b",
+    "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+    "packages": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "scipy": "1.18.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "artifacts": {
+    "label_free_predictions": {
+      "path": "showcase/evidence_v011/geisbauer/label_free_predictions.csv",
+      "row_count": 120,
+      "sha256": "41032721d9256d4e09fa471b2d9268221d90f33b0f502fd9aca1e4080c979555"
+    },
+    "cell_metrics": {
+      "path": "showcase/evidence_v011/geisbauer/cell_metrics.csv",
+      "row_count": 60,
+      "sha256": "97cd37dc9f84f0c98d1deb71f7ceb616a46274948d1e2bfacbb4fd45f51cd2cc"
+    },
+    "condition_summary": {
+      "path": "showcase/evidence_v011/geisbauer/condition_summary.csv",
+      "row_count": 12,
+      "sha256": "d0130fbae0494499e6fae65077cbb7aeb11b9c27767c39cdf454c4662e43dfbc"
+    },
+    "comparison_summary": {
+      "path": "showcase/evidence_v011/geisbauer/comparison_summary.csv",
+      "row_count": 4,
+      "sha256": "29ebf121d6eef4ba5fe246ca58250b354c5f73b2197f2a448ee248dabc34a640"
+    }
+  }
+}

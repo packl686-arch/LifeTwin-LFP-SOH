@@ -16,11 +16,12 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 建议按以下顺序阅读：
 
 1. [开题报告补充材料](SUBMISSION_SUPPLEMENT.md)：一页了解问题、方案、结果与边界。
-2. [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md)：查看未来标签攻击、独立复算、故障回退和失败条件表。
-3. [数据分析样本](docs/data_analysis_sample.md)：从公开数据到结论的完整示例。
-4. [相关项目经验](docs/project_experience.md)：仓库中可核验的研究与工程积累。
-5. [研究笔记](docs/research_notes.md)：为什么从固定曲线走到动态门控模型。
-6. [参考资料](docs/references.md)：论文、数据集、代码来源和许可状态。
+2. [V0.11 新证据报告](reports/landmark_v4_external_evidence_2026-07-20.md)：查看动态 landmark、保守区间和独立外部负结果。
+3. [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md)：查看未来标签攻击、独立复算、故障回退和失败条件表。
+4. [数据分析样本](docs/data_analysis_sample.md)：从公开数据到结论的完整示例。
+5. [相关项目经验](docs/project_experience.md)：仓库中可核验的研究与工程积累。
+6. [研究笔记](docs/research_notes.md)：为什么从固定曲线走到动态门控模型。
+7. [参考资料](docs/references.md)：论文、数据集、代码来源和许可状态。
 
 ## 核心方法
 
@@ -32,9 +33,12 @@ flowchart LR
     D --> E{"出现早期容量回升且数据充足?"}
     E -- "否" --> F["稳定层次幂律"]
     E -- "是" --> G["老化项 + 激活偏移项"]
-    F --> H["SOH轨迹、区间与越限时间"]
-    G --> H
-    H --> I["新数据进入后滚动更新"]
+    F --> R["训练域内有界残差修正"]
+    G --> R
+    R --> H["SOH轨迹与路由化不确定性"]
+    H --> U{"校准与域证据足够?"}
+    U -- "是" --> I["发放区间并滚动更新"]
+    U -- "否" --> J["拒绝预测或扩大区间"]
 ```
 
 三个核心设计是：
@@ -47,6 +51,10 @@ flowchart LR
   饱和激活偏移项，避免单调模型把早期回升误判成长期快速衰减。
 - **证据驱动的模型门控**：只有异常形状和观测数量同时满足条件才启用专用
   模型，否则回退稳定主模型，避免复杂模型在普通工况中过拟合。
+- **受约束的残差学习**：残差只从训练条件的交叉拟合误差中学习，在 landmark
+  处锚定为零，并受时间支持和幅度上限约束，不允许黑盒修正吞掉机理主模型。
+- **路由化校准与拒绝发行**：specialist 和 fallback 分开按条件轨迹校准；样本量、
+  域支持或长期独立证据不足时，不输出貌似精确的运营区间。
 
 ## 回顾性开发结果
 
@@ -102,6 +110,24 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别是：`p=8, T25_S
 `N=17`，最长约 885 天；这不是单电芯级验证，不能支持海辰产品、真实电站或
 15-25 年预测精度宣称。
 
+## V0.11：landmark、区间和外部负结果
+
+本轮先完成正确性审计，再扩展方法。所有前缀被放到检查点 14-34 的相同未来窗口
+比较后，只有 `p=10` 同时满足两场景均值改善、逐条件零退化和唯一改善条件要求。
+它被记为**回顾性信号 landmark**，而不是预注册确认点；确认值仍为 `null`。
+
+V4 将层次机理均值、训练条件 LOCO 有界残差和按路由校准的轨迹区间组合起来。
+fallback 路由的 5 个校准条件只足以形成 80% 诊断分位数；specialist 仅 1 个校准
+条件，80%/90%/95% 都拒绝。4 条测试轨迹中只有 3 条获得回顾性 80% 诊断区间，
+运营区间发放数为 **0**，因为校准结果已被复用且没有独立长期数据。
+
+项目还引入许可明确的 Geisbauer 独立电芯级 LFP 队列做 120 天、60 C 外部应力
+筛查。15 个电芯全部因前缀不足而回退稳定模型；主候选平均 IAE 为 `3.9735 pp`，
+目标前缀平方根比较器为 `3.8852 pp`，主候选**没有胜出**。项目保留这个负结果，
+不重调协议，也不把短期高温筛查改称长期验证。详见
+[完整报告](reports/landmark_v4_external_evidence_2026-07-20.md)和
+[机器可读证据包](showcase/evidence_v011/README.md)。
+
 ## 仓库结构
 
 ```text
@@ -109,6 +135,7 @@ LifeTwin-LFP-SOH/
 ├── src/lifetwin/              原型代码
 ├── configs/experiments/       冻结实验协议
 ├── data/interim/              CC BY 4.0 的规范化 Naumann 表
+├── data/external/             CC BY 4.0 的 Geisbauer LFP 外部应力数据
 ├── scripts/                   实验、审计与一键复现入口
 ├── showcase/                  数据分析样本与公开审计产物
 ├── docs/                      补充材料、研究笔记与参考资料
@@ -137,8 +164,9 @@ python3.12 -m venv .venv
 .venv/bin/python showcase/analyze_phase8_results.py --output artifacts/quick/phase8_results.png
 ```
 
-安装依赖后，推荐用一个命令完成发布预检、Phase 8、Phase 1 审计、无界面绘图和
-完整测试，并把证据原子化写入新目录：
+安装依赖后，推荐用一个命令完成发布预检、Phase 8、动态 landmark、V4 区间、
+Geisbauer 外部应力筛查、Phase 1 审计、无界面绘图和完整测试，并把证据原子化
+写入新目录：
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\reproduce_public_release.py --mode full --output artifacts\reproduction
@@ -171,11 +199,18 @@ $env:PYTHONPATH='src'
 
 ## 数据与许可
 
-仓库只包含一份可公开再分发的规范化数据表。其上游 Naumann 数据集由 Maik
-Naumann 发布于 Mendeley Data，DOI 为
+仓库包含两份许可明确且可公开再分发的数据文件。Naumann 数据集由 Maik Naumann
+发布于 Mendeley Data，DOI 为
 [`10.17632/kxh42bfgtj.1`](https://doi.org/10.17632/kxh42bfgtj.1)，许可为
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。转换和统计单位说明见
 [数据说明](data/interim/README.md)。
+
+Geisbauer LFP 数据由 Christoph Geisbauer、Markus Woerle、Philip Keil 和 Andreas
+Jossen 发布于 Zenodo，DOI 为
+[`10.5281/zenodo.6685365`](https://doi.org/10.5281/zenodo.6685365)，许可同为
+CC BY 4.0。仓库保留原始 2.7 KB LFP CSV，说明见
+[外部数据说明](data/external/geisbauer_2022/README.md)。它只有 120 天、60 C，
+只用于外部应力筛查。
 
 Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明确的数据/软件
 许可，因此没有上传任何文件或代码副本，只在[参考资料](docs/references.md)中
@@ -187,6 +222,9 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - 公开数据上的回顾性开发：完成。
 - 数据身份、未来标签隔离、独立评分复算与预测包坐标完整性：完成。
 - 门控边界、专用模型故障回退和 84 行失败条件清单：完成。
+- 固定共同未来窗口的动态 landmark 回顾性诊断：完成；确认性 landmark 待独立数据。
+- 机理层级模型、LOCO 有界残差、路由化区间与拒绝发行：完成回顾性实现。
+- 15 个独立 LFP 电芯的 120 天、60 C 外部应力筛查：完成，主候选未胜出。
 - Ubuntu/Windows fresh-clone CI：已配置，状态由仓库徽章和对应提交记录公开显示。
 - 独立长期 LFP 队列验证：待完成。
 - 海辰大容量电芯与真实电站验证：待完成。
@@ -194,4 +232,4 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 提交人：Jincheng Liu
 
-版本：`0.10.0`，2026-07-20
+版本：`0.11.0`，2026-07-20

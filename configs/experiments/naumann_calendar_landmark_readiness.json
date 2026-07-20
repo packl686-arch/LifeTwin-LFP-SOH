@@ -1,0 +1,43 @@
+{
+  "experiment_id": "naumann_calendar_landmark_readiness_locked_diagnostic_v1",
+  "design_status": "retrospective_locked_after_outcome_access",
+  "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "dataset_snapshot_id": "celljar_5c9601a027751c84ee8346f7c0ab9c6851330202_cycle_summary_6d4fd8d102ce9605c2c9bff86662b03201ae85411af583e23f3315b52bf81bc5",
+  "label_version": "published_condition_mean_capacity_retention_v1",
+  "statistical_unit": "temperature_soc_condition_mean_trajectory",
+  "evidence_role": "reused_naumann_landmark_readiness_diagnostic_only",
+  "dataset_relationship": "reused_and_outcomes_already_inspected",
+  "training_history_policy": "global_landmark_prefix",
+  "landmark_prefix_checkups": [5, 8, 10, 14],
+  "scenarios": [
+    "v3_unseen_temperature_level",
+    "v3_soc_interpolation_at_40c"
+  ],
+  "candidate_method": "mechanism_gated_target_activation_offset_hybrid_v1",
+  "comparator_method": "hierarchical_power_law_prefix_update_v2",
+  "common_support": {
+    "policy": "fixed_checkup_index_closed_interval",
+    "start_checkup_index": 14,
+    "end_checkup_index": 34
+  },
+  "retrospective_signal_rule": {
+    "mean_delta_threshold_pp": 0.0,
+    "condition_regression_tolerance_pp": 1e-12,
+    "require_all_scenarios": true,
+    "require_no_condition_regressions": true,
+    "minimum_unique_improved_conditions": 1
+  },
+  "confirmation_policy": {
+    "required_dataset_role": "independent_external_replication",
+    "current_dataset_status": "blocked_reused_outcomes",
+    "confirmed_earliest_landmark_must_be_null": true
+  },
+  "prohibited_claims": [
+    "confirmed_earliest_landmark_on_naumann_reuse",
+    "confirmatory_superiority_on_naumann_reuse",
+    "independent_external_validation",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

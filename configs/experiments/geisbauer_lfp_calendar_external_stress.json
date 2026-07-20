@@ -1,0 +1,55 @@
+{
+  "experiment_id": "geisbauer_lfp_calendar_external_stress_screen_v1",
+  "design_status": "retrospective_protocol_frozen_after_public_outcome_access",
+  "evidence_role": "accelerated_external_stress_check",
+  "source_dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "target_dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+  "source_training_history_policy": "all_available_source_history",
+  "target_prefix_days": [0, 39, 59],
+  "target_scoring_days": [84, 120],
+  "methods": [
+    "target_prefix_persistence_day59_v1",
+    "target_prefix_only_sqrt_time_v1",
+    "hierarchical_power_law_prefix_update_v2",
+    "mechanism_gated_hierarchical_activation_offset_hybrid_v1"
+  ],
+  "primary_candidate": "mechanism_gated_hierarchical_activation_offset_hybrid_v1",
+  "primary_comparator": "target_prefix_only_sqrt_time_v1",
+  "model": {
+    "minimum_training_conditions": 6,
+    "robust_loss_scale_pp": 0.25,
+    "power_exponent_bounds": [0.05, 1.5],
+    "stress_surface_ridge": 1.0,
+    "base_parameter_scale_floors": [0.1, 0.05],
+    "activation_parameter_scale_floors": [0.1, 0.05, 0.1],
+    "observation_scale_floor_pp": 0.1,
+    "activation_timescale_days": 7.0,
+    "activation_offset_bounds_pp": [0.0, 10.0]
+  },
+  "mechanism_gate": {
+    "minimum_positive_time_observations": 7,
+    "negative_loss_threshold_pp": 0.0,
+    "fallback_method": "hierarchical_power_law_prefix_update_v2"
+  },
+  "support_policy": {
+    "temperature_policy": "within_source_axis_aligned_range",
+    "soc_policy": "within_source_axis_aligned_range",
+    "time_policy": "target_scoring_day_not_beyond_source_maximum_day",
+    "cross_dataset_domain_confirmation": false,
+    "formal_uncertainty_calibration_allowed": false
+  },
+  "decision_policy": {
+    "pass_fail_threshold_defined": false,
+    "long_term_confirmation_status": "blocked_target_horizon_120_days",
+    "independent_long_term_validation_claim_allowed": false
+  },
+  "prohibited_claims": [
+    "outcome_blind_external_validation",
+    "independent_long_term_validation",
+    "activation_mechanism_confirmation",
+    "formal_uncertainty_calibration",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

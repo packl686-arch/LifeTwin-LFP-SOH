@@ -1,0 +1,96 @@
+{
+  "experiment_id": "naumann_calendar_v4_hybrid_development_v1",
+  "design_status": "retrospective_locked_after_outcome_access",
+  "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "dataset_snapshot_id": "celljar_5c9601a027751c84ee8346f7c0ab9c6851330202_cycle_summary_6d4fd8d102ce9605c2c9bff86662b03201ae85411af583e23f3315b52bf81bc5",
+  "label_version": "published_condition_mean_capacity_retention_v1",
+  "statistical_unit": "temperature_soc_condition_mean_trajectory",
+  "evidence_role": "reused_naumann_hybrid_uncertainty_development_only",
+  "split": {
+    "split_id": "naumann_v4_fixed_7_train_6_calibration_4_test_v1",
+    "selection_status": "post_hoc_locked_after_outcome_access",
+    "training_condition_ids": [
+      "NAUMANN_CAL_T0_SOC50",
+      "NAUMANN_CAL_T10_SOC50",
+      "NAUMANN_CAL_T25_SOC0",
+      "NAUMANN_CAL_T25_SOC100",
+      "NAUMANN_CAL_T60_SOC0",
+      "NAUMANN_CAL_T60_SOC50",
+      "NAUMANN_CAL_T60_SOC100"
+    ],
+    "calibration_condition_ids": [
+      "NAUMANN_CAL_T25_SOC50",
+      "NAUMANN_CAL_T40_SOC0",
+      "NAUMANN_CAL_T40_SOC25",
+      "NAUMANN_CAL_T40_SOC50",
+      "NAUMANN_CAL_T40_SOC75",
+      "NAUMANN_CAL_T40_SOC100"
+    ],
+    "test_condition_ids": [
+      "NAUMANN_CAL_T40_SOC12.5",
+      "NAUMANN_CAL_T40_SOC37.5",
+      "NAUMANN_CAL_T40_SOC62.5",
+      "NAUMANN_CAL_T40_SOC87.5"
+    ]
+  },
+  "landmark": {
+    "prefix_checkups": 10,
+    "prefix_end_checkup_index": 9,
+    "forecast_start_checkup_index": 10,
+    "forecast_end_checkup_index": 34,
+    "history_policy": "target_prefix_with_historical_training_residual_library"
+  },
+  "model": {
+    "time_unit": "day",
+    "minimum_training_conditions": 6,
+    "robust_loss_scale_pp": 0.25,
+    "power_exponent_bounds": [0.05, 1.5],
+    "stress_surface_ridge": 1.0,
+    "base_parameter_scale_floors": [0.1, 0.05],
+    "activation_parameter_scale_floors": [0.1, 0.05, 0.1],
+    "observation_scale_floor_pp": 0.1,
+    "activation_timescale_days": 7.0,
+    "activation_offset_bounds_pp": [0.0, 10.0],
+    "mechanism_gate_minimum_positive_time_observations": 7,
+    "mechanism_gate_negative_loss_threshold_pp": 0.0
+  },
+  "residual": {
+    "method": "landmark_anchored_bounded_ridge_v1",
+    "source_prediction_policy": "training_condition_leave_one_out_activation_specialist",
+    "minimum_source_conditions": 7,
+    "ridge_penalty": 1.0,
+    "correction_cap_pp": 2.0,
+    "support_end_checkup_index": 34,
+    "apply_to_route": "hierarchical_activation_residual"
+  },
+  "uncertainty": {
+    "requested_coverages": [0.8, 0.9, 0.95],
+    "primary_coverage": 0.8,
+    "calibration_unit": "condition_mean_trajectory",
+    "calibration_partition": "selected_mean_route",
+    "score": "maximum_standardized_error_over_checkups_10_to_34",
+    "quantile_rule": "ceil((n+1)*coverage)_higher_or_unavailable",
+    "predictive_scale_floor_pp": 0.1,
+    "physical_bounds_pct": [0.0, 100.0],
+    "max_interval_width_pp": null,
+    "formal_coverage_claim_allowed": false
+  },
+  "issuance": {
+    "diagnostic_interval_role": "reused_data_horizon_matched_diagnostic_only",
+    "operational_issuance_enabled": false,
+    "operational_abstention_reasons": [
+      "calibration_evidence_not_independent",
+      "independent_long_term_evidence_missing"
+    ]
+  },
+  "confirmation_status": "not_confirmed",
+  "prohibited_claims": [
+    "confirmatory_performance_on_naumann_reuse",
+    "formal_finite_sample_coverage_on_naumann_reuse",
+    "independent_external_validation",
+    "individual_cell_uncertainty",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

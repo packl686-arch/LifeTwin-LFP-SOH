@@ -54,11 +54,18 @@
    arXiv: <https://arxiv.org/abs/2107.07511>  
    用途：有限样本分位数、校准单位和覆盖率诊断的理论背景。
 
+9. Geisbauer, C., Woerle, M., Keil, P. and Jossen, A. **Experimental Calendar
+   Ageing Data for Lithium-Ion Battery Chemistries.** Version 3 (2022).
+   DOI: <https://doi.org/10.5281/zenodo.6685365>
+   用途：15 个独立 LFP 电芯在 60 C、三个 SOC 下的 120 天外部应力筛查。
+   数据为 CC BY 4.0；由于时间短且工况单一，不作为长期验证。
+
 ## 数据与代码来源
 
 | 资源 | 入口 | 本仓库处理 |
 |---|---|---|
 | Naumann 日历老化数据 | <https://doi.org/10.17632/kxh42bfgtj.1> | CC BY 4.0；发布规范化条件均值表并保留署名与变更说明 |
+| Geisbauer LFP 日历老化数据 | <https://doi.org/10.5281/zenodo.6685365> | CC BY 4.0；发布原始 2.7 KB LFP CSV；仅用于 120 天、60 C 外部应力筛查 |
 | Severson/MATR 项目 | <https://data.matr.io/1/projects/5c48dd2bc625d700019f3204> | 不上传原始大文件；只在研究经历中描述权威身份审计 |
 | Severson 作者代码 | <https://github.com/rdbraatz/data-driven-prediction-of-battery-cycle-life-before-capacity-degradation> | 用于核对公开实验身份和协议；不在本仓库复制第三方代码 |
 | CellJAR 固定传输快照 | <https://huggingface.co/datasets/mihnathul/celljar> | 本地研究阶段使用固定 revision；GitHub 版不上传仓库副本 |
@@ -68,6 +75,7 @@
 
 - LifeTwin 原创代码当前为公开可查看、保留全部权利，详见仓库 `LICENSE`。
 - Naumann 规范化 CSV 单独遵循 CC BY 4.0，详见 `data/interim/README.md`。
+- Geisbauer 原始 LFP CSV 单独遵循 CC BY 4.0，详见
+  `data/external/geisbauer_2022/README.md`。
 - 论文开放许可不自动等于配套数据或代码具有相同许可。
 - 海辰名称只用于说明竞赛命题背景，不表示官方背书或产品验证。
-

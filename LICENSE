@@ -6,6 +6,6 @@ modify, redistribute, sublicense, or use the software or documentation for
 commercial purposes without prior written permission from the copyright holder.
 
 Third-party datasets and publications retain their original rights and licenses.
-The Naumann-derived table included in this repository is separately governed by
-CC BY 4.0 as described in data/interim/README.md.
-
+The Naumann-derived table and the Geisbauer LFP CSV included in this repository
+are separately governed by CC BY 4.0 as described in data/interim/README.md and
+data/external/geisbauer_2022/README.md.

@@ -1,0 +1,135 @@
+{
+  "status": "retrospective_hybrid_diagnostic_complete_not_confirmed",
+  "execution_status": "completed",
+  "experiment_id": "naumann_calendar_v4_hybrid_development_v1",
+  "config_sha256": "a7ab156fba62229b4223cf91c681bac2402563d1b11cc64c29668392a4182661",
+  "prediction_pack_sha256": "ac0bd25154954a603eab6dbbbcfd3a1f281b4ec59d0ce5207a95c015a87c4d0c",
+  "design": {
+    "design_status": "retrospective_locked_after_outcome_access",
+    "selection_status": "post_hoc_locked_after_outcome_access",
+    "evidence_role": "reused_naumann_hybrid_uncertainty_development_only",
+    "split_id": "naumann_v4_fixed_7_train_6_calibration_4_test_v1",
+    "training_condition_count": 7,
+    "calibration_condition_count": 6,
+    "test_condition_count": 4,
+    "prefix_checkups": 10,
+    "forecast_checkup_indices": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34
+    ],
+    "target_future_outcomes_used_for_prediction": false,
+    "calibration_outcomes_used_for_mean_or_residual_fit": false,
+    "test_outcomes_used_before_prediction_freeze": false,
+    "residual_source_unit": "training_condition_trajectory",
+    "calibration_unit": "condition_mean_trajectory"
+  },
+  "calibration": {
+    "partition": "selected_mean_route",
+    "horizon_matched": true,
+    "formal_coverage_claim_allowed": false,
+    "primary_coverage": 0.8,
+    "diagnostic_available_test_trajectory_count": 3,
+    "diagnostic_unavailable_test_trajectory_count": 1,
+    "operational_issued_trajectory_count": 0
+  },
+  "confirmation": {
+    "status": "not_confirmed",
+    "current_dataset_relationship": "reused_and_outcomes_already_inspected",
+    "independent_long_term_dataset_available": false,
+    "15_to_25_year_claim_allowed": false
+  },
+  "future_label_firewall": {
+    "label_free_prediction_pack_frozen_before_test_scoring": true,
+    "scorer_independently_regenerates_prediction_pack": true,
+    "future_outcome_columns_in_prediction_pack": []
+  },
+  "prohibited_claims": [
+    "confirmatory_performance_on_naumann_reuse",
+    "formal_finite_sample_coverage_on_naumann_reuse",
+    "independent_external_validation",
+    "individual_cell_uncertainty",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ],
+  "claim_boundary": "This is a post-hoc diagnostic on 17 reused Naumann condition-mean trajectories through 885 days. It does not validate individual-cell, Hithium-product, plant, or 15-25 year predictions or intervals.",
+  "provenance": {
+    "input_path": "data/interim/naumann_calendar_observations.csv",
+    "input_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "config_path": "configs/experiments/naumann_calendar_v4_hybrid_development.json",
+    "config_file_sha256": "92d06bb4f30b8144e0423ceb3f935e95b9f761b1ec1ff85c86d1c9cc5201bbba",
+    "source_sha256": {
+      "scripts/run_calendar_v4_hybrid_development.py": "dd8bd319069fe80c47fc28263a06e4e786bfca1a0cb72d17083db232b4463e7b",
+      "src/lifetwin/data/naumann.py": "3397745fc0b7adee4f12072cebf2a12cf90a272f5db4ae2b073649d24e141aab",
+      "src/lifetwin/models/calendar_v2.py": "7120a33a8bb64bb6d2287936a761817d1270e40d3d38f5cfe06992462ff6b97e",
+      "src/lifetwin/models/calendar_v2_uncertainty.py": "1613ee88f670c56a37fec1506d19888e6aa83ddd98a402b987b97698f6cdc1b7",
+      "src/lifetwin/models/calendar_v3_activation.py": "2121accfa57799197d6fdcb563efd081a02e013366bc2e396296af9ce1af4e6b",
+      "src/lifetwin/models/calendar_v4_hybrid.py": "4ac057ed745feae272f3241a9eb69603ea002ae933c378fb1391542ed8d100b2",
+      "src/lifetwin/experiments/calendar_v4_hybrid_development.py": "42a41f8cf307421e0e10df6bb75693198f41d3ea98324b115f2d53615ea6dda9"
+    },
+    "source_tree_sha256": "5ddd613e8612c9999eff24b80a40f7b605cb450786738299e90c539ad9d30925",
+    "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+    "packages": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "scipy": "1.18.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "artifacts": {
+    "label_free_predictions": {
+      "path": "showcase/evidence_v011/v4/label_free_predictions.csv",
+      "row_count": 300,
+      "sha256": "ac0bd25154954a603eab6dbbbcfd3a1f281b4ec59d0ce5207a95c015a87c4d0c"
+    },
+    "training_residual_crossfit": {
+      "path": "showcase/evidence_v011/v4/training_residual_crossfit.csv",
+      "row_count": 175,
+      "sha256": "2c6810d42b530ff9392615134913a40ae4b6dfba8d95d91c528e9429ba908847"
+    },
+    "calibration_condition_scores": {
+      "path": "showcase/evidence_v011/v4/calibration_condition_scores.csv",
+      "row_count": 6,
+      "sha256": "40648bec84438ed149b545e7ef6e80a03249a24fd1eebeeac2954e2f1df1b2af"
+    },
+    "calibration_quantiles": {
+      "path": "showcase/evidence_v011/v4/calibration_quantiles.csv",
+      "row_count": 6,
+      "sha256": "9c8e83adad412091f1953f2b57772f068c065eae937a8620f44483e2b9594ad0"
+    },
+    "condition_metrics": {
+      "path": "showcase/evidence_v011/v4/condition_metrics.csv",
+      "row_count": 12,
+      "sha256": "a2d37470698fd12979e287c983445ce994a1fa91e7513310df27274da2e3f117"
+    },
+    "condition_splits": {
+      "path": "showcase/evidence_v011/v4/condition_splits.csv",
+      "row_count": 17,
+      "sha256": "b8878b10f4eab0c12b200b5714f4c5651d823b41a496a4000815916c3bd48fbb"
+    }
+  }
+}

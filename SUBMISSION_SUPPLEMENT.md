@@ -34,7 +34,9 @@ LifeTwin 将问题从“一次性外推一个远期点值”改写为“随数�
 | 层次主模型 | 多工况历史 + 目标前缀 | 个性化退化幅度和时间指数 | 用群体经验缓解目标对象数据不足 |
 | 激活偏移模型 | 低 SOC 早期异常形状 | 老化项与偏移项 | 避免容量回升造成长期外推偏差 |
 | 证据门控 | 异常证据 + 观测数量 | 模型选择与回退原因 | 只在确有证据时增加复杂度 |
-| 风险输出 | 预测分布与业务阈值 | SOH、区间、越限时间、提示 | 支持研发、质保和运维决策 |
+| 有界残差 | 训练条件交叉拟合误差 | 小幅曲率修正 | 修正结构误差但不替代机理主模型 |
+| 路由化校准 | 条件轨迹级误差与模型路由 | 诊断区间或拒绝原因 | 避免把时间点伪装成独立样本 |
+| 风险输出 | 预测分布、证据状态与业务阈值 | SOH、区间、越限时间、提示 | 支持研发、质保和运维决策 |
 
 ## 4. 可核验结果
 
@@ -49,6 +51,22 @@ LifeTwin 将问题从“一次性外推一个远期点值”改写为“随数�
 
 全部数字可由仓库中的 CC BY 4.0 数据、冻结配置和测试重新计算，不要求评委
 相信一张无法追溯的结果截图。
+
+### 4.1 入围后的三项强化结果
+
+1. **动态 landmark**：把 `p=5/8/10/14` 放到检查点 14-34 的同一未来窗口后，
+   只有 `p=10` 同时满足两场景均值改善、逐条件零退化和唯一改善条件要求。由于
+   Naumann 结果已被查看，它只叫回顾性信号点，确认 landmark 仍为空。
+2. **V4 区间与拒绝**：7/6/4 条件级训练、校准、测试切分下，fallback 的 5 个
+   校准条件只够产生 80% 诊断分位数；specialist 只有 1 个校准条件，所有覆盖率
+   都拒绝。最终 4 条测试轨迹中 3 条获得回顾性 80% 诊断区间，运营区间发放为 0。
+3. **独立外部应力筛查**：在许可明确的 15 个 Geisbauer LFP 电芯上，只用
+   0/39/59 天预测 84/120 天。主候选 IAE 为 `3.9735 pp`，目标前缀平方根为
+   `3.8852 pp`，候选没有胜出；100% SOC 的迁移问题最明显。该负结果被完整保留。
+
+这三项强化的创新不在“没有偷看未来”，那只是研究正确性的底线；真正的技术增量是
+机理层级均值与受约束残差的组合、按实际模型路由进行轨迹级小样本校准，以及把域支持
+和长期独立证据直接接入区间发行决策。
 
 ## 5. 对抗审计与真实修复
 
@@ -86,6 +104,8 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
 | 数据分析样本 | [docs/data_analysis_sample.md](docs/data_analysis_sample.md) | 展示数据、指标、图表和结论链 |
 | 可运行分析脚本 | [showcase/analyze_phase8_results.py](showcase/analyze_phase8_results.py) | 一条命令重建核心图表 |
 | 对抗性审计报告 | [reports/phase1_adversarial_audit_2026-07-20.md](reports/phase1_adversarial_audit_2026-07-20.md) | 逐项解释攻击、修复、失败条件和证据边界 |
+| V0.11 新证据报告 | [reports/landmark_v4_external_evidence_2026-07-20.md](reports/landmark_v4_external_evidence_2026-07-20.md) | 解释动态 landmark、V4 区间拒绝和外部负结果 |
+| V0.11 机器可读证据 | [showcase/evidence_v011/README.md](showcase/evidence_v011/README.md) | 直接查看三组冻结结果、预测和条件级指标 |
 | 机器可读审计总览 | [showcase/audit_results/phase1_adversarial_audit.json](showcase/audit_results/phase1_adversarial_audit.json) | 汇总审计状态、检查项和禁止宣称 |
 | 未来标签攻击矩阵 | [showcase/audit_results/future_label_attack_cases.csv](showcase/audit_results/future_label_attack_cases.csv) | 核对四个 landmark 的预测不变与评分改变 |
 | 独立指标复算 | [showcase/audit_results/independent_metric_audit.csv](showcase/audit_results/independent_metric_audit.csv) | 复核 504 个条件-方法指标组 |
@@ -112,10 +132,12 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
    .venv/bin/python scripts/reproduce_public_release.py --mode full --output artifacts/reproduction
    ```
 
-3. 打开对抗审计报告，展示逐 landmark 未来标签攻击、评分器真实修复和故障回退。
-4. 打开失败条件表，先解释 `p=10` 的 17 条精确回退和增益集中，再展示总体均值。
-5. 打开研究笔记中的 `T40_SOC12.5` 失效链，解释为什么模型会演进。
-6. 最后展示证据边界：公开数据证明方法可行，但产品承诺必须等待独立和内部数据。
+3. 打开 V0.11 报告，先展示 `p=10` 只是回顾性 landmark，再展示为何大多数区间
+   被拒绝发行。
+4. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
+5. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
+6. 打开研究笔记中的 `T40_SOC12.5` 失效链，解释为什么模型会演进。
+7. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
 
 GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)，
@@ -125,5 +147,7 @@ GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 
 本项目没有海辰数据，也没有证明 15-25 年预测精度。当前最强结论是：一个低
 参数、可解释、可滚动更新的混合模型在公开数据上表现出清晰的可行性信号，且
-已经具备数据接入、验证、回退和审计框架。下一步应冻结现有规则，在独立长期
-LFP 队列和海辰目标产品数据上一次性验证，而不是继续对同一公开数据调参。
+已经具备数据接入、验证、回退、受约束残差、区间拒绝和审计框架。独立的 120 天
+高温队列暴露了 100% SOC 迁移风险，不能代替长期验证。下一步应冻结现有规则，
+在许可明确的独立长期 LFP 队列和海辰目标产品数据上一次性验证，而不是继续对
+同一公开数据调参。
