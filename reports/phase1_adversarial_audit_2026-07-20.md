@@ -164,10 +164,17 @@ Linux/macOS：
 `artifacts/reproduction/reproduction_summary.json`、命令日志和带 SHA-256 的审计产物清单。
 输出目录必须事先不存在，以免覆盖旧证据。
 
-规范复现约束精确数值栈，清单所列的已发布证据文件必须逐字节匹配 SHA-256；Ubuntu/Windows
-重算表允许 `2e-4` 绝对数值容差。`training_state_sha256` 等派生状态哈希可能随底层数值库改变，
-因此要求格式有效、行间等价类结构一致，并在同一次 baseline/attacked 攻击内成对相等；
-不把跨操作系统哈希相等误写成模型结论。
+规范复现约束精确数值栈，清单所列的已发布证据文件必须逐字节匹配 SHA-256。Phase 8 核心表
+跨平台重算允许 `2e-4` 绝对数值容差；Phase 1 审计表先按文件声明的唯一主键对齐，再执行
+默认精确的逐字段策略。只有求解器派生误差指标允许 `5e-3 pp`，派生比例允许 `1e-4`，
+审计残差只允许 `1e-10`；身份、工况、前缀、计数、真值、门控状态和结论字段必须精确一致，
+所有容差字段还必须是有限数。该范围由冻结依赖下的 Ubuntu/Windows 重算和不同 OpenBLAS
+CPU 内核审计校准，观测到的最大求解器漂移为 `0.003893 pp`，低于 `0.005 pp` 上限。
+比较器同时重算独立指标残差、消融均值差、失败表回退/误差/排名/风险标签等关系，不能用
+“每个单元格都在容差内”掩盖列间矛盾。
+`training_state_sha256` 等派生状态哈希可能随底层数值库改变，因此要求格式有效、行间等价类
+结构一致，并在同一次 baseline/attacked 攻击内成对相等；不把跨操作系统哈希相等误写成
+模型结论。
 
 GitHub Actions 已配置 Ubuntu 与 Windows 的 clean checkout 矩阵。运行记录见
 [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)，

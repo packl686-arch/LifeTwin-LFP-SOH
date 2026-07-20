@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from dataclasses import dataclass
 import hashlib
 from importlib import metadata as importlib_metadata
 from importlib.util import find_spec
@@ -53,6 +54,15 @@ PACKAGE_IMPORTS = {
 }
 NUMERIC_RELATIVE_TOLERANCE = 1e-8
 NUMERIC_ABSOLUTE_TOLERANCE = 2e-4
+PHASE1_SOLVER_RELATIVE_TOLERANCE = 1e-8
+PHASE1_SOLVER_ABSOLUTE_TOLERANCE = 5e-3
+# Maximum drift found while forcing alternate local OpenBLAS kernels.
+PHASE1_SOLVER_MAX_OBSERVED_ABSOLUTE_DELTA_PP = 3.8927328e-3
+PHASE1_FRACTION_RELATIVE_TOLERANCE = 1e-8
+PHASE1_FRACTION_ABSOLUTE_TOLERANCE = 1e-4
+PHASE1_AUDIT_RESIDUAL_RELATIVE_TOLERANCE = 0.0
+PHASE1_AUDIT_RESIDUAL_ABSOLUTE_TOLERANCE = 1e-10
+PHASE1_FAILURE_CLASSIFICATION_TOLERANCE = 1e-12
 STATE_HASH_COLUMNS = frozenset(
     {"training_state_sha256", "prediction_state_sha256"}
 )
@@ -62,6 +72,162 @@ FUTURE_ATTACK_HASH_PAIRS = (
 )
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 REPRODUCTION_PYTHON = (3, 12)
+
+
+@dataclass(frozen=True)
+class _Phase1CsvSchema:
+    key_columns: tuple[str, ...]
+    tolerant_columns: tuple[tuple[str, float, float], ...] = ()
+    volatile_sha256_columns: frozenset[str] = frozenset()
+    sha256_pairs: tuple[tuple[str, str], ...] = ()
+
+
+def _column_tolerances(
+    columns: tuple[str, ...],
+    *,
+    absolute: float,
+    relative: float,
+) -> tuple[tuple[str, float, float], ...]:
+    return tuple((column, absolute, relative) for column in columns)
+
+
+_INDEPENDENT_SOLVER_COLUMNS = (
+    "trajectory_iae_pp",
+    "future_point_mae_pp",
+    "final_predicted_retention_pct",
+    "final_error_pp",
+    "trajectory_iae_pp_recomputed",
+    "future_point_mae_pp_recomputed",
+    "final_predicted_retention_pct_recomputed",
+    "final_error_pp_recomputed",
+)
+_INDEPENDENT_AUDIT_RESIDUAL_COLUMNS = (
+    "trajectory_iae_pp_audit_difference",
+    "future_point_mae_pp_audit_difference",
+    "final_true_retention_pct_audit_difference",
+    "final_predicted_retention_pct_audit_difference",
+    "final_error_pp_audit_difference",
+)
+_INDEPENDENT_METRIC_RELATIONSHIPS = (
+    (
+        "future_checkup_count",
+        "future_checkup_count_recomputed",
+        "future_checkup_count_audit_difference",
+    ),
+    (
+        "trajectory_iae_pp",
+        "trajectory_iae_pp_recomputed",
+        "trajectory_iae_pp_audit_difference",
+    ),
+    (
+        "future_point_mae_pp",
+        "future_point_mae_pp_recomputed",
+        "future_point_mae_pp_audit_difference",
+    ),
+    (
+        "final_true_retention_pct",
+        "final_true_retention_pct_recomputed",
+        "final_true_retention_pct_audit_difference",
+    ),
+    (
+        "final_predicted_retention_pct",
+        "final_predicted_retention_pct_recomputed",
+        "final_predicted_retention_pct_audit_difference",
+    ),
+    (
+        "final_error_pp",
+        "final_error_pp_recomputed",
+        "final_error_pp_audit_difference",
+    ),
+)
+_FAILURE_SOLVER_COLUMNS = (
+    "candidate_trajectory_iae_pp",
+    "candidate_future_point_mae_pp",
+    "candidate_final_predicted_retention_pct",
+    "candidate_final_error_pp",
+    "comparator_trajectory_iae_pp",
+    "comparator_future_point_mae_pp",
+    "comparator_final_predicted_retention_pct",
+    "comparator_final_error_pp",
+    "ungated_target_trajectory_iae_pp",
+    "gated_hierarchical_trajectory_iae_pp",
+    "primary_vs_v2_delta_iae_pp",
+    "ungated_target_vs_v2_delta_iae_pp",
+    "gated_hierarchical_vs_v2_delta_iae_pp",
+    "candidate_final_absolute_error_pp",
+    "comparator_final_absolute_error_pp",
+)
+_FUTURE_ATTACK_HASH_COLUMNS = frozenset(
+    column for pair in FUTURE_ATTACK_HASH_PAIRS for column in pair
+)
+PHASE1_CSV_SCHEMAS = {
+    "data_condition_audit.csv": _Phase1CsvSchema(("condition_id",)),
+    "future_label_attack_cases.csv": _Phase1CsvSchema(
+        ("prefix_checkups",),
+        _column_tolerances(
+            ("maximum_absolute_score_change_pp",),
+            absolute=PHASE1_AUDIT_RESIDUAL_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_AUDIT_RESIDUAL_RELATIVE_TOLERANCE,
+        ),
+        _FUTURE_ATTACK_HASH_COLUMNS,
+        FUTURE_ATTACK_HASH_PAIRS,
+    ),
+    "independent_metric_audit.csv": _Phase1CsvSchema(
+        (
+            "scenario",
+            "fold_id",
+            "target_condition_id",
+            "prefix_checkups",
+            "method",
+        ),
+        _column_tolerances(
+            _INDEPENDENT_SOLVER_COLUMNS,
+            absolute=PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_SOLVER_RELATIVE_TOLERANCE,
+        )
+        + _column_tolerances(
+            _INDEPENDENT_AUDIT_RESIDUAL_COLUMNS,
+            absolute=PHASE1_AUDIT_RESIDUAL_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_AUDIT_RESIDUAL_RELATIVE_TOLERANCE,
+        ),
+    ),
+    "ablation_audit.csv": _Phase1CsvSchema(
+        ("ablation", "scenario", "prefix_checkups"),
+        _column_tolerances(
+            (
+                "candidate_iae_pp_mean",
+                "comparator_iae_pp_mean",
+                "mean_delta_iae_pp",
+            ),
+            absolute=PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_SOLVER_RELATIVE_TOLERANCE,
+        )
+        + _column_tolerances(
+            ("relative_improvement_fraction",),
+            absolute=PHASE1_FRACTION_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_FRACTION_RELATIVE_TOLERANCE,
+        ),
+    ),
+    "gate_boundary_cases.csv": _Phase1CsvSchema(("case",)),
+    "failure_condition_table.csv": _Phase1CsvSchema(
+        (
+            "scenario",
+            "fold_id",
+            "target_condition_id",
+            "prefix_checkups",
+        ),
+        _column_tolerances(
+            _FAILURE_SOLVER_COLUMNS,
+            absolute=PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_SOLVER_RELATIVE_TOLERANCE,
+        )
+        + _column_tolerances(
+            ("primary_vs_v2_relative_improvement_fraction",),
+            absolute=PHASE1_FRACTION_ABSOLUTE_TOLERANCE,
+            relative=PHASE1_FRACTION_RELATIVE_TOLERANCE,
+        ),
+    ),
+}
 
 
 def _requires_exact_numeric_value(column: str) -> bool:
@@ -475,6 +641,822 @@ def _paired_sha256_columns_valid(
     return True
 
 
+def _phase1_csv_mismatch(
+    reason: str,
+    *,
+    key: dict[str, str] | None,
+    column: str,
+    published_value: object,
+    generated_value: object,
+    delta: float | None = None,
+    tolerance: object = None,
+) -> dict[str, object]:
+    return {
+        "reason": reason,
+        "key": key,
+        "column": column,
+        "values": {
+            "published": published_value,
+            "generated": generated_value,
+        },
+        "delta": delta,
+        "tolerance": tolerance or {"mode": "exact"},
+    }
+
+
+def _phase1_row_invariant_mismatch(
+    filename: str,
+    indexed_rows: dict[tuple[str, ...], list[str]],
+    indexes: dict[str, int],
+    key_columns: tuple[str, ...],
+    *,
+    side: str,
+) -> dict[str, object] | None:
+    """Validate arithmetic and routing witnesses within one audit table."""
+
+    def side_payload(payload: object) -> tuple[object, object]:
+        return (payload, None) if side == "published" else (None, payload)
+
+    failure_rank: dict[tuple[str, ...], float] = {}
+    failure_group_size: dict[tuple[str, ...], int] = {}
+    failure_occurrences: dict[tuple[str, str], int] = {}
+    failure_minimum_temperature = 0.0
+    failure_maximum_temperature = 0.0
+    if filename == "failure_condition_table.csv":
+        grouped_keys: dict[tuple[str, str], list[tuple[str, ...]]] = {}
+        occurrence_scenarios: dict[tuple[str, str], set[str]] = {}
+        temperatures: list[float] = []
+        for key, row in indexed_rows.items():
+            group = (
+                row[indexes["scenario"]],
+                row[indexes["prefix_checkups"]],
+            )
+            grouped_keys.setdefault(group, []).append(key)
+            occurrence = (
+                row[indexes["prefix_checkups"]],
+                row[indexes["target_condition_id"]],
+            )
+            occurrence_scenarios.setdefault(occurrence, set()).add(
+                row[indexes["scenario"]]
+            )
+            temperatures.append(float(row[indexes["temperature_c"]]))
+        for keys in grouped_keys.values():
+            values = {
+                key: float(
+                    indexed_rows[key][indexes["candidate_trajectory_iae_pp"]]
+                )
+                for key in keys
+            }
+            for key, value in values.items():
+                failure_rank[key] = 1.0 + sum(
+                    other > value for other in values.values()
+                )
+                failure_group_size[key] = len(keys)
+        failure_occurrences = {
+            key: len(scenarios)
+            for key, scenarios in occurrence_scenarios.items()
+        }
+        failure_minimum_temperature = min(temperatures)
+        failure_maximum_temperature = max(temperatures)
+
+    for key in sorted(indexed_rows):
+        row = indexed_rows[key]
+        key_report = dict(zip(key_columns, key, strict=True))
+
+        def number(column: str) -> float:
+            return float(row[indexes[column]])
+
+        def numeric_check(
+            column: str,
+            expected: float,
+            *,
+            absolute: float = PHASE1_AUDIT_RESIDUAL_ABSOLUTE_TOLERANCE,
+        ) -> dict[str, object] | None:
+            actual = number(column)
+            if math.isclose(actual, expected, rel_tol=0.0, abs_tol=absolute):
+                return None
+            published_value, generated_value = side_payload(
+                {"actual": row[indexes[column]], "expected": expected}
+            )
+            return _phase1_csv_mismatch(
+                "row_invariant_mismatch",
+                key=key_report,
+                column=column,
+                published_value=published_value,
+                generated_value=generated_value,
+                delta=actual - expected,
+                tolerance={"absolute": absolute, "relative": 0.0},
+            )
+
+        def exact_check(
+            column: str,
+            expected: str,
+        ) -> dict[str, object] | None:
+            actual = row[indexes[column]]
+            if actual == expected:
+                return None
+            published_value, generated_value = side_payload(
+                {"actual": actual, "expected": expected}
+            )
+            return _phase1_csv_mismatch(
+                "row_invariant_mismatch",
+                key=key_report,
+                column=column,
+                published_value=published_value,
+                generated_value=generated_value,
+                tolerance={"mode": "derived_exact"},
+            )
+
+        checks: list[dict[str, object] | None] = []
+        if filename == "independent_metric_audit.csv":
+            for official, recomputed, difference in (
+                _INDEPENDENT_METRIC_RELATIONSHIPS
+            ):
+                checks.append(
+                    numeric_check(
+                        difference,
+                        number(official) - number(recomputed),
+                    )
+                )
+        elif filename == "ablation_audit.csv":
+            candidate = number("candidate_iae_pp_mean")
+            comparator = number("comparator_iae_pp_mean")
+            if comparator == 0.0:
+                published_value, generated_value = side_payload(
+                    {"actual": row[indexes["comparator_iae_pp_mean"]]}
+                )
+                return _phase1_csv_mismatch(
+                    "zero_invariant_denominator",
+                    key=key_report,
+                    column="comparator_iae_pp_mean",
+                    published_value=published_value,
+                    generated_value=generated_value,
+                    tolerance={"mode": "nonzero_denominator"},
+                )
+            checks.extend(
+                [
+                    numeric_check("mean_delta_iae_pp", candidate - comparator),
+                    numeric_check(
+                        "relative_improvement_fraction",
+                        (comparator - candidate) / comparator,
+                    ),
+                    numeric_check(
+                        "condition_count",
+                        number("candidate_better_condition_count")
+                        + number("candidate_worse_condition_count")
+                        + number("candidate_equal_condition_count"),
+                        absolute=0.0,
+                    ),
+                ]
+            )
+        elif filename == "failure_condition_table.csv":
+            candidate_iae = number("candidate_trajectory_iae_pp")
+            comparator_iae = number("comparator_trajectory_iae_pp")
+            prefix_end_days = number("prefix_end_days")
+            for denominator_column, denominator in (
+                ("comparator_trajectory_iae_pp", comparator_iae),
+                ("prefix_end_days", prefix_end_days),
+            ):
+                if denominator == 0.0:
+                    published_value, generated_value = side_payload(
+                        {"actual": row[indexes[denominator_column]]}
+                    )
+                    return _phase1_csv_mismatch(
+                        "zero_invariant_denominator",
+                        key=key_report,
+                        column=denominator_column,
+                        published_value=published_value,
+                        generated_value=generated_value,
+                        tolerance={"mode": "nonzero_denominator"},
+                    )
+            primary_delta = candidate_iae - comparator_iae
+            gate_ready = row[indexes["activation_gate_ready"]] == "True"
+            component_selected = (
+                row[indexes["activation_component_selected"]] == "True"
+            )
+            negative_loss_evidence = (
+                row[indexes["negative_loss_evidence"]] == "True"
+            )
+            positive_count = number("positive_time_observation_count")
+            occurrence_key = (
+                row[indexes["prefix_checkups"]],
+                row[indexes["target_condition_id"]],
+            )
+            expected_occurrences = failure_occurrences[occurrence_key]
+            expected_rank = failure_rank[key]
+            expected_top_quartile = expected_rank <= math.ceil(
+                failure_group_size[key] * 0.25
+            )
+            temperature = number("temperature_c")
+            expected_outside_hull = (
+                "temperature" in row[indexes["scenario"]]
+                and temperature
+                in (
+                    failure_minimum_temperature,
+                    failure_maximum_temperature,
+                )
+            )
+            ungated_delta = (
+                number("ungated_target_trajectory_iae_pp") - comparator_iae
+            )
+            gated_hierarchical_delta = (
+                number("gated_hierarchical_trajectory_iae_pp")
+                - comparator_iae
+            )
+            checks.extend(
+                [
+                    numeric_check(
+                        "candidate_final_error_pp",
+                        number("candidate_final_predicted_retention_pct")
+                        - number("final_true_retention_pct"),
+                    ),
+                    numeric_check(
+                        "comparator_final_error_pp",
+                        number("comparator_final_predicted_retention_pct")
+                        - number("final_true_retention_pct"),
+                    ),
+                    numeric_check("primary_vs_v2_delta_iae_pp", primary_delta),
+                    numeric_check(
+                        "primary_vs_v2_relative_improvement_fraction",
+                        -primary_delta / comparator_iae,
+                    ),
+                    numeric_check(
+                        "ungated_target_vs_v2_delta_iae_pp",
+                        ungated_delta,
+                    ),
+                    numeric_check(
+                        "gated_hierarchical_vs_v2_delta_iae_pp",
+                        gated_hierarchical_delta,
+                    ),
+                    numeric_check(
+                        "candidate_final_absolute_error_pp",
+                        abs(number("candidate_final_error_pp")),
+                    ),
+                    numeric_check(
+                        "comparator_final_absolute_error_pp",
+                        abs(number("comparator_final_error_pp")),
+                    ),
+                    numeric_check(
+                        "horizon_to_prefix_time_ratio",
+                        number("validation_horizon_days")
+                        / prefix_end_days,
+                    ),
+                    numeric_check(
+                        "scenario_occurrence_count",
+                        float(expected_occurrences),
+                        absolute=0.0,
+                    ),
+                    numeric_check(
+                        "candidate_error_rank_desc",
+                        expected_rank,
+                        absolute=0.0,
+                    ),
+                    exact_check(
+                        "is_primary_prefix",
+                        "True" if number("prefix_checkups") == 10 else "False",
+                    ),
+                    exact_check(
+                        "selected_branch",
+                        (
+                            "target_activation_specialist"
+                            if component_selected
+                            else "hierarchical_v2_fallback"
+                        ),
+                    ),
+                    exact_check(
+                        "activation_component_selected",
+                        "True" if gate_ready else "False",
+                    ),
+                    exact_check(
+                        "activation_gate_ready",
+                        (
+                            "True"
+                            if positive_count >= 7 and negative_loss_evidence
+                            else "False"
+                        ),
+                    ),
+                    exact_check(
+                        "gate_evidence_gap",
+                        (
+                            "none"
+                            if gate_ready
+                            else (
+                                "insufficient_positive_time_observations"
+                                if positive_count < 7
+                                else "negative_loss_evidence_absent"
+                            )
+                        ),
+                    ),
+                    exact_check(
+                        "independent_evidence_key",
+                        row[indexes["target_condition_id"]],
+                    ),
+                    exact_check(
+                        "duplicated_across_scenarios",
+                        "True" if expected_occurrences > 1 else "False",
+                    ),
+                    exact_check(
+                        "candidate_error_top_quartile",
+                        "True" if expected_top_quartile else "False",
+                    ),
+                    exact_check(
+                        "temperature_outside_training_hull",
+                        "True" if expected_outside_hull else "False",
+                    ),
+                ]
+            )
+            if primary_delta > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
+                outcome_class = "relative_regression"
+            elif (
+                abs(primary_delta)
+                <= PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            ):
+                outcome_class = "exact_v2_fallback"
+            else:
+                outcome_class = "retrospective_improvement"
+            checks.append(exact_check("outcome_class", outcome_class))
+            observed_failure = primary_delta > (
+                PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            ) or (
+                gate_ready
+                and primary_delta
+                >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            )
+            if observed_failure:
+                trust_status = "observed_relative_failure"
+            elif not gate_ready:
+                trust_status = "fallback_only_no_v3_evidence"
+            else:
+                trust_status = "development_signal_requires_external_validation"
+            checks.append(exact_check("trust_status", trust_status))
+
+            risk_flags = [
+                "retrospective_post_hoc",
+                "condition_mean_not_cell_level",
+            ]
+            if not gate_ready:
+                risk_flags.append("specialist_not_activated")
+            if outcome_class == "relative_regression":
+                risk_flags.append("primary_regression_vs_v2")
+            elif outcome_class == "exact_v2_fallback":
+                risk_flags.append("fallback_same_as_v2")
+            else:
+                risk_flags.append("retrospective_improvement_signal")
+            if (
+                gate_ready
+                and primary_delta
+                >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            ):
+                risk_flags.append("gate_triggered_without_trajectory_gain")
+            if number("candidate_final_absolute_error_pp") > number(
+                "comparator_final_absolute_error_pp"
+            ) + PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
+                risk_flags.append("candidate_worse_at_final_checkup")
+            if number("horizon_to_prefix_time_ratio") > 5.0:
+                risk_flags.append("long_horizon_from_short_prefix")
+            if expected_top_quartile:
+                risk_flags.append(
+                    "top_quartile_absolute_error_within_scenario_landmark"
+                )
+            if expected_outside_hull:
+                risk_flags.append("temperature_outside_training_convex_hull")
+            if expected_occurrences > 1:
+                risk_flags.append("scenario_duplicate_not_independent_evidence")
+            if ungated_delta > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
+                risk_flags.append("ungated_specialist_would_regress")
+            if (
+                gated_hierarchical_delta
+                > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            ):
+                risk_flags.append("alternative_hierarchical_gate_regresses")
+            checks.append(exact_check("risk_flags", ";".join(risk_flags)))
+
+            if trust_status == "observed_relative_failure":
+                recommended_action = (
+                    "Do not use the candidate; diagnose the specialist and "
+                    "retain V2."
+                )
+            elif not gate_ready:
+                recommended_action = (
+                    "Retain the V2 fallback and collect denser early "
+                    "condition-level data."
+                )
+            else:
+                recommended_action = (
+                    "Freeze the rule and test an independent cell-level cohort "
+                    "before use."
+                )
+            checks.append(
+                exact_check("recommended_action", recommended_action)
+            )
+
+            if not gate_ready:
+                for candidate_column, comparator_column in (
+                    (
+                        "candidate_trajectory_iae_pp",
+                        "comparator_trajectory_iae_pp",
+                    ),
+                    (
+                        "candidate_future_point_mae_pp",
+                        "comparator_future_point_mae_pp",
+                    ),
+                    (
+                        "candidate_final_predicted_retention_pct",
+                        "comparator_final_predicted_retention_pct",
+                    ),
+                    ("candidate_final_error_pp", "comparator_final_error_pp"),
+                ):
+                    checks.append(
+                        numeric_check(candidate_column, number(comparator_column))
+                    )
+
+        for mismatch in checks:
+            if mismatch is not None:
+                return mismatch
+    return None
+
+
+def _phase1_csv_semantic_comparison(
+    filename: str,
+    published_rows: list[list[str]],
+    generated_rows: list[list[str]],
+) -> dict[str, object]:
+    """Compare a Phase 1 CSV by its stable row identity and column policy."""
+    try:
+        schema = PHASE1_CSV_SCHEMAS[filename]
+    except KeyError as exc:
+        raise ReproductionError(f"No Phase 1 CSV schema declared for {filename}") from exc
+
+    tolerances = {
+        column: (absolute, relative)
+        for column, absolute, relative in schema.tolerant_columns
+    }
+    tolerance_report = {
+        column: {"absolute": absolute, "relative": relative}
+        for column, (absolute, relative) in tolerances.items()
+    }
+
+    def result(
+        mismatch: dict[str, object] | None,
+    ) -> dict[str, object]:
+        return {
+            "semantic_content_equal": mismatch is None,
+            "exact_by_default": True,
+            "key_columns": list(schema.key_columns),
+            "numeric_tolerances": tolerance_report,
+            "solver_calibration_max_observed_absolute_delta_pp": (
+                PHASE1_SOLVER_MAX_OBSERVED_ABSOLUTE_DELTA_PP
+                if any(
+                    absolute == PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+                    for absolute, _relative in tolerances.values()
+                )
+                else None
+            ),
+            "cross_platform_volatile_sha256_columns": sorted(
+                schema.volatile_sha256_columns
+            ),
+            "mismatch": mismatch,
+        }
+
+    if not published_rows or not generated_rows:
+        return result(
+            _phase1_csv_mismatch(
+                "missing_header",
+                key=None,
+                column="__header__",
+                published_value=published_rows[0] if published_rows else None,
+                generated_value=generated_rows[0] if generated_rows else None,
+            )
+        )
+
+    published_header = published_rows[0]
+    generated_header = generated_rows[0]
+    if published_header != generated_header:
+        return result(
+            _phase1_csv_mismatch(
+                "header_drift",
+                key=None,
+                column="__header__",
+                published_value=published_header,
+                generated_value=generated_header,
+            )
+        )
+    header = published_header
+    if len(header) != len(set(header)) or "" in header:
+        return result(
+            _phase1_csv_mismatch(
+                "invalid_header",
+                key=None,
+                column="__header__",
+                published_value=header,
+                generated_value=generated_header,
+            )
+        )
+
+    required_columns = (
+        set(schema.key_columns)
+        | set(tolerances)
+        | set(schema.volatile_sha256_columns)
+        | {column for pair in schema.sha256_pairs for column in pair}
+    )
+    missing_columns = sorted(required_columns - set(header))
+    if missing_columns:
+        return result(
+            _phase1_csv_mismatch(
+                "missing_schema_column",
+                key=None,
+                column=missing_columns[0],
+                published_value="missing",
+                generated_value="missing",
+            )
+        )
+
+    indexes = {column: index for index, column in enumerate(header)}
+
+    for side, rows in (
+        ("published", published_rows[1:]),
+        ("generated", generated_rows[1:]),
+    ):
+        for row_number, row in enumerate(rows, start=2):
+            if len(row) != len(header):
+                return result(
+                    _phase1_csv_mismatch(
+                        "row_width_mismatch",
+                        key=None,
+                        column="__row__",
+                        published_value=(
+                            {"row_number": row_number, "width": len(row)}
+                            if side == "published"
+                            else None
+                        ),
+                        generated_value=(
+                            {"row_number": row_number, "width": len(row)}
+                            if side == "generated"
+                            else None
+                        ),
+                    )
+                )
+
+    def index_rows(
+        rows: list[list[str]], side: str
+    ) -> tuple[dict[tuple[str, ...], list[str]], dict[str, object] | None]:
+        indexed: dict[tuple[str, ...], list[str]] = {}
+        for row_number, row in enumerate(rows[1:], start=2):
+            key = tuple(row[indexes[column]] for column in schema.key_columns)
+            key_report = dict(zip(schema.key_columns, key, strict=True))
+            for column, value in zip(schema.key_columns, key, strict=True):
+                try:
+                    number = float(value)
+                except ValueError:
+                    continue
+                if not math.isfinite(number):
+                    return indexed, _phase1_csv_mismatch(
+                        "non_finite_numeric_value",
+                        key=key_report,
+                        column=column,
+                        published_value=value if side == "published" else None,
+                        generated_value=value if side == "generated" else None,
+                        tolerance={"mode": "finite_values_only"},
+                    )
+            if any(value == "" for value in key):
+                missing_column = schema.key_columns[key.index("")]
+                return indexed, _phase1_csv_mismatch(
+                    "missing_key_value",
+                    key=key_report,
+                    column=missing_column,
+                    published_value=(
+                        {"row_number": row_number, "value": ""}
+                        if side == "published"
+                        else None
+                    ),
+                    generated_value=(
+                        {"row_number": row_number, "value": ""}
+                        if side == "generated"
+                        else None
+                    ),
+                )
+            if key in indexed:
+                return indexed, _phase1_csv_mismatch(
+                    "duplicate_key",
+                    key=key_report,
+                    column="__key__",
+                    published_value=("duplicate" if side == "published" else None),
+                    generated_value=("duplicate" if side == "generated" else None),
+                )
+            indexed[key] = row
+        return indexed, None
+
+    published_index, mismatch = index_rows(published_rows, "published")
+    if mismatch is not None:
+        return result(mismatch)
+    generated_index, mismatch = index_rows(generated_rows, "generated")
+    if mismatch is not None:
+        return result(mismatch)
+
+    published_keys = set(published_index)
+    generated_keys = set(generated_index)
+    if published_keys != generated_keys:
+        missing_generated = sorted(published_keys - generated_keys)
+        unexpected_generated = sorted(generated_keys - published_keys)
+        if missing_generated:
+            key = missing_generated[0]
+            published_value, generated_value = "present", "missing"
+        else:
+            key = unexpected_generated[0]
+            published_value, generated_value = "missing", "present"
+        return result(
+            _phase1_csv_mismatch(
+                "key_set_mismatch",
+                key=dict(zip(schema.key_columns, key, strict=True)),
+                column="__key__",
+                published_value=published_value,
+                generated_value=generated_value,
+            )
+        )
+
+    ordered_keys = sorted(published_keys)
+    for key in ordered_keys:
+        key_report = dict(zip(schema.key_columns, key, strict=True))
+        published_row = published_index[key]
+        generated_row = generated_index[key]
+        for column, published_value, generated_value in zip(
+            header, published_row, generated_row, strict=True
+        ):
+            for value in (published_value, generated_value):
+                try:
+                    number = float(value)
+                except ValueError:
+                    continue
+                if not math.isfinite(number):
+                    return result(
+                        _phase1_csv_mismatch(
+                            "non_finite_numeric_value",
+                            key=key_report,
+                            column=column,
+                            published_value=published_value,
+                            generated_value=generated_value,
+                            tolerance={"mode": "finite_values_only"},
+                        )
+                    )
+
+    for side, indexed_rows in (
+        ("published", published_index),
+        ("generated", generated_index),
+    ):
+        mismatch = _phase1_row_invariant_mismatch(
+            filename,
+            indexed_rows,
+            indexes,
+            schema.key_columns,
+            side=side,
+        )
+        if mismatch is not None:
+            return result(mismatch)
+
+    for key in ordered_keys:
+        key_report = dict(zip(schema.key_columns, key, strict=True))
+        published_row = published_index[key]
+        generated_row = generated_index[key]
+        for left_column, right_column in schema.sha256_pairs:
+            left_index = indexes[left_column]
+            right_index = indexes[right_column]
+            published_pair = (
+                published_row[left_index],
+                published_row[right_index],
+            )
+            generated_pair = (
+                generated_row[left_index],
+                generated_row[right_index],
+            )
+            for side, pair in (
+                ("published", published_pair),
+                ("generated", generated_pair),
+            ):
+                valid = pair == ("", "") or (
+                    pair[0] == pair[1]
+                    and SHA256_PATTERN.fullmatch(pair[0]) is not None
+                )
+                if not valid:
+                    return result(
+                        _phase1_csv_mismatch(
+                            "invalid_sha256_pair",
+                            key=key_report,
+                            column=f"{left_column},{right_column}",
+                            published_value=(published_pair if side == "published" else None),
+                            generated_value=(generated_pair if side == "generated" else None),
+                            tolerance={"mode": "equal_sha256_or_both_blank"},
+                        )
+                    )
+
+    volatile_columns = tuple(
+        column for column in header if column in schema.volatile_sha256_columns
+    )
+
+    def sha256_topology(
+        indexed_rows: dict[tuple[str, ...], list[str]],
+    ) -> list[int | None]:
+        classes: dict[str, int] = {}
+        topology: list[int | None] = []
+        for key in ordered_keys:
+            for column in volatile_columns:
+                value = indexed_rows[key][indexes[column]]
+                if value == "":
+                    topology.append(None)
+                    continue
+                if value not in classes:
+                    classes[value] = len(classes)
+                topology.append(classes[value])
+        return topology
+
+    published_topology = sha256_topology(published_index)
+    generated_topology = sha256_topology(generated_index)
+    if published_topology != generated_topology:
+        mismatch_index = next(
+            index
+            for index, values in enumerate(
+                zip(published_topology, generated_topology, strict=True)
+            )
+            if values[0] != values[1]
+        )
+        key_index, column_index = divmod(mismatch_index, len(volatile_columns))
+        key = ordered_keys[key_index]
+        column = volatile_columns[column_index]
+        value_index = indexes[column]
+        return result(
+            _phase1_csv_mismatch(
+                "sha256_topology_mismatch",
+                key=dict(zip(schema.key_columns, key, strict=True)),
+                column=column,
+                published_value=published_index[key][value_index],
+                generated_value=generated_index[key][value_index],
+                tolerance={"mode": "global_equivalent_sha256_topology"},
+            )
+        )
+
+    for key in ordered_keys:
+        key_report = dict(zip(schema.key_columns, key, strict=True))
+        published_row = published_index[key]
+        generated_row = generated_index[key]
+        for column, published_value, generated_value in zip(
+            header, published_row, generated_row, strict=True
+        ):
+            if column in schema.volatile_sha256_columns:
+                continue
+            if column not in tolerances:
+                if published_value != generated_value:
+                    return result(
+                        _phase1_csv_mismatch(
+                            "exact_value_mismatch",
+                            key=key_report,
+                            column=column,
+                            published_value=published_value,
+                            generated_value=generated_value,
+                        )
+                    )
+                continue
+
+            absolute, relative = tolerances[column]
+            tolerance = {"absolute": absolute, "relative": relative}
+            try:
+                published_number = float(published_value)
+                generated_number = float(generated_value)
+            except ValueError:
+                return result(
+                    _phase1_csv_mismatch(
+                        "invalid_numeric_value",
+                        key=key_report,
+                        column=column,
+                        published_value=published_value,
+                        generated_value=generated_value,
+                        tolerance=tolerance,
+                    )
+                )
+            delta = generated_number - published_number
+            allowed_delta = max(
+                absolute,
+                relative * max(abs(published_number), abs(generated_number)),
+            )
+            if not math.isclose(
+                published_number,
+                generated_number,
+                rel_tol=relative,
+                abs_tol=absolute,
+            ):
+                return result(
+                    _phase1_csv_mismatch(
+                        "numeric_value_mismatch",
+                        key=key_report,
+                        column=column,
+                        published_value=published_value,
+                        generated_value=generated_value,
+                        delta=delta,
+                        tolerance={**tolerance, "allowed_delta": allowed_delta},
+                    )
+                )
+
+    return result(None)
+
+
 def _json_semantically_equal(left: object, right: object) -> bool:
     if isinstance(left, dict) and isinstance(right, dict):
         return set(left) == set(right) and all(
@@ -634,6 +1616,12 @@ def _inspect_phase1_audit(
         published_sha256 = _sha256(published)
         generated_sha256 = _sha256(generated)
         volatile_sha256_columns: frozenset[str] = frozenset()
+        key_columns: list[str] = []
+        semantic_mismatch: dict[str, object] | None = None
+        numeric_tolerance: dict[str, object] = {
+            "relative": NUMERIC_RELATIVE_TOLERANCE,
+            "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
+        }
         if filename.endswith(".json"):
             semantically_equal = _json_semantically_equal(
                 json.loads(published.read_text(encoding="utf-8")),
@@ -647,21 +1635,23 @@ def _inspect_phase1_audit(
                 if filename == "future_label_attack_cases.csv"
                 else frozenset()
             )
-            semantically_equal = _csv_semantically_equal(
-                published_rows,
-                generated_rows,
-                volatile_sha256_columns=volatile_sha256_columns,
+            csv_comparison = _phase1_csv_semantic_comparison(
+                filename, published_rows, generated_rows
             )
-            if filename == "future_label_attack_cases.csv":
-                semantically_equal = bool(
-                    semantically_equal
-                    and _paired_sha256_columns_valid(
-                        published_rows, FUTURE_ATTACK_HASH_PAIRS
-                    )
-                    and _paired_sha256_columns_valid(
-                        generated_rows, FUTURE_ATTACK_HASH_PAIRS
-                    )
-                )
+            semantically_equal = bool(
+                csv_comparison["semantic_content_equal"]
+            )
+            key_columns = list(csv_comparison["key_columns"])
+            semantic_mismatch = csv_comparison["mismatch"]
+            numeric_tolerance = {
+                "exact_by_default": True,
+                "columns": csv_comparison["numeric_tolerances"],
+                "solver_calibration_max_observed_absolute_delta_pp": (
+                    csv_comparison[
+                        "solver_calibration_max_observed_absolute_delta_pp"
+                    ]
+                ),
+            }
         passed = published_sha256 == expected_sha256 and semantically_equal
         comparison = {
             "path": published_relative,
@@ -671,10 +1661,9 @@ def _inspect_phase1_audit(
             "generated_sha256": generated_sha256,
             "generated_sha_matches_release": generated_sha256 == expected_sha256,
             "semantic_content_equal": semantically_equal,
-            "numeric_tolerance": {
-                "relative": NUMERIC_RELATIVE_TOLERANCE,
-                "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
-            },
+            "numeric_tolerance": numeric_tolerance,
+            "key_columns": key_columns,
+            "mismatch": semantic_mismatch,
             "cross_platform_volatile_sha256_columns": sorted(
                 volatile_sha256_columns
             ),
@@ -835,7 +1824,7 @@ def reproduce(
             if scratch_path.exists():
                 _rmtree(scratch_path)
         summary: dict[str, object] = {
-            "schema_version": 1,
+            "schema_version": 2,
             "status": "passed",
             "mode": mode,
             "atomic_publish": True,

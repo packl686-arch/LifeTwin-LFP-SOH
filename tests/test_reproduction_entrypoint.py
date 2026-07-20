@@ -15,15 +15,18 @@ from scripts.reproduce_public_release import (
     CORE_PHASE8_CSVS,
     FUTURE_ATTACK_HASH_PAIRS,
     PHASE1_AUDIT_FILES,
+    PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
     ReproductionError,
     STATE_HASH_COLUMNS,
     _clean_git_head,
     _compare_core_csvs,
+    _csv_content,
     _command_environment,
     _csv_semantically_equal,
     _inspect_phase1_audit,
     _locked_versions,
     _paired_sha256_columns_valid,
+    _phase1_csv_semantic_comparison,
     _rmtree,
     reproduce,
 )
@@ -51,6 +54,10 @@ def writable_root() -> Path:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _phase1_csv_rows(filename: str) -> list[list[str]]:
+    return _csv_content(PROJECT_ROOT / "showcase/audit_results" / filename)
 
 
 def _init_release_repository(root: Path) -> None:
@@ -199,6 +206,229 @@ def test_future_attack_hash_pairs_require_within_run_equality() -> None:
     assert _paired_sha256_columns_valid(rows, FUTURE_ATTACK_HASH_PAIRS)
     rows[1][1] = "b" * 64
     assert not _paired_sha256_columns_valid(rows, FUTURE_ATTACK_HASH_PAIRS)
+
+
+def test_phase1_csv_comparison_aligns_rows_by_declared_key() -> None:
+    published = _phase1_csv_rows("ablation_audit.csv")
+    generated = [published[0].copy(), *reversed(published[1:])]
+
+    comparison = _phase1_csv_semantic_comparison(
+        "ablation_audit.csv", published, generated
+    )
+
+    assert comparison["semantic_content_equal"] is True
+    assert comparison["mismatch"] is None
+
+
+def test_phase1_csv_comparison_rejects_duplicate_keys_and_header_drift() -> None:
+    published = _phase1_csv_rows("data_condition_audit.csv")
+    duplicate = [row.copy() for row in published]
+    duplicate.append(duplicate[1].copy())
+
+    comparison = _phase1_csv_semantic_comparison(
+        "data_condition_audit.csv", published, duplicate
+    )
+
+    assert comparison["semantic_content_equal"] is False
+    assert comparison["mismatch"]["reason"] == "duplicate_key"
+    assert comparison["mismatch"]["key"] == {
+        "condition_id": duplicate[1][0]
+    }
+
+    drifted_header = [row.copy() for row in published]
+    drifted_header[0][0] = "condition"
+    comparison = _phase1_csv_semantic_comparison(
+        "data_condition_audit.csv", published, drifted_header
+    )
+    assert comparison["mismatch"]["reason"] == "header_drift"
+
+
+def test_phase1_csv_comparison_keeps_protocol_columns_exact() -> None:
+    published = _phase1_csv_rows("failure_condition_table.csv")
+    generated = [row.copy() for row in published]
+    column = published[0].index("temperature_c")
+    generated[1][column] = str(float(published[1][column]) + 0.0001)
+
+    comparison = _phase1_csv_semantic_comparison(
+        "failure_condition_table.csv", published, generated
+    )
+    mismatch = comparison["mismatch"]
+
+    assert comparison["semantic_content_equal"] is False
+    assert mismatch["reason"] == "exact_value_mismatch"
+    assert mismatch["column"] == "temperature_c"
+    assert mismatch["values"] == {
+        "published": published[1][column],
+        "generated": generated[1][column],
+    }
+    assert mismatch["tolerance"] == {"mode": "exact"}
+
+
+def test_phase1_csv_comparison_enforces_solver_tolerance_boundary() -> None:
+    published = _phase1_csv_rows("independent_metric_audit.csv")
+    columns = [
+        published[0].index("trajectory_iae_pp"),
+        published[0].index("trajectory_iae_pp_recomputed"),
+    ]
+
+    within = [row.copy() for row in published]
+    for column in columns:
+        within[1][column] = str(
+            float(published[1][column])
+            + 0.9 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+        )
+    comparison = _phase1_csv_semantic_comparison(
+        "independent_metric_audit.csv", published, within
+    )
+    assert comparison["semantic_content_equal"] is True
+
+    beyond = [row.copy() for row in published]
+    for column in columns:
+        beyond[1][column] = str(
+            float(published[1][column])
+            + 1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+        )
+    comparison = _phase1_csv_semantic_comparison(
+        "independent_metric_audit.csv", published, beyond
+    )
+    mismatch = comparison["mismatch"]
+
+    assert comparison["semantic_content_equal"] is False
+    assert mismatch["reason"] == "numeric_value_mismatch"
+    assert mismatch["column"] == "trajectory_iae_pp"
+    assert mismatch["key"] == {
+        key: published[1][published[0].index(key)]
+        for key in comparison["key_columns"]
+    }
+    assert mismatch["delta"] == pytest.approx(
+        1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+    )
+    assert mismatch["tolerance"]["absolute"] == (
+        PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+    )
+
+
+def test_phase1_csv_comparison_rejects_inconsistent_metric_witnesses() -> None:
+    published = _phase1_csv_rows("independent_metric_audit.csv")
+    generated = [row.copy() for row in published]
+    official = published[0].index("trajectory_iae_pp")
+    recomputed = published[0].index("trajectory_iae_pp_recomputed")
+    shift = 0.8 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+    generated[1][official] = str(float(published[1][official]) + shift)
+    generated[1][recomputed] = str(float(published[1][recomputed]) - shift)
+
+    comparison = _phase1_csv_semantic_comparison(
+        "independent_metric_audit.csv", published, generated
+    )
+    mismatch = comparison["mismatch"]
+
+    assert comparison["semantic_content_equal"] is False
+    assert mismatch["reason"] == "row_invariant_mismatch"
+    assert mismatch["column"] == "trajectory_iae_pp_audit_difference"
+
+
+def test_phase1_csv_comparison_recomputes_failure_risk_flags() -> None:
+    published = _phase1_csv_rows("failure_condition_table.csv")
+    generated = [row.copy() for row in published]
+    gated = published[0].index("gated_hierarchical_trajectory_iae_pp")
+    delta = published[0].index("gated_hierarchical_vs_v2_delta_iae_pp")
+    row_index = next(
+        index
+        for index, row in enumerate(published[1:], start=1)
+        if abs(float(row[delta])) <= 1e-12
+    )
+    generated[row_index][gated] = str(
+        float(published[row_index][gated]) + 0.004
+    )
+    generated[row_index][delta] = str(
+        float(published[row_index][delta]) + 0.004
+    )
+
+    comparison = _phase1_csv_semantic_comparison(
+        "failure_condition_table.csv", published, generated
+    )
+
+    assert comparison["semantic_content_equal"] is False
+    assert comparison["mismatch"]["reason"] == "row_invariant_mismatch"
+    assert comparison["mismatch"]["column"] == "risk_flags"
+
+
+@pytest.mark.parametrize(
+    ("filename", "column"),
+    [
+        ("ablation_audit.csv", "comparator_iae_pp_mean"),
+        ("failure_condition_table.csv", "comparator_trajectory_iae_pp"),
+        ("failure_condition_table.csv", "prefix_end_days"),
+    ],
+)
+def test_phase1_csv_comparison_rejects_zero_invariant_denominators(
+    filename: str,
+    column: str,
+) -> None:
+    published = _phase1_csv_rows(filename)
+    generated = [row.copy() for row in published]
+    generated[1][published[0].index(column)] = "0"
+
+    comparison = _phase1_csv_semantic_comparison(
+        filename, published, generated
+    )
+
+    assert comparison["semantic_content_equal"] is False
+    assert comparison["mismatch"]["reason"] == "zero_invariant_denominator"
+    assert comparison["mismatch"]["column"] == column
+
+
+def test_phase1_csv_comparison_preserves_global_hash_aliases() -> None:
+    published = _phase1_csv_rows("future_label_attack_cases.csv")
+    header = published[0]
+    hash_columns = [
+        header.index(column)
+        for pair in FUTURE_ATTACK_HASH_PAIRS
+        for column in pair
+    ]
+    renamed = [row.copy() for row in published]
+    mapping: dict[str, str] = {}
+    for row in renamed[1:]:
+        for column in hash_columns:
+            value = row[column]
+            if value:
+                mapping.setdefault(value, f"{len(mapping) + 1:064x}")
+                row[column] = mapping[value]
+
+    comparison = _phase1_csv_semantic_comparison(
+        "future_label_attack_cases.csv", published, renamed
+    )
+    assert comparison["semantic_content_equal"] is True
+
+    aliased = [row.copy() for row in renamed]
+    prefix_index = header.index("prefix_checkups")
+    prefix_10 = next(row for row in aliased[1:] if row[prefix_index] == "10")
+    prediction_hash = prefix_10[header.index("prediction_sha256_baseline")]
+    prefix_10[header.index("sensitivity_sha256_baseline")] = prediction_hash
+    prefix_10[header.index("sensitivity_sha256_attacked")] = prediction_hash
+
+    comparison = _phase1_csv_semantic_comparison(
+        "future_label_attack_cases.csv", published, aliased
+    )
+    assert comparison["semantic_content_equal"] is False
+    assert comparison["mismatch"]["reason"] == "sha256_topology_mismatch"
+
+
+def test_phase1_csv_comparison_rejects_nonfinite_values() -> None:
+    published = _phase1_csv_rows("independent_metric_audit.csv")
+    generated = [row.copy() for row in published]
+    column = published[0].index("trajectory_iae_pp")
+    generated[1][column] = "nan"
+
+    comparison = _phase1_csv_semantic_comparison(
+        "independent_metric_audit.csv", published, generated
+    )
+    mismatch = comparison["mismatch"]
+
+    assert comparison["semantic_content_equal"] is False
+    assert mismatch["reason"] == "non_finite_numeric_value"
+    assert mismatch["column"] == "trajectory_iae_pp"
+    assert mismatch["values"]["generated"] == "nan"
 
 
 def test_reproduction_constraints_must_be_exact_and_unique(
@@ -419,13 +649,11 @@ def test_phase1_audit_summary_and_file_inventory(writable_root: Path) -> None:
     audit_root = writable_root / "phase1_audit"
     audit_root.mkdir()
     for filename in PHASE1_AUDIT_FILES:
-        content = "placeholder\n"
-        if filename == "future_label_attack_cases.csv":
-            header = [
-                column for pair in FUTURE_ATTACK_HASH_PAIRS for column in pair
-            ]
-            content = ",".join(header) + "\n" + ",".join(["a" * 64] * 4) + "\n"
-        (audit_root / filename).write_text(content, encoding="utf-8")
+        if filename.endswith(".csv"):
+            shutil.copy2(
+                PROJECT_ROOT / "showcase/audit_results" / filename,
+                audit_root / filename,
+            )
     (audit_root / "phase1_adversarial_audit.json").write_text(
         json.dumps(
             {
