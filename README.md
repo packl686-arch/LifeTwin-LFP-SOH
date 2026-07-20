@@ -153,7 +153,7 @@ Linux/macOS：
 该命令拒绝覆盖已有输出。GitHub Actions 的 Ubuntu/Windows fresh-clone 运行记录见
 [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)，
 以对应提交的实际状态为准。
-清单所列的已发布证据文件必须逐字节匹配 SHA-256；跨平台重算的数值表按 `1e-8` 科学容差
+清单所列的已发布证据文件必须逐字节匹配 SHA-256；跨平台重算的数值表按 `2e-4` 绝对容差
 核对。环境敏感的模型状态哈希不做跨操作系统相等宣称，但必须保持行间等价类结构，
 并在每次未来标签攻击运行内部满足 baseline 与 attacked 哈希相等。
 

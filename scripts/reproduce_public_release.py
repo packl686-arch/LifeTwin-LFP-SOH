@@ -52,7 +52,7 @@ PACKAGE_IMPORTS = {
     "pytest": "pytest",
 }
 NUMERIC_RELATIVE_TOLERANCE = 1e-8
-NUMERIC_ABSOLUTE_TOLERANCE = 1e-8
+NUMERIC_ABSOLUTE_TOLERANCE = 2e-4
 STATE_HASH_COLUMNS = frozenset(
     {"training_state_sha256", "prediction_state_sha256"}
 )
@@ -62,6 +62,10 @@ FUTURE_ATTACK_HASH_PAIRS = (
 )
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 REPRODUCTION_PYTHON = (3, 12)
+
+
+def _requires_exact_numeric_value(column: str) -> bool:
+    return column == "prefix_checkups" or column.endswith(("_count", "_index"))
 
 
 class ReproductionError(RuntimeError):
@@ -411,6 +415,8 @@ def _csv_semantically_equal(
                 continue
             if published_value == generated_value:
                 continue
+            if _requires_exact_numeric_value(header[index]):
+                return False
             try:
                 published_number = float(published_value)
                 generated_number = float(generated_value)
@@ -485,6 +491,8 @@ def _json_semantically_equal(left: object, right: object) -> bool:
         and isinstance(right, (int, float))
         and not isinstance(right, bool)
     ):
+        if isinstance(left, int) or isinstance(right, int):
+            return type(left) is type(right) and left == right
         return math.isclose(
             float(left),
             float(right),

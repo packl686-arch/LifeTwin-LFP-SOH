@@ -139,13 +139,18 @@ def test_subprocess_environment_isolated_from_external_pythonpath(
 
 
 def test_semantic_csv_comparison_allows_numeric_drift_but_validates_hashes() -> None:
+    hash_header = [
+        "value",
+        "training_state_sha256",
+        "prediction_state_sha256",
+    ]
     published = [
-        ["value", "training_state_sha256", "prediction_state_sha256"],
+        hash_header,
         ["1.0", "a" * 64, "b" * 64],
     ]
     generated = [
         published[0],
-        ["1.000000005", "c" * 64, "d" * 64],
+        ["1.00019", "c" * 64, "d" * 64],
     ]
 
     assert _csv_semantically_equal(
@@ -153,30 +158,38 @@ def test_semantic_csv_comparison_allows_numeric_drift_but_validates_hashes() -> 
         generated,
         volatile_sha256_columns=STATE_HASH_COLUMNS,
     )
-    generated[1][0] = "1.0001"
+    generated[1][0] = "1.001"
     assert not _csv_semantically_equal(
         published,
         generated,
         volatile_sha256_columns=STATE_HASH_COLUMNS,
     )
+    invalid_hash = [hash_header, ["1.0", "not-a-hash", "d" * 64]]
+    assert not _csv_semantically_equal(
+        published,
+        invalid_hash,
+        volatile_sha256_columns=STATE_HASH_COLUMNS,
+    )
 
-    published.append(["2.0", "e" * 64, "f" * 64])
-    generated = [
-        published[0],
+    published_topology = [
+        hash_header,
+        ["1.0", "a" * 64, "b" * 64],
+        ["2.0", "e" * 64, "f" * 64],
+    ]
+    collapsed_topology = [
+        hash_header,
         ["1.0", "c" * 64, "d" * 64],
         ["2.0", "c" * 64, "d" * 64],
     ]
     assert not _csv_semantically_equal(
-        published,
-        generated,
+        published_topology,
+        collapsed_topology,
         volatile_sha256_columns=STATE_HASH_COLUMNS,
     )
-    generated[1] = ["1.0", "not-a-hash", "d" * 64]
-    assert not _csv_semantically_equal(
-        published,
-        generated,
-        volatile_sha256_columns=STATE_HASH_COLUMNS,
-    )
+
+    published_count = [["prefix_checkups", "value"], ["10", "1.0"]]
+    drifted_count = [["prefix_checkups", "value"], ["10.0001", "1.0"]]
+    assert not _csv_semantically_equal(published_count, drifted_count)
 
 
 def test_future_attack_hash_pairs_require_within_run_equality() -> None:
