@@ -4,14 +4,16 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import pandas as pd
+
+matplotlib.use("Agg")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_ROOT = PROJECT_ROOT / "showcase/results"
-DEFAULT_OUTPUT = PROJECT_ROOT / "docs/assets/phase8_results.png"
+DEFAULT_OUTPUT = PROJECT_ROOT / "artifacts/showcase/phase8_results.png"
 PRIMARY_PREFIX = 10
 SQRT_METHOD = "target_prefix_only_sqrt_time_v1"
 V3_METHOD = "mechanism_gated_target_activation_offset_hybrid_v1"
@@ -25,9 +27,9 @@ SCENARIO_LABELS = {
 }
 
 
-def load_summary() -> tuple[pd.DataFrame, pd.DataFrame]:
-    comparisons = pd.read_csv(RESULTS_ROOT / "comparison_summary.csv")
-    sensitivity = pd.read_csv(RESULTS_ROOT / "tau_sensitivity_summary.csv")
+def load_summary(results_root: Path = RESULTS_ROOT) -> tuple[pd.DataFrame, pd.DataFrame]:
+    comparisons = pd.read_csv(results_root / "comparison_summary.csv")
+    sensitivity = pd.read_csv(results_root / "tau_sensitivity_summary.csv")
     required_comparison = {
         "scenario",
         "prefix_checkups",
@@ -80,6 +82,8 @@ def build_figure(
     *,
     output: Path,
 ) -> None:
+    from matplotlib import pyplot as plt
+
     colors = ("#737373", "#0F766E", "#C2410C")
     figure, axes = plt.subplots(1, 2, figsize=(12.0, 4.8))
 
@@ -147,16 +151,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Rebuild the public LifeTwin Phase 8 analysis figure."
     )
+    parser.add_argument("--results-root", type=Path, default=RESULTS_ROOT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
 
-    comparisons, sensitivity = load_summary()
+    comparisons, sensitivity = load_summary(args.results_root)
     matrix = model_matrix(comparisons)
     build_figure(matrix, sensitivity, output=args.output)
     print(
         json.dumps(
             {
                 "output": args.output.as_posix(),
+                "results_root": args.results_root.as_posix(),
                 "prefix_checkups": PRIMARY_PREFIX,
                 "trajectory_iae_pp": matrix.to_dict(orient="index"),
             },

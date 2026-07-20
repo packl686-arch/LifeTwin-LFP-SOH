@@ -1,0 +1,7 @@
+case,positive_time_observation_count,minimum_capacity_loss_pct,negative_loss_threshold_pp,expected_negative_loss_evidence,observed_negative_loss_evidence,expected_gate_ready,observed_gate_ready,case_passed
+six_points_with_negative_loss,6,-0.20000000000000001,0,True,True,False,False,True
+seven_points_with_negative_loss,7,-0.20000000000000001,0,True,True,True,True,True
+seven_points_without_negative_loss,7,0,0,False,False,False,False,True
+negative_loss_exactly_at_margin,7,-0.10000000000000001,0.10000000000000001,False,False,False,False,True
+negative_loss_beyond_margin,7,-0.10000100000000001,0.10000000000000001,True,True,True,True,True
+ten_points_without_negative_loss,10,0.050000000000000003,0,False,False,False,False,True

@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,14 +14,38 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        run: python -m pip install -e ".[dev]"
-      - name: Lint public core
         run: >-
-          ruff check
-          src/lifetwin/models/calendar_v2.py
-          src/lifetwin/models/calendar_v3_activation.py
-          src/lifetwin/experiments/calendar_v3_activation_development.py
-          showcase/analyze_phase8_results.py
-          tests/test_public_release.py
-      - name: Run reproducibility tests
-        run: python -m pytest -q tests/test_public_release.py
+          python -m pip install
+          -c requirements/reproduction.txt
+          -e ".[dev,showcase]"
+      - name: Lint release, audit, and reproduction paths
+        run: ruff check src scripts showcase tests
+
+  reproduce:
+    name: reproduce (${{ matrix.os }})
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install clean environment
+        run: >-
+          python -m pip install
+          -c requirements/reproduction.txt
+          -e ".[dev,showcase]"
+      - name: Full release reproduction
+        run: >-
+          python scripts/reproduce_public_release.py
+          --mode full
+          --output artifacts/reproduction
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reproduction-${{ matrix.os }}
+          path: artifacts/reproduction

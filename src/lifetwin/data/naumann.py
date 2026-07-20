@@ -13,6 +13,11 @@ NAUMANN_CALENDAR_DATASET_ID = "NAUMANN_LFP_CALENDAR_2021"
 NAUMANN_CALENDAR_DOI = "10.17632/kxh42bfgtj.1"
 NAUMANN_CALENDAR_SOURCE_URL = "https://data.mendeley.com/datasets/kxh42bfgtj/1"
 NAUMANN_CALENDAR_LICENSE = "CC-BY-4.0"
+NAUMANN_CALENDAR_LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/"
+NAUMANN_CALENDAR_EVIDENCE_ROLE = "public_calendar_aging_method_validation"
+NAUMANN_CALENDAR_OBSERVATIONS_SHA256 = (
+    "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c"
+)
 NAUMANN_REPLICATE_SEMANTICS = "published_mean_of_3_physical_cells"
 NAUMANN_STATISTICAL_UNIT = "temperature_soc_condition_mean_trajectory"
 
@@ -36,6 +41,66 @@ EXPECTED_CALENDAR_CONDITIONS = {
     (60.0, 1.0),
 }
 
+# These fields define the public experiment coordinates. They deliberately omit
+# capacity and resistance outcomes so future-label mutation tests remain valid.
+EXPECTED_CALENDAR_PROFILE = {
+    "NAUMANN_CAL_T0_SOC50": (0.0, 0.5),
+    "NAUMANN_CAL_T10_SOC50": (10.0, 0.5),
+    "NAUMANN_CAL_T25_SOC0": (25.0, 0.0),
+    "NAUMANN_CAL_T25_SOC50": (25.0, 0.5),
+    "NAUMANN_CAL_T25_SOC100": (25.0, 1.0),
+    "NAUMANN_CAL_T40_SOC0": (40.0, 0.0),
+    "NAUMANN_CAL_T40_SOC12.5": (40.0, 0.125),
+    "NAUMANN_CAL_T40_SOC25": (40.0, 0.25),
+    "NAUMANN_CAL_T40_SOC37.5": (40.0, 0.375),
+    "NAUMANN_CAL_T40_SOC50": (40.0, 0.5),
+    "NAUMANN_CAL_T40_SOC62.5": (40.0, 0.625),
+    "NAUMANN_CAL_T40_SOC75": (40.0, 0.75),
+    "NAUMANN_CAL_T40_SOC87.5": (40.0, 0.875),
+    "NAUMANN_CAL_T40_SOC100": (40.0, 1.0),
+    "NAUMANN_CAL_T60_SOC0": (60.0, 0.0),
+    "NAUMANN_CAL_T60_SOC50": (60.0, 0.5),
+    "NAUMANN_CAL_T60_SOC100": (60.0, 1.0),
+}
+
+EXPECTED_CALENDAR_ELAPSED_TIME_S = (
+    0.0,
+    577188.0,
+    997128.0,
+    1472364.0,
+    2549196.0,
+    3632760.0,
+    4628160.0,
+    7002000.0,
+    9285120.0,
+    11832120.0,
+    13941720.0,
+    16138800.0,
+    18426960.0,
+    20711160.0,
+    22997160.0,
+    25296120.0,
+    27588240.0,
+    29880360.0,
+    32513760.0,
+    34796880.0,
+    37087200.0,
+    39380400.0,
+    41670000.0,
+    43959600.0,
+    46238400.0,
+    48531600.0,
+    50828400.0,
+    52902000.0,
+    54532800.0,
+    56919600.0,
+    61203600.0,
+    65660400.0,
+    69084000.0,
+    72586800.0,
+    76467600.0,
+)
+
 REQUIRED_CYCLE_SUMMARY_COLUMNS = {
     "test_id",
     "cell_id",
@@ -52,6 +117,7 @@ REQUIRED_OBSERVATION_COLUMNS = {
     "condition_id",
     "cell_id",
     "test_id",
+    "source_cell_id",
     "temperature_c",
     "storage_soc_fraction",
     "elapsed_time_s",
@@ -63,9 +129,17 @@ REQUIRED_OBSERVATION_COLUMNS = {
     "capacity_loss_pct",
     "resistance_dc_ohm",
     "resistance_growth_pct",
+    "resistance_dc_pulse_duration_s",
+    "resistance_dc_soc_pct",
+    "nominal_capacity_ah",
     "physical_replicates_aggregated",
     "replicate_semantics",
     "statistical_unit",
+    "evidence_role",
+    "source_doi",
+    "source_url",
+    "source_license",
+    "source_license_url",
 }
 
 
@@ -119,8 +193,8 @@ def validate_naumann_calendar_observations(
         raise ValueError(f"Missing Naumann calendar columns: {missing}")
     if observations.empty:
         raise ValueError("Naumann calendar observations cannot be empty")
-    if observations[["condition_id", "test_id"]].isna().any().any():
-        raise ValueError("Condition and test ids must be non-null")
+    if observations[list(REQUIRED_OBSERVATION_COLUMNS)].isna().any().any():
+        raise ValueError("Required Naumann calendar values must be non-null")
     if observations.duplicated(["condition_id", "elapsed_time_s"]).any():
         raise ValueError("Duplicate condition/checkup observations are not allowed")
     if observations.duplicated(["condition_id", "checkup_index"]).any():
@@ -134,11 +208,16 @@ def validate_naumann_calendar_observations(
         "elapsed_time_s",
         "elapsed_hours",
         "elapsed_days",
+        "checkup_index",
         "capacity_ah",
         "capacity_retention_pct",
         "capacity_loss_pct",
         "resistance_dc_ohm",
         "resistance_growth_pct",
+        "resistance_dc_pulse_duration_s",
+        "resistance_dc_soc_pct",
+        "nominal_capacity_ah",
+        "physical_replicates_aggregated",
     ]
     numeric = observations[numeric_columns].apply(pd.to_numeric, errors="coerce")
     if numeric.isna().any().any() or not np.isfinite(numeric.to_numpy()).all():
@@ -172,6 +251,52 @@ def validate_naumann_calendar_observations(
         raise ValueError("Calendar-aging temperatures are outside the accepted range")
     if (numeric["capacity_ah"] <= 0).any() or (numeric["resistance_dc_ohm"] <= 0).any():
         raise ValueError("Capacity and resistance must be positive")
+    if not numeric["resistance_dc_ohm"].between(0.001, 1.0).all():
+        raise ValueError("DC resistance must be expressed in ohms")
+    capacity_to_nominal = (
+        numeric["capacity_ah"] / numeric["nominal_capacity_ah"]
+    )
+    if not capacity_to_nominal.between(0.1, 1.25).all():
+        raise ValueError("Capacity must be expressed in Ah relative to nominal capacity")
+    initial_rows = observations.loc[numeric["checkup_index"] == 0]
+    initial_capacity_by_condition = initial_rows.set_index("condition_id")[
+        "capacity_ah"
+    ]
+    initial_capacity = observations["condition_id"].map(
+        initial_capacity_by_condition
+    )
+    expected_retention = (
+        100.0
+        * numeric["capacity_ah"].to_numpy(dtype=float)
+        / pd.to_numeric(initial_capacity).to_numpy(dtype=float)
+    )
+    if not np.allclose(
+        numeric["capacity_retention_pct"].to_numpy(dtype=float),
+        expected_retention,
+        rtol=0.0,
+        atol=1e-9,
+    ):
+        raise ValueError("Capacity retention is inconsistent with condition capacity")
+    initial_resistance_by_condition = initial_rows.set_index("condition_id")[
+        "resistance_dc_ohm"
+    ]
+    initial_resistance = observations["condition_id"].map(
+        initial_resistance_by_condition
+    )
+    expected_resistance_growth = 100.0 * (
+        numeric["resistance_dc_ohm"].to_numpy(dtype=float)
+        / pd.to_numeric(initial_resistance).to_numpy(dtype=float)
+        - 1.0
+    )
+    if not np.allclose(
+        numeric["resistance_growth_pct"].to_numpy(dtype=float),
+        expected_resistance_growth,
+        rtol=0.0,
+        atol=1e-9,
+    ):
+        raise ValueError(
+            "Resistance growth is inconsistent with condition resistance"
+        )
 
     dataset_ids = set(observations["dataset_id"].astype(str))
     if dataset_ids != {NAUMANN_CALENDAR_DATASET_ID}:
@@ -186,9 +311,29 @@ def validate_naumann_calendar_observations(
         raise ValueError("The statistical unit must be the condition mean trajectory")
     if set(pd.to_numeric(observations["physical_replicates_aggregated"])) != {3}:
         raise ValueError("The public calendar trajectories aggregate three physical cells")
+    source_identity = {
+        "source_doi": NAUMANN_CALENDAR_DOI,
+        "source_url": NAUMANN_CALENDAR_SOURCE_URL,
+        "source_license": NAUMANN_CALENDAR_LICENSE,
+        "source_license_url": NAUMANN_CALENDAR_LICENSE_URL,
+        "evidence_role": NAUMANN_CALENDAR_EVIDENCE_ROLE,
+    }
+    for column, expected in source_identity.items():
+        observed = set(observations[column].astype(str))
+        if observed != {expected}:
+            raise ValueError(f"Unexpected Naumann {column}: {sorted(observed)}")
 
     grouped = observations.groupby("condition_id", sort=True)
     condition_count = grouped.ngroups
+    identity_cardinality = grouped[["cell_id", "test_id", "source_cell_id"]].nunique(
+        dropna=False
+    )
+    if not (identity_cardinality == 1).all().all():
+        raise ValueError("Each condition must map to one cell, test, and source identity")
+    if observations["test_id"].astype(str).nunique() != condition_count:
+        raise ValueError("Test ids must map one-to-one with calendar conditions")
+    if observations["source_cell_id"].astype(str).nunique() != condition_count:
+        raise ValueError("Source cell ids must map one-to-one with conditions")
     if expected_condition_count is not None and condition_count != expected_condition_count:
         raise ValueError(
             f"Expected {expected_condition_count} calendar conditions, found {condition_count}"
@@ -201,6 +346,39 @@ def validate_naumann_calendar_observations(
             "Unexpected checkup count by condition: "
             f"{row_counts.loc[row_counts != expected_rows_per_condition].to_dict()}"
         )
+
+    if require_published_grid:
+        observed_condition_ids = set(observations["condition_id"].astype(str))
+        expected_condition_ids = set(EXPECTED_CALENDAR_PROFILE)
+        if observed_condition_ids != expected_condition_ids:
+            raise ValueError(
+                "Published condition identities mismatch: "
+                f"missing={sorted(expected_condition_ids - observed_condition_ids)}, "
+                f"extra={sorted(observed_condition_ids - expected_condition_ids)}"
+            )
+        if not np.allclose(
+            numeric["nominal_capacity_ah"].to_numpy(dtype=float),
+            3.0,
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            raise ValueError("Published nominal capacity must remain 3 Ah")
+        if not np.allclose(
+            numeric["resistance_dc_pulse_duration_s"].to_numpy(dtype=float),
+            10.0,
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            raise ValueError("Published DC resistance pulse duration must remain 10 s")
+        if not np.allclose(
+            numeric["resistance_dc_soc_pct"].to_numpy(dtype=float),
+            100.0 * numeric["storage_soc_fraction"].to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            raise ValueError(
+                "Resistance measurement SOC must be percent-valued storage SOC"
+            )
 
     condition_grid: set[tuple[float, float]] = set()
     for condition_id, condition in grouped:
@@ -222,6 +400,43 @@ def validate_naumann_calendar_observations(
         if ordered["storage_soc_fraction"].nunique() != 1:
             raise ValueError(f"Storage SOC changes within condition {condition_id}")
         initial = ordered.iloc[0]
+        if require_published_grid:
+            expected_temperature, expected_soc = EXPECTED_CALENDAR_PROFILE[
+                str(condition_id)
+            ]
+            expected_test_id = f"{condition_id}_TEST"
+            expected_source_id = (
+                f"TP_{expected_temperature:g}"
+                + "\N{DEGREE SIGN}"
+                + f"C,{100.0 * expected_soc:g}%SOC"
+            )
+            observed_identity = (
+                float(initial["temperature_c"]),
+                float(initial["storage_soc_fraction"]),
+                str(initial["test_id"]),
+                str(initial["source_cell_id"]),
+            )
+            expected_identity = (
+                expected_temperature,
+                expected_soc,
+                expected_test_id,
+                expected_source_id,
+            )
+            if observed_identity != expected_identity:
+                raise ValueError(
+                    "Published condition identity mismatch for "
+                    f"{condition_id}: expected={expected_identity}, "
+                    f"observed={observed_identity}"
+                )
+            if not np.allclose(
+                elapsed,
+                np.asarray(EXPECTED_CALENDAR_ELAPSED_TIME_S, dtype=float),
+                rtol=0.0,
+                atol=1e-6,
+            ):
+                raise ValueError(
+                    f"Published checkup time axis mismatch for {condition_id}"
+                )
         if not np.isclose(float(initial["capacity_retention_pct"]), 100.0, atol=1e-8):
             raise ValueError(f"Initial capacity retention is not 100% for {condition_id}")
         if not np.isclose(float(initial["capacity_loss_pct"]), 0.0, atol=1e-8):
@@ -348,7 +563,7 @@ def load_naumann_calendar_observations(
     raw["physical_replicates_aggregated"] = 3
     raw["replicate_semantics"] = NAUMANN_REPLICATE_SEMANTICS
     raw["statistical_unit"] = NAUMANN_STATISTICAL_UNIT
-    raw["evidence_role"] = "public_calendar_aging_method_validation"
+    raw["evidence_role"] = NAUMANN_CALENDAR_EVIDENCE_ROLE
 
     output_columns = [
         "dataset_id",

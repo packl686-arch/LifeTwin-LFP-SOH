@@ -50,9 +50,11 @@ EVIDENCE_ROLE = "reused_naumann_low_soc_mechanism_development_only"
 RUNNER_SCOPE = "naumann_reuse_activation_offset_development_only"
 CONFIRMATION_STATUS = "blocked_pending_independent_dataset"
 EXPECTED_PREFIXES = (5, 8, 10, 14)
+EXPECTED_CHECKUP_INDICES = tuple(range(35))
 PRIMARY_PREFIX = 10
 TEMPERATURE_SCENARIO = "v3_unseen_temperature_level"
 SOC_SCENARIO = "v3_soc_interpolation_at_40c"
+SOC_FOLD_ID = "40c_intermediate_soc_v3_activation_development"
 GATE_SCENARIOS = (TEMPERATURE_SCENARIO, SOC_SCENARIO)
 METHOD_NAMES = (
     TARGET_SQRT_METHOD,
@@ -593,23 +595,6 @@ def _target_state(
     gate_config = config["mechanism_gate"]
     exponent_bounds = tuple(float(v) for v in model["power_exponent_bounds"])
     offset_bounds = tuple(float(v) for v in model["activation_offset_bounds_pp"])
-    sqrt_rate = fit_sqrt_rate(prefix)
-    base_fit = update_hierarchical_power_law(
-        base_prior, prefix, exponent_bounds=exponent_bounds
-    )
-    target_activation = fit_activation_offset_power_law(
-        prefix,
-        activation_timescale_days=float(model["activation_timescale_days"]),
-        exponent_bounds=exponent_bounds,
-        activation_offset_bounds_pp=offset_bounds,
-        robust_loss_scale_pp=float(model["robust_loss_scale_pp"]),
-    )
-    hierarchical_activation = update_hierarchical_activation_offset(
-        activation_prior,
-        prefix,
-        exponent_bounds=exponent_bounds,
-        activation_offset_bounds_pp=offset_bounds,
-    )
     gate = activation_mechanism_gate(
         prefix,
         minimum_positive_time_observations=int(
@@ -619,13 +604,76 @@ def _target_state(
             gate_config["negative_loss_threshold_pp"]
         ),
     )
+    sqrt_rate = fit_sqrt_rate(prefix)
+    base_fit = update_hierarchical_power_law(
+        base_prior, prefix, exponent_bounds=exponent_bounds
+    )
     elapsed = future["elapsed_days"].to_numpy(dtype=float)
     base_loss = predict_power_loss(base_fit, elapsed)
-    target_activation_loss = predict_activation_offset_loss(
-        target_activation, elapsed
+
+    target_activation = None
+    target_activation_loss = base_loss
+    target_activation_error: str | None = None
+    try:
+        target_activation = fit_activation_offset_power_law(
+            prefix,
+            activation_timescale_days=float(model["activation_timescale_days"]),
+            exponent_bounds=exponent_bounds,
+            activation_offset_bounds_pp=offset_bounds,
+            robust_loss_scale_pp=float(model["robust_loss_scale_pp"]),
+        )
+        target_activation_loss = predict_activation_offset_loss(
+            target_activation, elapsed
+        )
+        if not np.isfinite(target_activation_loss).all():
+            raise RuntimeError("Target activation specialist returned non-finite values")
+    except Exception as exc:  # Numerical specialist failure must not block V2.
+        target_activation = None
+        target_activation_loss = base_loss
+        target_activation_error = f"{type(exc).__name__}: {exc}"
+
+    hierarchical_activation = None
+    hierarchical_activation_loss = base_loss
+    hierarchical_activation_error: str | None = None
+    try:
+        hierarchical_activation = update_hierarchical_activation_offset(
+            activation_prior,
+            prefix,
+            exponent_bounds=exponent_bounds,
+            activation_offset_bounds_pp=offset_bounds,
+        )
+        hierarchical_activation_loss = predict_activation_offset_loss(
+            hierarchical_activation, elapsed
+        )
+        if not np.isfinite(hierarchical_activation_loss).all():
+            raise RuntimeError(
+                "Hierarchical activation specialist returned non-finite values"
+            )
+    except Exception as exc:  # Keep the primary gated prediction operational.
+        hierarchical_activation = None
+        hierarchical_activation_loss = base_loss
+        hierarchical_activation_error = f"{type(exc).__name__}: {exc}"
+    target_specialist_selected = bool(gate.ready and target_activation is not None)
+    hierarchical_specialist_selected = bool(
+        gate.ready and hierarchical_activation is not None
     )
-    hierarchical_activation_loss = predict_activation_offset_loss(
-        hierarchical_activation, elapsed
+    target_fallback_reason = (
+        "none"
+        if target_specialist_selected
+        else (
+            "gate_not_ready"
+            if not gate.ready
+            else f"specialist_fit_failed:{target_activation_error}"
+        )
+    )
+    hierarchical_fallback_reason = (
+        "none"
+        if hierarchical_specialist_selected
+        else (
+            "gate_not_ready"
+            if not gate.ready
+            else f"specialist_fit_failed:{hierarchical_activation_error}"
+        )
     )
     predictions = {
         TARGET_SQRT_METHOD: predict_sqrt_loss(sqrt_rate, elapsed),
@@ -633,10 +681,12 @@ def _target_state(
         TARGET_ACTIVATION_METHOD: target_activation_loss,
         HIERARCHICAL_ACTIVATION_METHOD: hierarchical_activation_loss,
         GATED_TARGET_ACTIVATION_METHOD: (
-            target_activation_loss if gate.ready else base_loss
+            target_activation_loss if target_specialist_selected else base_loss
         ),
         GATED_HIERARCHICAL_ACTIVATION_METHOD: (
-            hierarchical_activation_loss if gate.ready else base_loss
+            hierarchical_activation_loss
+            if hierarchical_specialist_selected
+            else base_loss
         ),
     }
     target_id = str(ordered["condition_id"].iloc[0])
@@ -665,8 +715,24 @@ def _target_state(
         "parameters": {
             TARGET_SQRT_METHOD: {"sqrt_rate": float(sqrt_rate)},
             HIERARCHICAL_POWER_METHOD: base_fit.parameter_map(),
-            TARGET_ACTIVATION_METHOD: target_activation.parameter_map(),
-            HIERARCHICAL_ACTIVATION_METHOD: hierarchical_activation.parameter_map(),
+            TARGET_ACTIVATION_METHOD: (
+                target_activation.parameter_map()
+                if target_activation is not None
+                else {
+                    "fit_status": "failed",
+                    "fallback_method": HIERARCHICAL_POWER_METHOD,
+                    "error": target_activation_error,
+                }
+            ),
+            HIERARCHICAL_ACTIVATION_METHOD: (
+                hierarchical_activation.parameter_map()
+                if hierarchical_activation is not None
+                else {
+                    "fit_status": "failed",
+                    "fallback_method": HIERARCHICAL_POWER_METHOD,
+                    "error": hierarchical_activation_error,
+                }
+            ),
         },
         "predictions": {
             method: [float(value) for value in values]
@@ -677,17 +743,14 @@ def _target_state(
     prefix_end = prefix.sort_values("checkup_index", kind="stable").iloc[-1]
     rows: list[dict[str, object]] = []
     for method in METHOD_NAMES:
-        selected = method in {
-            TARGET_ACTIVATION_METHOD,
-            HIERARCHICAL_ACTIVATION_METHOD,
-        } or (
-            gate.ready
-            and method
-            in {
-                GATED_TARGET_ACTIVATION_METHOD,
-                GATED_HIERARCHICAL_ACTIVATION_METHOD,
-            }
-        )
+        selected = {
+            TARGET_ACTIVATION_METHOD: target_activation is not None,
+            HIERARCHICAL_ACTIVATION_METHOD: hierarchical_activation is not None,
+            GATED_TARGET_ACTIVATION_METHOD: target_specialist_selected,
+            GATED_HIERARCHICAL_ACTIVATION_METHOD: (
+                hierarchical_specialist_selected
+            ),
+        }.get(method, False)
         for coordinate, loss in zip(
             future.itertuples(index=False), predictions[method], strict=True
         ):
@@ -746,22 +809,56 @@ def _target_state(
         "base_prior_time_exponent": float(base_prior_mean[1]),
         "base_posterior_log_amplitude": base_fit.log_amplitude,
         "base_posterior_time_exponent": base_fit.time_exponent,
-        "activation_target_log_amplitude": target_activation.log_amplitude,
-        "activation_target_time_exponent": target_activation.time_exponent,
-        "activation_target_offset_pp": target_activation.activation_offset_pp,
+        "activation_target_log_amplitude": (
+            target_activation.log_amplitude
+            if target_activation is not None
+            else None
+        ),
+        "activation_target_time_exponent": (
+            target_activation.time_exponent
+            if target_activation is not None
+            else None
+        ),
+        "activation_target_offset_pp": (
+            target_activation.activation_offset_pp
+            if target_activation is not None
+            else None
+        ),
         "activation_prior_log_amplitude": float(activation_prior_mean[0]),
         "activation_prior_time_exponent": float(activation_prior_mean[1]),
         "activation_prior_offset_pp": float(activation_prior_mean[2]),
         "activation_posterior_log_amplitude": (
             hierarchical_activation.log_amplitude
+            if hierarchical_activation is not None
+            else None
         ),
         "activation_posterior_time_exponent": (
             hierarchical_activation.time_exponent
+            if hierarchical_activation is not None
+            else None
         ),
         "activation_posterior_offset_pp": (
             hierarchical_activation.activation_offset_pp
+            if hierarchical_activation is not None
+            else None
         ),
-        "activation_timescale_days": target_activation.activation_timescale_days,
+        "activation_timescale_days": float(model["activation_timescale_days"]),
+        "target_activation_fit_status": (
+            "fitted" if target_activation is not None else "failed"
+        ),
+        "target_activation_fit_error": target_activation_error or "none",
+        "hierarchical_activation_fit_status": (
+            "fitted" if hierarchical_activation is not None else "failed"
+        ),
+        "hierarchical_activation_fit_error": (
+            hierarchical_activation_error or "none"
+        ),
+        "fallback_reason": target_fallback_reason,
+        "hierarchical_fallback_reason": hierarchical_fallback_reason,
+        "primary_gated_specialist_selected": target_specialist_selected,
+        "hierarchical_gated_specialist_selected": (
+            hierarchical_specialist_selected
+        ),
         "training_condition_count": len(base_prior.training_condition_ids),
         "training_observation_count": int(base_prior.training_observation_count),
         "training_max_checkup_index": int(prefix_checkups - 1),
@@ -769,24 +866,33 @@ def _target_state(
         "prediction_state_sha256": prediction_hash,
     }
     sensitivity_rows: list[dict[str, object]] = []
+    sensitivity_fit_errors: list[str] = []
     if prefix_checkups == PRIMARY_PREFIX:
         for tau in TAU_SENSITIVITY_DAYS:
-            sensitivity_fit = (
-                fit_activation_offset_power_law(
-                    prefix,
-                    activation_timescale_days=tau,
-                    exponent_bounds=exponent_bounds,
-                    activation_offset_bounds_pp=offset_bounds,
-                    robust_loss_scale_pp=float(model["robust_loss_scale_pp"]),
-                )
-                if gate.ready
-                else None
-            )
-            sensitivity_loss = (
-                predict_activation_offset_loss(sensitivity_fit, elapsed)
-                if sensitivity_fit is not None
-                else base_loss
-            )
+            sensitivity_fit = None
+            sensitivity_loss = base_loss
+            if gate.ready:
+                try:
+                    sensitivity_fit = fit_activation_offset_power_law(
+                        prefix,
+                        activation_timescale_days=tau,
+                        exponent_bounds=exponent_bounds,
+                        activation_offset_bounds_pp=offset_bounds,
+                        robust_loss_scale_pp=float(model["robust_loss_scale_pp"]),
+                    )
+                    sensitivity_loss = predict_activation_offset_loss(
+                        sensitivity_fit, elapsed
+                    )
+                    if not np.isfinite(sensitivity_loss).all():
+                        raise RuntimeError(
+                            "Sensitivity specialist returned non-finite values"
+                        )
+                except Exception as exc:  # Sensitivity failure is diagnostic only.
+                    sensitivity_fit = None
+                    sensitivity_loss = base_loss
+                    sensitivity_fit_errors.append(
+                        f"tau={tau:g}:{type(exc).__name__}: {exc}"
+                    )
             sensitivity_state = {
                 "scenario": scenario,
                 "fold_id": fold_id,
@@ -830,11 +936,17 @@ def _target_state(
                             == ordered["checkup_index"].max()
                         ),
                         "activation_gate_ready": gate.ready,
-                        "activation_component_selected": gate.ready,
+                        "activation_component_selected": (
+                            gate.ready and sensitivity_fit is not None
+                        ),
                         "training_state_sha256": training_state_sha256,
                         "prediction_state_sha256": sensitivity_hash,
                     }
                 )
+    diagnostic["sensitivity_fit_failure_count"] = len(sensitivity_fit_errors)
+    diagnostic["sensitivity_fit_errors"] = (
+        ";".join(sensitivity_fit_errors) if sensitivity_fit_errors else "none"
+    )
     return pd.DataFrame(rows)[PREDICTION_COLUMNS], diagnostic, sensitivity_rows
 
 
@@ -848,8 +960,26 @@ def calendar_v3_prediction_sha256(predictions: pd.DataFrame) -> str:
         )
     if predictions.empty or predictions.duplicated(PREDICTION_KEY_COLUMNS).any():
         raise ValueError("Calendar V3 prediction keys must be non-empty and unique")
+    if predictions[PREDICTION_KEY_COLUMNS].isna().any().any():
+        raise ValueError("Calendar V3 prediction keys cannot be null")
     if set(predictions["method"].astype(str)) != set(METHOD_NAMES):
         raise ValueError("Calendar V3 prediction pack must contain every method")
+    support_columns = [
+        column for column in PREDICTION_KEY_COLUMNS if column != "method"
+    ]
+    methods_by_coordinate = predictions.groupby(
+        support_columns,
+        sort=False,
+        dropna=False,
+    )["method"].agg(lambda values: frozenset(values.astype(str)))
+    expected_methods = frozenset(METHOD_NAMES)
+    if not methods_by_coordinate.map(
+        lambda methods: methods == expected_methods
+    ).all():
+        raise ValueError(
+            "Calendar V3 prediction support must contain every method at "
+            "every future coordinate"
+        )
     for column in ("training_state_sha256", "prediction_state_sha256"):
         if not predictions[column].astype(str).str.fullmatch(r"[0-9a-f]{64}").all():
             raise ValueError(f"Invalid Calendar V3 state hash column: {column}")
@@ -868,13 +998,329 @@ def calendar_v3_sensitivity_sha256(predictions: pd.DataFrame) -> str:
         )
     if predictions.empty or predictions.duplicated(SENSITIVITY_KEY_COLUMNS).any():
         raise ValueError("Calendar V3 sensitivity keys must be non-empty and unique")
+    if predictions[SENSITIVITY_KEY_COLUMNS].isna().any().any():
+        raise ValueError("Calendar V3 sensitivity keys cannot be null")
     if set(predictions["activation_timescale_days"].astype(float)) != set(
         TAU_SENSITIVITY_DAYS
     ):
         raise ValueError("Calendar V3 sensitivity must contain the frozen tau grid")
+    support_columns = [
+        column
+        for column in SENSITIVITY_KEY_COLUMNS
+        if column != "activation_timescale_days"
+    ]
+    timescales_by_coordinate = predictions.groupby(
+        support_columns,
+        sort=False,
+        dropna=False,
+    )["activation_timescale_days"].agg(
+        lambda values: frozenset(float(value) for value in values)
+    )
+    expected_timescales = frozenset(TAU_SENSITIVITY_DAYS)
+    if not timescales_by_coordinate.map(
+        lambda timescales: timescales == expected_timescales
+    ).all():
+        raise ValueError(
+            "Calendar V3 sensitivity support must contain every frozen tau at "
+            "every future coordinate"
+        )
     return _canonical_frame_sha256(
         predictions[SENSITIVITY_COLUMNS], sort_by=SENSITIVITY_KEY_COLUMNS
     )
+
+
+def _validated_scoring_frame(
+    predictions: pd.DataFrame,
+    observations: pd.DataFrame,
+    *,
+    grouping_columns: list[str],
+) -> pd.DataFrame:
+    is_sensitivity = "activation_timescale_days" in predictions.columns
+    _validate_frozen_protocol_target_coverage(
+        predictions,
+        observations,
+        expected_prefixes=(PRIMARY_PREFIX,) if is_sensitivity else EXPECTED_PREFIXES,
+        context=(
+            "Calendar V3 sensitivity" if is_sensitivity else "Calendar V3 prediction"
+        ),
+    )
+    required_scoring_columns = set(grouping_columns) | {
+        "target_checkup_index",
+        "elapsed_days",
+        "predicted_capacity_retention_pct",
+        "is_final_checkup",
+    }
+    if predictions[list(required_scoring_columns)].isna().any().any():
+        raise ValueError("Calendar V3 scoring fields must be non-null")
+    numeric_columns = [
+        "prefix_checkups",
+        "target_checkup_index",
+        "prefix_end_checkup_index",
+        "prefix_end_days",
+        "temperature_c",
+        "storage_soc_fraction",
+        "elapsed_days",
+        "predicted_capacity_retention_pct",
+        "positive_time_observation_count",
+        "minimum_prefix_capacity_loss_pct",
+        "training_support_days",
+        "validation_horizon_days",
+        "time_extrapolation_ratio",
+        "activation_timescale_days",
+    ]
+    for column in numeric_columns:
+        if column not in predictions:
+            continue
+        values = pd.to_numeric(predictions[column], errors="coerce").to_numpy(
+            dtype=float
+        )
+        if not np.isfinite(values).all():
+            raise ValueError(f"Calendar V3 prediction column must be finite: {column}")
+
+    for column in (
+        "prefix_checkups",
+        "target_checkup_index",
+        "prefix_end_checkup_index",
+    ):
+        if column not in predictions:
+            continue
+        values = pd.to_numeric(predictions[column], errors="coerce").to_numpy(
+            dtype=float
+        )
+        if not np.equal(values, np.floor(values)).all():
+            raise ValueError(f"Calendar V3 prediction column must be integral: {column}")
+    if not pd.api.types.is_bool_dtype(predictions["is_final_checkup"]):
+        raise ValueError("Calendar V3 final-checkup flags must be boolean")
+
+    truth = observations[
+        [
+            "condition_id",
+            "checkup_index",
+            "elapsed_days",
+            "temperature_c",
+            "storage_soc_fraction",
+            "capacity_retention_pct",
+        ]
+    ].rename(
+        columns={
+            "condition_id": "target_condition_id",
+            "checkup_index": "target_checkup_index",
+            "elapsed_days": "truth_elapsed_days",
+            "temperature_c": "truth_temperature_c",
+            "storage_soc_fraction": "truth_storage_soc_fraction",
+            "capacity_retention_pct": "true_capacity_retention_pct",
+        }
+    )
+    if truth["target_condition_id"].isna().any():
+        raise ValueError("Calendar V3 truth condition ids must be non-null")
+    if truth.duplicated(["target_condition_id", "target_checkup_index"]).any():
+        raise ValueError("Calendar V3 truth coordinates must be unique")
+    truth_numeric = truth[
+        [
+            "target_checkup_index",
+            "truth_elapsed_days",
+            "truth_temperature_c",
+            "truth_storage_soc_fraction",
+            "true_capacity_retention_pct",
+        ]
+    ].apply(pd.to_numeric, errors="coerce")
+    if not np.isfinite(truth_numeric.to_numpy(dtype=float)).all():
+        raise ValueError("Calendar V3 truth coordinates and outcomes must be finite")
+    if not np.equal(
+        truth_numeric["target_checkup_index"],
+        np.floor(truth_numeric["target_checkup_index"]),
+    ).all():
+        raise ValueError("Calendar V3 truth checkup indices must be integral")
+    truth[truth_numeric.columns] = truth_numeric
+
+    target_ids = set(predictions["target_condition_id"].astype(str))
+    relevant_truth = truth.loc[
+        truth["target_condition_id"].astype(str).isin(target_ids)
+    ].copy()
+    if set(relevant_truth["target_condition_id"].astype(str)) != target_ids:
+        raise ValueError("Every Calendar V3 target condition must exist in truth")
+    for _, condition in relevant_truth.groupby("target_condition_id", sort=True):
+        indices = sorted(
+            pd.to_numeric(condition["target_checkup_index"]).astype(int).tolist()
+        )
+        if indices != list(EXPECTED_CHECKUP_INDICES):
+            raise ValueError(
+                "Calendar V3 truth must contain checkup indices range(0, 35)"
+            )
+
+    scored = predictions.merge(
+        truth,
+        on=["target_condition_id", "target_checkup_index"],
+        how="left",
+        validate="many_to_one",
+        indicator="_future_truth_merge",
+    )
+    if (scored["_future_truth_merge"] != "both").any() or scored[
+        "true_capacity_retention_pct"
+    ].isna().any():
+        raise ValueError("Every Calendar V3 prediction must match a future outcome")
+    scored = scored.drop(columns="_future_truth_merge")
+
+    for prediction_column, truth_column in (
+        ("elapsed_days", "truth_elapsed_days"),
+        ("temperature_c", "truth_temperature_c"),
+        ("storage_soc_fraction", "truth_storage_soc_fraction"),
+    ):
+        if prediction_column not in scored:
+            continue
+        matches = np.isclose(
+            pd.to_numeric(scored[prediction_column]).to_numpy(dtype=float),
+            pd.to_numeric(scored[truth_column]).to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        if not matches.all():
+            raise ValueError(
+                f"Calendar V3 prediction coordinate disagrees with truth: "
+                f"{prediction_column}"
+            )
+
+    prefixes = pd.to_numeric(scored["prefix_checkups"]).astype(int)
+    target_indices = pd.to_numeric(scored["target_checkup_index"]).astype(int)
+    if not prefixes.isin(EXPECTED_PREFIXES).all():
+        raise ValueError("Calendar V3 prediction uses an unsupported prefix")
+    if (target_indices < prefixes).any():
+        raise ValueError("Calendar V3 prediction target precedes its prefix")
+
+    if "prefix_end_checkup_index" in scored:
+        prefix_end_indices = pd.to_numeric(
+            scored["prefix_end_checkup_index"]
+        ).astype(int)
+        if not (prefix_end_indices == prefixes - 1).all():
+            raise ValueError("Calendar V3 prefix-end index disagrees with prefix")
+        prefix_truth = truth[
+            ["target_condition_id", "target_checkup_index", "truth_elapsed_days"]
+        ].rename(
+            columns={
+                "target_checkup_index": "prefix_end_checkup_index",
+                "truth_elapsed_days": "truth_prefix_end_days",
+            }
+        )
+        scored = scored.merge(
+            prefix_truth,
+            on=["target_condition_id", "prefix_end_checkup_index"],
+            how="left",
+            validate="many_to_one",
+        )
+        if not np.isclose(
+            pd.to_numeric(scored["prefix_end_days"]).to_numpy(dtype=float),
+            pd.to_numeric(scored["truth_prefix_end_days"]).to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        ).all():
+            raise ValueError("Calendar V3 prefix-end day disagrees with truth")
+
+    truth_horizons = relevant_truth.groupby("target_condition_id", sort=True)[
+        "truth_elapsed_days"
+    ].max()
+    if "validation_horizon_days" in scored:
+        expected_horizons = scored["target_condition_id"].map(truth_horizons)
+        if not np.isclose(
+            pd.to_numeric(scored["validation_horizon_days"]).to_numpy(dtype=float),
+            pd.to_numeric(expected_horizons).to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        ).all():
+            raise ValueError("Calendar V3 validation horizon disagrees with truth")
+        expected_ratios = (
+            pd.to_numeric(scored["validation_horizon_days"])
+            / pd.to_numeric(scored["training_support_days"])
+        )
+        if not np.isclose(
+            pd.to_numeric(scored["time_extrapolation_ratio"]).to_numpy(dtype=float),
+            expected_ratios.to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        ).all():
+            raise ValueError("Calendar V3 extrapolation ratio is inconsistent")
+
+    for _, group in scored.groupby(grouping_columns, sort=True, dropna=False):
+        prefix_values = pd.to_numeric(group["prefix_checkups"]).astype(int).unique()
+        if len(prefix_values) != 1:
+            raise ValueError("Calendar V3 trajectory must use one prefix")
+        expected_future = list(range(int(prefix_values[0]), 35))
+        actual_future = sorted(
+            pd.to_numeric(group["target_checkup_index"]).astype(int).tolist()
+        )
+        if actual_future != expected_future:
+            raise ValueError(
+                "Calendar V3 trajectory must contain every future checkup in "
+                "range(prefix, 35)"
+            )
+
+    truth_final_indices = relevant_truth.groupby("target_condition_id", sort=True)[
+        "target_checkup_index"
+    ].max()
+    scored_target_indices = pd.to_numeric(scored["target_checkup_index"]).astype(int)
+    expected_final = scored_target_indices == scored["target_condition_id"].map(
+        truth_final_indices
+    ).astype(int)
+    if not (scored["is_final_checkup"].to_numpy(dtype=bool) == expected_final).all():
+        raise ValueError("Calendar V3 final-checkup flag disagrees with truth")
+    scored["truth_is_final_checkup"] = expected_final
+    return scored
+
+
+def _validate_frozen_protocol_target_coverage(
+    predictions: pd.DataFrame,
+    observations: pd.DataFrame,
+    *,
+    expected_prefixes: tuple[int, ...],
+    context: str,
+) -> None:
+    observed_scenarios = set(predictions["scenario"].astype(str))
+    frozen_scenarios = set(GATE_SCENARIOS)
+    profile = observations[
+        ["condition_id", "temperature_c", "storage_soc_fraction"]
+    ].drop_duplicates()
+    observation_ids = set(profile["condition_id"].astype(str))
+    soc_targets = frozenset(SOC_TARGET_CONDITIONS)
+    if not soc_targets.issubset(observation_ids):
+        if not observed_scenarios.intersection(frozen_scenarios):
+            return
+        raise ValueError(f"{context} frozen SOC targets are absent from scoring truth")
+
+    expected_groups: dict[tuple[str, str, int], frozenset[str]] = {}
+    for temperature, rows in profile.groupby("temperature_c", sort=True):
+        targets = frozenset(rows["condition_id"].astype(str))
+        fold_id = f"temperature_c={float(temperature):g}"
+        for prefix in expected_prefixes:
+            expected_groups[(TEMPERATURE_SCENARIO, fold_id, prefix)] = targets
+    for prefix in expected_prefixes:
+        expected_groups[(SOC_SCENARIO, SOC_FOLD_ID, prefix)] = soc_targets
+
+    target_rows = predictions[
+        ["scenario", "fold_id", "prefix_checkups", "target_condition_id"]
+    ].copy()
+    target_rows["scenario"] = target_rows["scenario"].astype(str)
+    target_rows["fold_id"] = target_rows["fold_id"].astype(str)
+    target_rows["prefix_checkups"] = pd.to_numeric(
+        target_rows["prefix_checkups"], errors="coerce"
+    )
+    target_rows["target_condition_id"] = target_rows[
+        "target_condition_id"
+    ].astype(str)
+    actual_groups = {
+        (str(scenario), str(fold_id), int(prefix)): frozenset(
+            group["target_condition_id"]
+        )
+        for (scenario, fold_id, prefix), group in target_rows.groupby(
+            ["scenario", "fold_id", "prefix_checkups"],
+            sort=False,
+            dropna=False,
+        )
+        if np.isfinite(prefix) and float(prefix).is_integer()
+    }
+    if actual_groups != expected_groups:
+        raise ValueError(
+            f"{context} target coverage does not match the frozen "
+            "scenario/fold/prefix protocol"
+        )
 
 
 def _score_prediction_pack(
@@ -884,34 +1330,22 @@ def _score_prediction_pack(
     key_columns: list[str],
     grouping_columns: list[str],
 ) -> pd.DataFrame:
-    outcomes = observations[
-        ["condition_id", "checkup_index", "capacity_retention_pct"]
-    ].rename(
-        columns={
-            "condition_id": "target_condition_id",
-            "checkup_index": "target_checkup_index",
-            "capacity_retention_pct": "true_capacity_retention_pct",
-        }
+    scored = _validated_scoring_frame(
+        predictions,
+        observations,
+        grouping_columns=grouping_columns,
     )
-    scored = predictions.merge(
-        outcomes,
-        on=["target_condition_id", "target_checkup_index"],
-        how="left",
-        validate="many_to_one",
-    )
-    if scored["true_capacity_retention_pct"].isna().any():
-        raise ValueError("Every Calendar V3 prediction must match a future outcome")
     scored["prediction_error_pp"] = (
         scored["predicted_capacity_retention_pct"]
         - scored["true_capacity_retention_pct"]
     )
     rows: list[dict[str, object]] = []
     for keys, group in scored.groupby(grouping_columns, sort=True):
-        ordered = group.sort_values("elapsed_days", kind="stable")
-        elapsed = ordered["elapsed_days"].to_numpy(dtype=float)
+        ordered = group.sort_values("truth_elapsed_days", kind="stable")
+        elapsed = ordered["truth_elapsed_days"].to_numpy(dtype=float)
         error = ordered["prediction_error_pp"].to_numpy(dtype=float)
         absolute = np.abs(error)
-        final = ordered.loc[ordered["is_final_checkup"]]
+        final = ordered.loc[ordered["truth_is_final_checkup"]]
         if len(elapsed) < 2 or elapsed[-1] <= elapsed[0] or len(final) != 1:
             raise ValueError("Calendar V3 trajectory scoring support is incomplete")
         rows.append(

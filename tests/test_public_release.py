@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 
 import pandas as pd
@@ -12,7 +11,6 @@ from lifetwin.experiments.calendar_v3_activation_development import (
     PRIMARY_PREFIX,
     SOC_SCENARIO,
     TEMPERATURE_SCENARIO,
-    run_calendar_v3_activation_development,
 )
 from lifetwin.models.calendar_v3_activation import activation_mechanism_gate
 from scripts.verify_public_release import verify
@@ -20,10 +18,6 @@ from scripts.verify_public_release import verify
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = PROJECT_ROOT / "data/interim/naumann_calendar_observations.csv"
-CONFIG_PATH = (
-    PROJECT_ROOT
-    / "configs/experiments/naumann_calendar_v3_activation_development.json"
-)
 EXPECTED_DATA_SHA256 = (
     "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c"
 )
@@ -31,17 +25,6 @@ EXPECTED_DATA_SHA256 = (
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-@pytest.fixture(scope="module")
-def observations() -> pd.DataFrame:
-    return pd.read_csv(DATA_PATH)
-
-
-@pytest.fixture(scope="module")
-def completed_run(observations: pd.DataFrame) -> tuple:
-    config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    return run_calendar_v3_activation_development(observations, config=config)
 
 
 def test_public_data_identity_license_and_statistical_unit(
@@ -107,4 +90,4 @@ def test_phase8_public_reproduction(completed_run: tuple) -> None:
 def test_release_manifest_and_exclusion_rules() -> None:
     result = verify(PROJECT_ROOT)
     assert result["status"] == "passed", result
-
+    assert result["version_consistency"]["status"] == "passed"

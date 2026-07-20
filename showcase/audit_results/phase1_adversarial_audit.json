@@ -1,0 +1,231 @@
+{
+  "audit_date": "2026-07-20",
+  "audit_execution_status": "passed",
+  "audit_id": "lifetwin_phase1_adversarial_audit_v1",
+  "baseline_fairness_and_ablation": {
+    "checks": {
+      "all_methods_use_global_landmark": true,
+      "all_predictions_are_after_their_prefix": true,
+      "each_fold_assigns_all_17_conditions_once": true,
+      "each_fold_contains_training_and_target_roles": true,
+      "every_future_coordinate_has_all_methods": true,
+      "fallback_hierarchical_path_equals_v2": true,
+      "fallback_target_path_equals_v2": true,
+      "gated_selection_matches_gate": true,
+      "method_invariant_support_is_identical": true,
+      "post_hoc_tau_is_explicit": true,
+      "prediction_pack_has_no_future_outcomes": true,
+      "ready_hierarchical_path_equals_specialist": true,
+      "ready_target_path_equals_specialist": true
+    },
+    "fairness_boundary": "V2 and V3 share target conditions, prefixes, future coordinates, and training folds. The square-root baseline is target-only and therefore a lower-information conventional reference. Tau=7 remains post-hoc, so the comparison is retrospective rather than confirmatory.",
+    "fallback_future_coordinate_count": 1871,
+    "future_coordinate_count": 2163,
+    "maximum_routing_differences_pp": {
+      "fallback_hierarchical_vs_v2": 0.0,
+      "fallback_target_vs_v2": 0.0,
+      "ready_hierarchical_vs_specialist": 0.0,
+      "ready_target_vs_specialist": 0.0
+    },
+    "method_count": 6,
+    "ready_future_coordinate_count": 292,
+    "status": "passed"
+  },
+  "completion_scope": "Passing this audit means the public retrospective implementation and its guardrails survived the specified attacks. It does not validate 15-25 year accuracy, Hithium products, activation physics, or deployment.",
+  "data_identity_units_duplicates_missing": {
+    "checks": {
+      "canonical_snapshot_sha256_verified": true,
+      "capacity_loss_identity_consistent": true,
+      "capacity_retention_consistent_with_ah": true,
+      "condition_count_is_17": true,
+      "dataset_identity_exact": true,
+      "elapsed_days_consistent": true,
+      "elapsed_hours_consistent": true,
+      "in_memory_observations_match_source_file": true,
+      "logical_ids_are_condition_means": true,
+      "no_duplicate_condition_checkups": true,
+      "no_exact_duplicate_rows": true,
+      "no_missing_values": true,
+      "nominal_capacity_is_3_ah": true,
+      "published_condition_profile_exact": true,
+      "published_time_axis_exact": true,
+      "replicate_semantics_exact": true,
+      "resistance_growth_consistent_with_ohm": true,
+      "resistance_pulse_is_10_seconds": true,
+      "resistance_soc_uses_percent_units": true,
+      "resistance_values_are_ohm_scale": true,
+      "rows_per_condition_are_35": true,
+      "source_doi_exact": true,
+      "source_license_exact": true,
+      "source_license_url_exact": true,
+      "source_url_exact": true,
+      "statistical_unit_exact": true,
+      "three_replicates_per_condition": true
+    },
+    "data_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "duplicate_condition_checkup_count": 0,
+    "effective_independent_n": 17,
+    "exact_duplicate_row_count": 0,
+    "expected_data_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "guardrail": "The 595 rows are repeated checkups of 17 condition-mean trajectories; the effective independent sample size is 17, not 595 or 51.",
+    "logical_condition_count": 17,
+    "maximum_capacity_retention_consistency_error_pp": 5.684341886080802e-14,
+    "maximum_elapsed_day_conversion_error": 1.1368683772161603e-13,
+    "maximum_elapsed_hour_conversion_error": 9.094947017729282e-13,
+    "maximum_resistance_growth_consistency_error_pp": 3.3573144264664734e-13,
+    "missing_value_count": 0,
+    "observation_count": 595,
+    "published_physical_cell_count": 51,
+    "status": "passed"
+  },
+  "development_gate": {
+    "confirmation_status": "blocked_pending_independent_dataset",
+    "core_timescale_robustness_passed": true,
+    "current_dataset_relationship": "reused_and_outcomes_already_inspected",
+    "descriptive_signal_status": "mechanistic_mean_signal_with_sparse_condition_support",
+    "mean_improvement_in_both_primary_scenarios": true,
+    "reason": "The mechanism and seven-day timescale were introduced after inspecting the Phase 7 failure. Only three unique conditions trigger the gate, so mean improvement cannot establish general low-SOC validity or independent superiority.",
+    "strict_bootstrap_superiority_in_both_primary_scenarios": false
+  },
+  "failure_condition_inventory": {
+    "improvement_concentration": {
+      "focus_condition_id": "NAUMANN_CAL_T40_SOC12.5",
+      "focus_scenario_occurrence_count": 2,
+      "focus_share_of_primary_total_gain_fraction": 0.9035443849964387,
+      "focus_share_of_unseen_temperature_gain_fraction": 0.8077036532205022,
+      "independence_warning": "The same condition appears in two scenarios; those occurrences are not independent evidence."
+    },
+    "interpretation": "The primary p=10 gate shows no observed regression versus V2, but that is structurally aided by exact fallback and is not evidence of general accuracy. Absolute high-error, extrapolation, fallback, and duplicated-scenario rows remain explicitly untrusted.",
+    "landmark_prefixes": [
+      5,
+      8,
+      10,
+      14
+    ],
+    "long_horizon_row_count": 63,
+    "primary_exact_v2_fallback_row_count": 17,
+    "primary_improvement_signal_row_count": 4,
+    "primary_observed_relative_regression_count": 0,
+    "primary_observed_relative_regression_keys": [],
+    "primary_prefix_row_count": 21,
+    "primary_specialist_gate_ready_row_count": 4,
+    "primary_unique_improved_condition_count": 3,
+    "primary_unique_improved_condition_ids": [
+      "NAUMANN_CAL_T25_SOC0",
+      "NAUMANN_CAL_T40_SOC0",
+      "NAUMANN_CAL_T40_SOC12.5"
+    ],
+    "row_count": 84,
+    "status": "generated",
+    "status_counts": {
+      "development_signal_requires_external_validation": 9,
+      "fallback_only_no_v3_evidence": 72,
+      "observed_relative_failure": 3
+    },
+    "top_quartile_absolute_error_row_count": 24,
+    "unique_specialist_gate_ready_condition_count": 3,
+    "unique_specialist_gate_ready_condition_ids": [
+      "NAUMANN_CAL_T25_SOC0",
+      "NAUMANN_CAL_T40_SOC0",
+      "NAUMANN_CAL_T40_SOC12.5"
+    ]
+  },
+  "future_label_firewall_attack": {
+    "attack": {
+      "attack_count": 4,
+      "mutated_columns": [
+        "capacity_ah",
+        "capacity_retention_pct",
+        "capacity_loss_pct"
+      ],
+      "retention_shock_pp": -4.0,
+      "tested_prefix_checkups": [
+        5,
+        8,
+        10,
+        14
+      ]
+    },
+    "checks": {
+      "every_attack_changes_corresponding_scores": true,
+      "every_attack_preserves_splits": true,
+      "every_prefix_diagnostics_identical": true,
+      "every_prefix_parameters_identical": true,
+      "every_prefix_prediction_frame_identical": true,
+      "every_prefix_prediction_hash_identical": true,
+      "held_out_target_prefix_isolated_from_fold_prior": true,
+      "prediction_pack_contains_no_outcome_columns": true,
+      "primary_sensitivity_predictions_identical": true
+    },
+    "held_out_target_prefix_split_isolation": {
+      "checks": {
+        "changed_target_predictions_respond": true,
+        "fold_parameters_unchanged": true,
+        "mutated_target_is_not_a_training_condition": true,
+        "other_target_diagnostics_unchanged": true,
+        "other_target_predictions_unchanged": true,
+        "splits_unchanged": true
+      },
+      "fold_id": "40c_intermediate_soc_v3_activation_development",
+      "interpretation": "Changing one held-out target's observed prefix changed its own update but not the fold prior or predictions for other targets in that fold.",
+      "mutated_prefix_row_count": 9,
+      "mutated_target_condition_id": "NAUMANN_CAL_T40_SOC12.5",
+      "other_target_prediction_row_count": 450,
+      "prefix_checkups": 10,
+      "scenario": "v3_soc_interpolation_at_40c",
+      "status": "passed"
+    },
+    "interpretation": "At every registered landmark, labels at and after that landmark changed the scores but not that landmark's predictions, fitted parameters, diagnostics, splits, or label-free prediction hash.",
+    "maximum_absolute_prediction_delta_pp": 0.0,
+    "maximum_absolute_score_change_pp": 4.000000000000002,
+    "status": "passed"
+  },
+  "gate_boundary_and_routing": {
+    "case_count": 6,
+    "checks": {
+      "all_boundary_cases_passed": true,
+      "invalid_minimum_observation_count_rejected": true,
+      "multi_condition_input_rejected": true,
+      "negative_threshold_rejected": true,
+      "zero_positive_time_input_rejected": true
+    },
+    "status": "passed",
+    "strict_boundary_rule": "negative evidence requires minimum_loss < -threshold; equality does not activate the specialist"
+  },
+  "independent_metric_recalculation": {
+    "checks": {
+      "all_condition_metrics_match": true,
+      "all_official_groups_recomputed": true,
+      "all_summary_means_match": true,
+      "rehashed_tampered_final_marker_rejected": true,
+      "rehashed_tampered_time_axis_rejected": true,
+      "statistical_unit_is_condition_trajectory": true
+    },
+    "condition_method_group_count": 504,
+    "formula": "trapezoid(abs(prediction-truth), elapsed_days) divided by the elapsed span from the first to final future checkup",
+    "maximum_absolute_metric_differences": {
+      "final_error_pp": 0.0,
+      "final_predicted_retention_pct": 0.0,
+      "final_true_retention_pct": 0.0,
+      "future_checkup_count": 0.0,
+      "future_point_mae_pp": 0.0,
+      "trajectory_iae_pp": 0.0
+    },
+    "maximum_absolute_summary_difference": 4.440892098500626e-16,
+    "prediction_coordinate_tamper_attacks": {
+      "elapsed_days_rehashed_and_rejected": true,
+      "final_marker_rehashed_and_rejected": true
+    },
+    "status": "passed"
+  },
+  "model_validation_status": "not_confirmed",
+  "prohibited_claims": [
+    "confirmatory_superiority_on_naumann_reuse",
+    "preregistered_tau_selection",
+    "general_low_soc_mechanism_validation",
+    "independent_external_validation",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

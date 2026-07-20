@@ -38,3 +38,27 @@
 
 发布版的目标是“评委可理解、核心结果可复算、边界可检查”，不是完整复制本地
 研究归档。
+
+## Phase 1 审计增量
+
+`v0.10.0` 在原 Phase 8 结果之外新增对抗性审计代码、机器可读审计产物、
+失败条件表、评分完整性测试、门控故障注入测试和跨平台一键复现入口。发布清单
+同时冻结这些证据文件的 SHA-256。被 Git 忽略的 `artifacts/` 仅用于本地或 CI
+重跑结果，不属于 GitHub 发布内容，也不会覆盖已发布证据。
+
+fresh clone 使用 Python 3.12.x，并以 `requirements/reproduction.txt` 约束安装依赖后使用：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\reproduce_public_release.py --mode full --output artifacts\reproduction
+```
+
+Linux/macOS：
+
+```bash
+.venv/bin/python scripts/reproduce_public_release.py --mode full --output artifacts/reproduction
+```
+
+命令先验证 Git 跟踪文件和冻结哈希，再运行 Phase 8、Phase 1 审计、无界面绘图与
+完整测试；失败时不发布半成品输出目录。
+清单所列的发布证据文件必须精确匹配 SHA-256；跨平台数值重算使用 `1e-8` 容差，
+派生模型状态哈希验证格式、行间等价类结构与同运行内部一致性。

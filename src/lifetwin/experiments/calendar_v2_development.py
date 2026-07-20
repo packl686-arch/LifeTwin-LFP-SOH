@@ -43,9 +43,11 @@ EXPECTED_DATASET_SNAPSHOT_ID = (
 )
 EXPECTED_LABEL_VERSION = "published_condition_mean_capacity_retention_v1"
 EXPECTED_PREFIXES = (5, 8, 10, 14)
+EXPECTED_CHECKUP_INDICES = tuple(range(35))
 PRIMARY_PREFIX = 10
 TEMPERATURE_SCENARIO = "v2_unseen_temperature_level"
 SOC_SCENARIO = "v2_soc_interpolation_at_40c"
+SOC_FOLD_ID = "40c_intermediate_soc_v2_development"
 GATE_SCENARIOS = (TEMPERATURE_SCENARIO, SOC_SCENARIO)
 SOC_TARGET_CONDITIONS = (
     "NAUMANN_CAL_T40_SOC12.5",
@@ -374,6 +376,22 @@ def calendar_v2_prediction_sha256(predictions: pd.DataFrame) -> str:
         raise ValueError("Calendar V2 prediction keys must be unique")
     if set(predictions["method"].astype(str)) != set(METHOD_NAMES):
         raise ValueError("Calendar V2 prediction pack must contain every method")
+    support_columns = [
+        column for column in PREDICTION_KEY_COLUMNS if column != "method"
+    ]
+    methods_by_coordinate = predictions.groupby(
+        support_columns,
+        sort=False,
+        dropna=False,
+    )["method"].agg(lambda values: frozenset(values.astype(str)))
+    expected_methods = frozenset(METHOD_NAMES)
+    if not methods_by_coordinate.map(
+        lambda methods: methods == expected_methods
+    ).all():
+        raise ValueError(
+            "Calendar V2 prediction support must contain every method at "
+            "every future coordinate"
+        )
     for column in ("training_state_sha256", "prediction_state_sha256"):
         if not predictions[column].astype(str).str.fullmatch(r"[0-9a-f]{64}").all():
             raise ValueError(f"Invalid Calendar V2 state hash column: {column}")
@@ -587,6 +605,279 @@ def _target_prediction_state(
     return pd.DataFrame(rows), diagnostics
 
 
+def _validated_scoring_frame(
+    predictions: pd.DataFrame,
+    observations: pd.DataFrame,
+    *,
+    grouping_columns: list[str],
+) -> pd.DataFrame:
+    _validate_frozen_protocol_target_coverage(predictions, observations)
+    required_scoring_columns = set(grouping_columns) | {
+        "target_checkup_index",
+        "elapsed_days",
+        "predicted_capacity_retention_pct",
+        "is_final_checkup",
+    }
+    if predictions[list(required_scoring_columns)].isna().any().any():
+        raise ValueError("Calendar V2 scoring fields must be non-null")
+    numeric_columns = [
+        "prefix_checkups",
+        "target_checkup_index",
+        "prefix_end_checkup_index",
+        "prefix_end_days",
+        "temperature_c",
+        "storage_soc_fraction",
+        "elapsed_days",
+        "predicted_capacity_retention_pct",
+        "training_support_days",
+        "validation_horizon_days",
+        "time_extrapolation_ratio",
+    ]
+    for column in numeric_columns:
+        values = pd.to_numeric(predictions[column], errors="coerce").to_numpy(
+            dtype=float
+        )
+        if not np.isfinite(values).all():
+            raise ValueError(f"Calendar V2 prediction column must be finite: {column}")
+    for column in (
+        "prefix_checkups",
+        "target_checkup_index",
+        "prefix_end_checkup_index",
+    ):
+        values = pd.to_numeric(predictions[column], errors="coerce").to_numpy(
+            dtype=float
+        )
+        if not np.equal(values, np.floor(values)).all():
+            raise ValueError(f"Calendar V2 prediction column must be integral: {column}")
+    if not pd.api.types.is_bool_dtype(predictions["is_final_checkup"]):
+        raise ValueError("Calendar V2 final-checkup flags must be boolean")
+
+    truth = observations[
+        [
+            "condition_id",
+            "checkup_index",
+            "elapsed_days",
+            "temperature_c",
+            "storage_soc_fraction",
+            "capacity_retention_pct",
+        ]
+    ].rename(
+        columns={
+            "condition_id": "target_condition_id",
+            "checkup_index": "target_checkup_index",
+            "elapsed_days": "truth_elapsed_days",
+            "temperature_c": "truth_temperature_c",
+            "storage_soc_fraction": "truth_storage_soc_fraction",
+            "capacity_retention_pct": "true_capacity_retention_pct",
+        }
+    )
+    if truth["target_condition_id"].isna().any():
+        raise ValueError("Calendar V2 truth condition ids must be non-null")
+    if truth.duplicated(["target_condition_id", "target_checkup_index"]).any():
+        raise ValueError("Calendar V2 truth coordinates must be unique")
+    truth_numeric = truth[
+        [
+            "target_checkup_index",
+            "truth_elapsed_days",
+            "truth_temperature_c",
+            "truth_storage_soc_fraction",
+            "true_capacity_retention_pct",
+        ]
+    ].apply(pd.to_numeric, errors="coerce")
+    if not np.isfinite(truth_numeric.to_numpy(dtype=float)).all():
+        raise ValueError("Calendar V2 truth coordinates and outcomes must be finite")
+    if not np.equal(
+        truth_numeric["target_checkup_index"],
+        np.floor(truth_numeric["target_checkup_index"]),
+    ).all():
+        raise ValueError("Calendar V2 truth checkup indices must be integral")
+    truth[truth_numeric.columns] = truth_numeric
+
+    target_ids = set(predictions["target_condition_id"].astype(str))
+    relevant_truth = truth.loc[
+        truth["target_condition_id"].astype(str).isin(target_ids)
+    ].copy()
+    if set(relevant_truth["target_condition_id"].astype(str)) != target_ids:
+        raise ValueError("Every Calendar V2 target condition must exist in truth")
+    for _, condition in relevant_truth.groupby("target_condition_id", sort=True):
+        indices = sorted(
+            pd.to_numeric(condition["target_checkup_index"]).astype(int).tolist()
+        )
+        if indices != list(EXPECTED_CHECKUP_INDICES):
+            raise ValueError(
+                "Calendar V2 truth must contain checkup indices range(0, 35)"
+            )
+
+    scored = predictions.merge(
+        truth,
+        on=["target_condition_id", "target_checkup_index"],
+        how="left",
+        validate="many_to_one",
+        indicator="_future_truth_merge",
+    )
+    if (scored["_future_truth_merge"] != "both").any() or scored[
+        "true_capacity_retention_pct"
+    ].isna().any():
+        raise ValueError("Every Calendar V2 prediction must match one future outcome")
+    scored = scored.drop(columns="_future_truth_merge")
+
+    for prediction_column, truth_column in (
+        ("elapsed_days", "truth_elapsed_days"),
+        ("temperature_c", "truth_temperature_c"),
+        ("storage_soc_fraction", "truth_storage_soc_fraction"),
+    ):
+        matches = np.isclose(
+            pd.to_numeric(scored[prediction_column]).to_numpy(dtype=float),
+            pd.to_numeric(scored[truth_column]).to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        if not matches.all():
+            raise ValueError(
+                f"Calendar V2 prediction coordinate disagrees with truth: "
+                f"{prediction_column}"
+            )
+
+    prefixes = pd.to_numeric(scored["prefix_checkups"]).astype(int)
+    target_indices = pd.to_numeric(scored["target_checkup_index"]).astype(int)
+    prefix_end_indices = pd.to_numeric(
+        scored["prefix_end_checkup_index"]
+    ).astype(int)
+    if not prefixes.isin(EXPECTED_PREFIXES).all():
+        raise ValueError("Calendar V2 prediction uses an unsupported prefix")
+    if (target_indices < prefixes).any():
+        raise ValueError("Calendar V2 prediction target precedes its prefix")
+    if not (prefix_end_indices == prefixes - 1).all():
+        raise ValueError("Calendar V2 prefix-end index disagrees with prefix")
+
+    prefix_truth = truth[
+        ["target_condition_id", "target_checkup_index", "truth_elapsed_days"]
+    ].rename(
+        columns={
+            "target_checkup_index": "prefix_end_checkup_index",
+            "truth_elapsed_days": "truth_prefix_end_days",
+        }
+    )
+    scored = scored.merge(
+        prefix_truth,
+        on=["target_condition_id", "prefix_end_checkup_index"],
+        how="left",
+        validate="many_to_one",
+    )
+    if not np.isclose(
+        pd.to_numeric(scored["prefix_end_days"]).to_numpy(dtype=float),
+        pd.to_numeric(scored["truth_prefix_end_days"]).to_numpy(dtype=float),
+        rtol=0.0,
+        atol=1e-12,
+    ).all():
+        raise ValueError("Calendar V2 prefix-end day disagrees with truth")
+
+    truth_horizons = relevant_truth.groupby("target_condition_id", sort=True)[
+        "truth_elapsed_days"
+    ].max()
+    expected_horizons = scored["target_condition_id"].map(truth_horizons)
+    if not np.isclose(
+        pd.to_numeric(scored["validation_horizon_days"]).to_numpy(dtype=float),
+        pd.to_numeric(expected_horizons).to_numpy(dtype=float),
+        rtol=0.0,
+        atol=1e-12,
+    ).all():
+        raise ValueError("Calendar V2 validation horizon disagrees with truth")
+    expected_ratios = (
+        pd.to_numeric(scored["validation_horizon_days"])
+        / pd.to_numeric(scored["training_support_days"])
+    )
+    if not np.isclose(
+        pd.to_numeric(scored["time_extrapolation_ratio"]).to_numpy(dtype=float),
+        expected_ratios.to_numpy(dtype=float),
+        rtol=0.0,
+        atol=1e-12,
+    ).all():
+        raise ValueError("Calendar V2 extrapolation ratio is inconsistent")
+
+    for _, group in scored.groupby(grouping_columns, sort=True, dropna=False):
+        prefix_values = pd.to_numeric(group["prefix_checkups"]).astype(int).unique()
+        if len(prefix_values) != 1:
+            raise ValueError("Calendar V2 trajectory must use one prefix")
+        expected_future = list(range(int(prefix_values[0]), 35))
+        actual_future = sorted(
+            pd.to_numeric(group["target_checkup_index"]).astype(int).tolist()
+        )
+        if actual_future != expected_future:
+            raise ValueError(
+                "Calendar V2 trajectory must contain every future checkup in "
+                "range(prefix, 35)"
+            )
+
+    truth_final_indices = relevant_truth.groupby("target_condition_id", sort=True)[
+        "target_checkup_index"
+    ].max()
+    scored_target_indices = pd.to_numeric(scored["target_checkup_index"]).astype(int)
+    expected_final = scored_target_indices == scored["target_condition_id"].map(
+        truth_final_indices
+    ).astype(int)
+    if not (scored["is_final_checkup"].to_numpy(dtype=bool) == expected_final).all():
+        raise ValueError("Calendar V2 final-checkup flag disagrees with truth")
+    scored["truth_is_final_checkup"] = expected_final
+    return scored
+
+
+def _validate_frozen_protocol_target_coverage(
+    predictions: pd.DataFrame,
+    observations: pd.DataFrame,
+) -> None:
+    observed_scenarios = set(predictions["scenario"].astype(str))
+    frozen_scenarios = set(GATE_SCENARIOS)
+    profile = observations[
+        ["condition_id", "temperature_c", "storage_soc_fraction"]
+    ].drop_duplicates()
+    observation_ids = set(profile["condition_id"].astype(str))
+    soc_targets = frozenset(SOC_TARGET_CONDITIONS)
+    if not soc_targets.issubset(observation_ids):
+        if not observed_scenarios.intersection(frozen_scenarios):
+            return
+        raise ValueError(
+            "Calendar V2 frozen SOC targets are absent from scoring truth"
+        )
+
+    expected_groups: dict[tuple[str, str, int], frozenset[str]] = {}
+    for temperature, rows in profile.groupby("temperature_c", sort=True):
+        targets = frozenset(rows["condition_id"].astype(str))
+        fold_id = f"temperature_c={float(temperature):g}"
+        for prefix in EXPECTED_PREFIXES:
+            expected_groups[(TEMPERATURE_SCENARIO, fold_id, prefix)] = targets
+    for prefix in EXPECTED_PREFIXES:
+        expected_groups[(SOC_SCENARIO, SOC_FOLD_ID, prefix)] = soc_targets
+
+    target_rows = predictions[
+        ["scenario", "fold_id", "prefix_checkups", "target_condition_id"]
+    ].copy()
+    target_rows["scenario"] = target_rows["scenario"].astype(str)
+    target_rows["fold_id"] = target_rows["fold_id"].astype(str)
+    target_rows["prefix_checkups"] = pd.to_numeric(
+        target_rows["prefix_checkups"], errors="coerce"
+    )
+    target_rows["target_condition_id"] = target_rows[
+        "target_condition_id"
+    ].astype(str)
+    actual_groups = {
+        (str(scenario), str(fold_id), int(prefix)): frozenset(
+            group["target_condition_id"]
+        )
+        for (scenario, fold_id, prefix), group in target_rows.groupby(
+            ["scenario", "fold_id", "prefix_checkups"],
+            sort=False,
+            dropna=False,
+        )
+        if np.isfinite(prefix) and float(prefix).is_integer()
+    }
+    if actual_groups != expected_groups:
+        raise ValueError(
+            "Calendar V2 prediction target coverage does not match the frozen "
+            "scenario/fold/prefix protocol"
+        )
+
+
 def score_calendar_v2_predictions(
     predictions: pd.DataFrame,
     observations: pd.DataFrame,
@@ -595,32 +886,6 @@ def score_calendar_v2_predictions(
 ) -> pd.DataFrame:
     if calendar_v2_prediction_sha256(predictions) != frozen_prediction_sha256:
         raise ValueError("Frozen Calendar V2 prediction hash does not match content")
-    outcomes = observations[
-        ["condition_id", "checkup_index", "capacity_retention_pct"]
-    ].rename(
-        columns={
-            "condition_id": "target_condition_id",
-            "checkup_index": "target_checkup_index",
-            "capacity_retention_pct": "true_capacity_retention_pct",
-        }
-    )
-    scored = predictions.merge(
-        outcomes,
-        on=["target_condition_id", "target_checkup_index"],
-        how="left",
-        validate="many_to_one",
-        indicator=True,
-    )
-    if (scored["_merge"] != "both").any() or scored[
-        "true_capacity_retention_pct"
-    ].isna().any():
-        raise ValueError("Every Calendar V2 prediction must match one future outcome")
-    scored = scored.drop(columns="_merge")
-    scored["prediction_error_pp"] = (
-        scored["predicted_capacity_retention_pct"]
-        - scored["true_capacity_retention_pct"]
-    )
-
     grouping = [
         "scenario",
         "fold_id",
@@ -631,15 +896,24 @@ def score_calendar_v2_predictions(
         "training_state_sha256",
         "prediction_state_sha256",
     ]
+    scored = _validated_scoring_frame(
+        predictions,
+        observations,
+        grouping_columns=grouping,
+    )
+    scored["prediction_error_pp"] = (
+        scored["predicted_capacity_retention_pct"]
+        - scored["true_capacity_retention_pct"]
+    )
     rows: list[dict[str, object]] = []
     for keys, group in scored.groupby(grouping, sort=True):
-        ordered = group.sort_values("elapsed_days", kind="stable")
-        elapsed = ordered["elapsed_days"].to_numpy(dtype=float)
+        ordered = group.sort_values("truth_elapsed_days", kind="stable")
+        elapsed = ordered["truth_elapsed_days"].to_numpy(dtype=float)
         error = ordered["prediction_error_pp"].to_numpy(dtype=float)
         absolute_error = np.abs(error)
         if len(elapsed) < 2 or elapsed[-1] <= elapsed[0]:
             raise ValueError("Trajectory IAE requires at least two future checkups")
-        final = ordered.loc[ordered["is_final_checkup"]]
+        final = ordered.loc[ordered["truth_is_final_checkup"]]
         if len(final) != 1:
             raise ValueError("Each Calendar V2 trajectory requires one final point")
         final_row = final.iloc[0]

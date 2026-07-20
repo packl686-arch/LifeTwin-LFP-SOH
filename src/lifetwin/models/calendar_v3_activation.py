@@ -395,6 +395,10 @@ def activation_mechanism_gate(
     if negative_loss_threshold_pp < 0.0:
         raise ValueError("Negative-loss threshold is expressed as a non-negative margin")
     positive = ordered.loc[ordered["elapsed_days"] > 0.0]
+    if positive.empty:
+        raise ValueError(
+            "Activation mechanism gate requires at least one positive-time point"
+        )
     minimum_loss = float(positive["capacity_loss_pct"].min())
     negative_evidence = minimum_loss < -float(negative_loss_threshold_pp)
     ready = bool(
