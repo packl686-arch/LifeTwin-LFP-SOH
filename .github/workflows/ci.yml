@@ -45,7 +45,12 @@ jobs:
           python scripts/reproduce_public_release.py
           --mode full
           --output artifacts/reproduction
+          --retain-failed-staging
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: reproduction-${{ matrix.os }}
-          path: artifacts/reproduction
+          path: |
+            artifacts/reproduction
+            artifacts/.reproduction.staging-*
+          if-no-files-found: error

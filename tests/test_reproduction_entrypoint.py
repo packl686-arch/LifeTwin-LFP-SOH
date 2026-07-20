@@ -375,6 +375,46 @@ def test_failed_reproduction_leaves_no_partial_output(
     assert not list(output.parent.glob(".reproduction.staging-*"))
 
 
+def test_failed_reproduction_can_retain_unpublished_diagnostics(
+    writable_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = writable_root / "artifacts/reproduction"
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._preflight",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._release_verification",
+        lambda *_: {"status": "passed"},
+    )
+
+    def fail_command(*_args: object, **_kwargs: object) -> dict[str, object]:
+        staging = Path(_kwargs["environment"]["LIFETWIN_TEST_SCRATCH"]).parent
+        (staging / "diagnostic.txt").write_text(
+            "failure evidence\n", encoding="utf-8"
+        )
+        raise ReproductionError("intentional failure")
+
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._run_command", fail_command
+    )
+    with pytest.raises(ReproductionError, match="diagnostic staging retained"):
+        reproduce(
+            writable_root,
+            output,
+            "tests",
+            retain_failed_staging=True,
+        )
+
+    retained = list(output.parent.glob(".reproduction.staging-*"))
+    assert not output.exists()
+    assert len(retained) == 1
+    assert (retained[0] / "diagnostic.txt").read_text(encoding="utf-8") == (
+        "failure evidence\n"
+    )
+
+
 def test_phase1_audit_summary_and_file_inventory(writable_root: Path) -> None:
     audit_root = writable_root / "phase1_audit"
     audit_root.mkdir()

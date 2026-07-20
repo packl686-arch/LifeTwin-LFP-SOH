@@ -7,7 +7,7 @@
   "maximum_file_size_bytes": 5000000,
   "frozen_files_sha256": {
     ".gitattributes": "3117a21781152323de8cb43c53038b1fb4e2ec88d08c29fcd85c8744045b1d7e",
-    ".github/workflows/ci.yml": "9bf3400ef70d5f2f87daa6356c21e2c99563611c526c54b3ae0db951404e0f61",
+    ".github/workflows/ci.yml": "367de60d104fe58b47d6f399815ea93396295afdd97c50e9c051d81225459733",
     ".gitignore": "e16c2f928b7b5f415ce1f1e1f6d250cfe7ff28ea4351ad866ed145c720223802",
     "CITATION.cff": "78b5a70dc8804b9bfdb1184d132cf22828dcc89136a9d95397966e13464064c8",
     "pyproject.toml": "9a48113733c1cf6d30299f928fddb9654edf7ea2711eb50748b7f5c7659c42a4",
@@ -33,7 +33,7 @@
     "scripts/run_calendar_v2_uncertainty_development.py": "8f2bd192d64056b5734a7275e746886d3d745d0f8e82f101a104a9eb94ae5bb8",
     "scripts/run_calendar_v3_activation_development.py": "f1b1a40923350f45ac74ff36dfa657baea9573b914ced3313f13099c23abc32a",
     "scripts/run_phase1_adversarial_audit.py": "c41cbba6b5ed06fac33d9ab572648560faf5a1e1fe3dd6fb47dd30d406fbf1b2",
-    "scripts/reproduce_public_release.py": "aec69823860b6fc3a699de57a1dd15efa2a1e47525259d6fb8e06d2ea79005ec",
+    "scripts/reproduce_public_release.py": "dc6bb62c220dc00b1c0a3be8b6f3e1b714e2a1e9d0bf6018a514b9652a393b1c",
     "scripts/verify_public_release.py": "a9ece5ac2c0f4e96d7b6c9d34e5a7e38893c0155e761e8bf7276cefdedb6f14a",
     "showcase/analyze_phase8_results.py": "6b7185acf83d6a6d6e57d541c7dd1af891de5dff8ff80149b3d78912d03b826c",
     "showcase/results/comparison_summary.csv": "a4ee3a2ddd1749d796d53ba815489c24eab8dabfe66ba212bf861ec90ef29dd6",
@@ -56,7 +56,7 @@
     "tests/test_prediction_scoring_integrity.py": "f9311d8d085f11c44a1448283e537ba4f18efa3e37e6d0c221fae2b328519310",
     "tests/test_calendar_v3_gate_fallback.py": "43ae6e9fd7a121da4078e46e8b1ac85dce92634b29ec64da508c8193b3bd503c",
     "tests/test_public_release.py": "cf82856d6696d01768cb7210216d61781750506fc5de17a31761b7ad05f8e6a4",
-    "tests/test_reproduction_entrypoint.py": "9ee393c4c86ad663b8232aa93d0ab7cab31622bdceced21f6303c6638f37bceb"
+    "tests/test_reproduction_entrypoint.py": "c76efd15aae9ff20a409673a12c36618b976e9a8bd04528d61e4ab9e7072d91e"
   },
   "forbidden_release_globs": [
     "artifacts/**",

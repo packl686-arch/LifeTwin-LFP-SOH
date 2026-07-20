@@ -705,7 +705,13 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         )
 
 
-def reproduce(project_root: Path, output: Path, mode: str) -> dict[str, object]:
+def reproduce(
+    project_root: Path,
+    output: Path,
+    mode: str,
+    *,
+    retain_failed_staging: bool = False,
+) -> dict[str, object]:
     project_root = project_root.resolve()
     output = output.resolve()
     if output.exists():
@@ -851,6 +857,10 @@ def reproduce(project_root: Path, output: Path, mode: str) -> dict[str, object]:
         os.replace(staging, output)
         return summary
     except BaseException as error:
+        if retain_failed_staging:
+            raise ReproductionError(
+                f"{error}\nFailed diagnostic staging retained at: {staging}"
+            ) from error
         try:
             if staging.exists():
                 _rmtree(staging)
@@ -880,10 +890,23 @@ def main() -> int:
         type=Path,
         default=Path("artifacts/reproduction"),
     )
+    parser.add_argument(
+        "--retain-failed-staging",
+        action="store_true",
+        help=(
+            "retain the hidden, unpublished staging directory after failure "
+            "for CI diagnostics"
+        ),
+    )
     parser.add_argument("--project-root", type=Path, default=PROJECT_ROOT)
     args = parser.parse_args()
     try:
-        summary = reproduce(args.project_root, args.output, args.mode)
+        summary = reproduce(
+            args.project_root,
+            args.output,
+            args.mode,
+            retain_failed_staging=args.retain_failed_staging,
+        )
     except Exception as error:
         print(
             json.dumps(
