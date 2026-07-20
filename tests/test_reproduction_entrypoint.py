@@ -346,9 +346,8 @@ def test_failed_reproduction_leaves_no_partial_output(
     def fail_command(*_args: object, **_kwargs: object) -> dict[str, object]:
         environment = _kwargs["environment"]
         scratch = Path(environment["LIFETWIN_TEST_SCRATCH"])
-        readonly_root = scratch / "fixture" / ".git" / "objects"
-        readonly_root.mkdir(parents=True)
-        readonly = readonly_root / "object"
+        scratch.mkdir(parents=True)
+        readonly = scratch / "readonly"
         readonly.write_bytes(b"git object")
         readonly.chmod(stat.S_IREAD)
         raise ReproductionError("intentional failure")

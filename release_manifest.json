@@ -56,7 +56,7 @@
     "tests/test_prediction_scoring_integrity.py": "f9311d8d085f11c44a1448283e537ba4f18efa3e37e6d0c221fae2b328519310",
     "tests/test_calendar_v3_gate_fallback.py": "43ae6e9fd7a121da4078e46e8b1ac85dce92634b29ec64da508c8193b3bd503c",
     "tests/test_public_release.py": "cf82856d6696d01768cb7210216d61781750506fc5de17a31761b7ad05f8e6a4",
-    "tests/test_reproduction_entrypoint.py": "bf903c2f9f87c7760c875d3f2ae6e901a158ba3e20ce63e3c50776d580d2e06d"
+    "tests/test_reproduction_entrypoint.py": "cfbb8516c1aeb644516941eac269151855c60c5a5764bd2ad396bc7e913676ed"
   },
   "forbidden_release_globs": [
     "artifacts/**",
