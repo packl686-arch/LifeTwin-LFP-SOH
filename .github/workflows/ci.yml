@@ -53,4 +53,5 @@ jobs:
           path: |
             artifacts/reproduction
             artifacts/.reproduction.staging-*
+          include-hidden-files: true
           if-no-files-found: error

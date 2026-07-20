@@ -7,7 +7,7 @@
   "maximum_file_size_bytes": 5000000,
   "frozen_files_sha256": {
     ".gitattributes": "3117a21781152323de8cb43c53038b1fb4e2ec88d08c29fcd85c8744045b1d7e",
-    ".github/workflows/ci.yml": "367de60d104fe58b47d6f399815ea93396295afdd97c50e9c051d81225459733",
+    ".github/workflows/ci.yml": "5fba59ddecb0f6a30bc510695586a258367fffa0f43d82ac46dd2cffac64c033",
     ".gitignore": "e16c2f928b7b5f415ce1f1e1f6d250cfe7ff28ea4351ad866ed145c720223802",
     "CITATION.cff": "78b5a70dc8804b9bfdb1184d132cf22828dcc89136a9d95397966e13464064c8",
     "pyproject.toml": "9a48113733c1cf6d30299f928fddb9654edf7ea2711eb50748b7f5c7659c42a4",
