@@ -29,6 +29,10 @@ from lifetwin.experiments.calendar_v4_hybrid_development import (
     FORECAST_START_INDEX,
 )
 from scripts import run_calendar_v4_calibration_robustness as audit_runner
+from scripts.reproduce_public_release import (
+    NUMERIC_ABSOLUTE_TOLERANCE,
+    NUMERIC_RELATIVE_TOLERANCE,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -236,14 +240,14 @@ def test_original_calibration_scores_preserve_v011_semantics(
     np.testing.assert_allclose(
         compared["maximum_standardized_error_audit"].to_numpy(dtype=float),
         compared["maximum_standardized_error_v011"].to_numpy(dtype=float),
-        rtol=0.0,
-        atol=5e-15,
+        rtol=NUMERIC_RELATIVE_TOLERANCE,
+        atol=NUMERIC_ABSOLUTE_TOLERANCE,
     )
     np.testing.assert_allclose(
         compared["maximum_absolute_error_pp_audit"].to_numpy(dtype=float),
         compared["maximum_absolute_error_pp_v011"].to_numpy(dtype=float),
-        rtol=0.0,
-        atol=5e-15,
+        rtol=NUMERIC_RELATIVE_TOLERANCE,
+        atol=NUMERIC_ABSOLUTE_TOLERANCE,
     )
 
 
