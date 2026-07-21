@@ -19,6 +19,7 @@ from lifetwin.models.calendar_v3_activation import (
 RESIDUAL_BASIS_NAME = "landmark_anchored_bounded_ridge_v1"
 _COVARIANCE_SYMMETRY_ATOL = 1e-12
 _COVARIANCE_PSD_ATOL = 1e-10
+RESIDUAL_SUPPORT_BOUNDARY_ATOL_DAYS = 1e-12
 
 
 class ResidualSupportError(ValueError):
@@ -311,10 +312,13 @@ def landmark_anchored_residual_basis(
         name="support_horizon_days",
     )
     horizon = _finite_vector(horizon_days, name="horizon_days", allow_empty=True)
-    if np.any(horizon < 0.0) or np.any(horizon > support):
+    if np.any(horizon < -RESIDUAL_SUPPORT_BOUNDARY_ATOL_DAYS) or np.any(
+        horizon > support + RESIDUAL_SUPPORT_BOUNDARY_ATOL_DAYS
+    ):
         raise ResidualSupportError(
             "Residual horizons must remain within [0, support_horizon_days]"
         )
+    horizon = np.clip(horizon, 0.0, support)
     normalized = horizon / support
     return np.column_stack(
         (

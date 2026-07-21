@@ -196,6 +196,14 @@ def test_residual_model_refuses_extrapolation_outside_declared_support() -> None
     )
     with pytest.raises(ResidualSupportError, match="within"):
         predict_bounded_residual_correction(fitted, [5.0001])
+
+    boundary = predict_bounded_residual_correction(
+        fitted,
+        [np.nextafter(0.0, -np.inf), np.nextafter(5.0, np.inf)],
+    )
+    exact = predict_bounded_residual_correction(fitted, [0.0, 5.0])
+    assert boundary == exact
+
     with pytest.raises(ValueError, match="maximum observed training horizon"):
         fit_bounded_residual_correction(
             [0.0, 2.0, 6.0],

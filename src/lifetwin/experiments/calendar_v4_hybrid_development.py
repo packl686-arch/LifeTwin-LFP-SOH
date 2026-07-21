@@ -10,6 +10,8 @@ import pandas as pd
 from scipy.spatial import ConvexHull
 
 from lifetwin.data.naumann import (
+    EXPECTED_CALENDAR_ELAPSED_TIME_S,
+    EXPECTED_CALENDAR_PROFILE,
     NAUMANN_CALENDAR_DATASET_ID,
     NAUMANN_STATISTICAL_UNIT,
     validate_naumann_calendar_observations,
@@ -216,7 +218,7 @@ CONDITION_METRIC_COLUMNS = [
 
 
 @dataclass(frozen=True)
-class _ConditionPrediction:
+class CalendarV4ConditionPrediction:
     condition_id: str
     prefix_end_days: float
     future: pd.DataFrame
@@ -230,6 +232,23 @@ class _ConditionPrediction:
     residual_support_ok: bool
     residual_cap_hit: bool
     prediction_state_sha256: str
+
+
+@dataclass(frozen=True)
+class CalendarV4ReferenceState:
+    """Fitted public-data state used by both the audit and prefix inference."""
+
+    power_prior: object
+    activation_prior: object
+    residual_fit: object
+    residual_crossfit: pd.DataFrame
+    training_state_sha256: str
+    calibration_condition_scores: pd.DataFrame
+    calibration_quantiles: pd.DataFrame
+    calibration_state_sha256: str
+    domain_hull: ConvexHull
+    condition_splits: pd.DataFrame
+    config_sha256: str
 
 
 def default_calendar_v4_hybrid_config() -> dict[str, object]:
@@ -466,13 +485,7 @@ def _stress_design(
     return np.vstack(rows)
 
 
-def validate_calendar_v4_split_and_rank(observations: pd.DataFrame) -> pd.DataFrame:
-    expected = set(TRAINING_CONDITION_IDS) | set(CALIBRATION_CONDITION_IDS) | set(
-        TEST_CONDITION_IDS
-    )
-    observed = set(observations["condition_id"].astype(str))
-    if expected != observed or len(expected) != 17:
-        raise ValueError("The locked V4 split must partition all 17 conditions")
+def _fixed_calendar_v4_splits() -> pd.DataFrame:
     roles = [
         *(dict(condition_id=value, role="training") for value in TRAINING_CONDITION_IDS),
         *(
@@ -484,6 +497,14 @@ def validate_calendar_v4_split_and_rank(observations: pd.DataFrame) -> pd.DataFr
     splits = pd.DataFrame(roles)
     if splits["condition_id"].duplicated().any():
         raise ValueError("A condition cannot occupy multiple V4 roles")
+    return splits.sort_values("condition_id", kind="stable").reset_index(drop=True)
+
+
+def _validate_calendar_v4_training_rank(observations: pd.DataFrame) -> None:
+    observed = set(observations["condition_id"].astype(str))
+    missing = sorted(set(TRAINING_CONDITION_IDS) - observed)
+    if missing:
+        raise ValueError(f"Missing locked V4 training conditions: {missing}")
 
     full_design = _stress_design(observations, TRAINING_CONDITION_IDS)
     if full_design.shape != (7, 5) or np.linalg.matrix_rank(full_design) != 5:
@@ -495,7 +516,54 @@ def validate_calendar_v4_split_and_rank(observations: pd.DataFrame) -> pd.DataFr
             raise ValueError(
                 f"LOCO stress design must retain rank five for {source_id}"
             )
-    return splits.sort_values("condition_id", kind="stable").reset_index(drop=True)
+
+
+def _validate_calendar_v4_reference_grid(observations: pd.DataFrame) -> None:
+    """Verify canonical identities and time axes for the 13 outcome references."""
+
+    reference_ids = set(TRAINING_CONDITION_IDS) | set(CALIBRATION_CONDITION_IDS)
+    observed = set(observations["condition_id"].astype(str))
+    if observed != reference_ids:
+        raise ValueError("Calendar V4 reference conditions are incomplete")
+    expected_elapsed = np.asarray(EXPECTED_CALENDAR_ELAPSED_TIME_S, dtype=float)
+    for condition_id in sorted(reference_ids):
+        condition = _condition_frame(observations, condition_id)
+        expected_temperature, expected_soc = EXPECTED_CALENDAR_PROFILE[condition_id]
+        expected_identity = (
+            expected_temperature,
+            expected_soc,
+            f"{condition_id}_TEST",
+            f"TP_{expected_temperature:g}\N{DEGREE SIGN}C,{100.0 * expected_soc:g}%SOC",
+        )
+        initial = condition.iloc[0]
+        observed_identity = (
+            float(initial["temperature_c"]),
+            float(initial["storage_soc_fraction"]),
+            str(initial["test_id"]),
+            str(initial["source_cell_id"]),
+        )
+        if observed_identity != expected_identity:
+            raise ValueError(
+                "Calendar V4 reference identity mismatch for "
+                f"{condition_id}: expected={expected_identity}, "
+                f"observed={observed_identity}"
+            )
+        elapsed = condition["elapsed_time_s"].to_numpy(dtype=float)
+        if not np.allclose(elapsed, expected_elapsed, rtol=0.0, atol=1e-6):
+            raise ValueError(
+                f"Calendar V4 reference time axis mismatch for {condition_id}"
+            )
+
+
+def validate_calendar_v4_split_and_rank(observations: pd.DataFrame) -> pd.DataFrame:
+    expected = set(TRAINING_CONDITION_IDS) | set(CALIBRATION_CONDITION_IDS) | set(
+        TEST_CONDITION_IDS
+    )
+    observed = set(observations["condition_id"].astype(str))
+    if expected != observed or len(expected) != 17:
+        raise ValueError("The locked V4 split must partition all 17 conditions")
+    _validate_calendar_v4_training_rank(observations)
+    return _fixed_calendar_v4_splits()
 
 
 def _domain_hull(observations: pd.DataFrame) -> ConvexHull:
@@ -683,7 +751,7 @@ def _predict_condition(
     training_state_sha256: str,
     config: Mapping[str, object],
     domain_hull: ConvexHull,
-) -> _ConditionPrediction:
+) -> CalendarV4ConditionPrediction:
     ordered = condition.sort_values("checkup_index", kind="stable").reset_index(
         drop=True
     )
@@ -809,7 +877,7 @@ def _predict_condition(
         "predicted_retention_pct": [float(value) for value in predicted],
         "predictive_sd_pp": [float(value) for value in predictive_sd],
     }
-    return _ConditionPrediction(
+    return CalendarV4ConditionPrediction(
         condition_id=condition_id,
         prefix_end_days=prefix_end_days,
         future=future,
@@ -1022,6 +1090,101 @@ def _build_calibration(
     }
     calibration_hash = _canonical_json_sha256(calibration_state)
     return scores, quantiles, calibration_hash
+
+
+def fit_calendar_v4_reference_state(
+    observations: pd.DataFrame,
+    *,
+    config: Mapping[str, object],
+) -> CalendarV4ReferenceState:
+    """Fit the locked V4 state without exposing test-condition outcomes to it."""
+
+    parsed = validate_calendar_v4_hybrid_config(config)
+    if "condition_id" not in observations.columns:
+        raise ValueError("Reference observations must include condition_id")
+    reference_ids = set(TRAINING_CONDITION_IDS) | set(CALIBRATION_CONDITION_IDS)
+    allowed_ids = reference_ids | set(TEST_CONDITION_IDS)
+    observed_ids = set(observations["condition_id"].astype(str))
+    missing = sorted(reference_ids - observed_ids)
+    unexpected = sorted(observed_ids - allowed_ids)
+    if missing or unexpected:
+        raise ValueError(
+            "Calendar V4 reference identities differ from the locked contract: "
+            f"missing_reference={missing}, unexpected={unexpected}"
+        )
+
+    # Isolate reference rows before any outcome-bearing validation. Optional test
+    # rows may be absent or have their future labels redacted without affecting fit.
+    isolated_reference = observations.loc[
+        observations["condition_id"].astype(str).isin(reference_ids)
+    ].copy()
+    validate_naumann_calendar_observations(
+        isolated_reference,
+        expected_condition_count=len(reference_ids),
+        require_published_grid=False,
+    )
+    _validate_calendar_v4_reference_grid(isolated_reference)
+    ordered = isolated_reference.sort_values(
+        ["condition_id", "checkup_index"], kind="stable"
+    ).reset_index(drop=True)
+    _validate_calendar_v4_training_rank(ordered)
+    splits = _fixed_calendar_v4_splits()
+    (
+        power_prior,
+        activation_prior,
+        residual_fit,
+        residual_frame,
+        training_hash,
+        _,
+        _,
+    ) = _build_training_state(ordered, parsed)
+    hull = _domain_hull(ordered)
+    calibration_scores, calibration_quantiles, calibration_hash = (
+        _build_calibration(
+            ordered,
+            power_prior=power_prior,
+            activation_prior=activation_prior,
+            residual_fit=residual_fit,
+            training_state_sha256=training_hash,
+            config=parsed,
+            domain_hull=hull,
+        )
+    )
+    return CalendarV4ReferenceState(
+        power_prior=power_prior,
+        activation_prior=activation_prior,
+        residual_fit=residual_fit,
+        residual_crossfit=residual_frame,
+        training_state_sha256=training_hash,
+        calibration_condition_scores=calibration_scores,
+        calibration_quantiles=calibration_quantiles,
+        calibration_state_sha256=calibration_hash,
+        domain_hull=hull,
+        condition_splits=splits,
+        config_sha256=_canonical_json_sha256(parsed),
+    )
+
+
+def predict_calendar_v4_condition(
+    condition: pd.DataFrame,
+    *,
+    reference_state: CalendarV4ReferenceState,
+    config: Mapping[str, object],
+) -> CalendarV4ConditionPrediction:
+    """Predict one p=10 target whose future rows contain coordinates only."""
+
+    parsed = validate_calendar_v4_hybrid_config(config)
+    if _canonical_json_sha256(parsed) != reference_state.config_sha256:
+        raise ValueError("Calendar V4 reference state and config do not match")
+    return _predict_condition(
+        condition,
+        power_prior=reference_state.power_prior,
+        activation_prior=reference_state.activation_prior,
+        residual_fit=reference_state.residual_fit,
+        training_state_sha256=reference_state.training_state_sha256,
+        config=parsed,
+        domain_hull=reference_state.domain_hull,
+    )
 
 
 def _reason_string(reasons: Sequence[str]) -> str:
@@ -1270,46 +1433,25 @@ def build_calendar_v4_label_free_predictions(
     ordered = observations.sort_values(
         ["condition_id", "checkup_index"], kind="stable"
     ).reset_index(drop=True)
-    splits = validate_calendar_v4_split_and_rank(ordered)
-    (
-        power_prior,
-        activation_prior,
-        residual_fit,
-        residual_frame,
-        training_hash,
-        _,
-        _,
-    ) = _build_training_state(ordered, parsed)
-    hull = _domain_hull(ordered)
-    calibration_scores, calibration_quantiles, calibration_hash = (
-        _build_calibration(
-            ordered,
-            power_prior=power_prior,
-            activation_prior=activation_prior,
-            residual_fit=residual_fit,
-            training_state_sha256=training_hash,
-            config=parsed,
-            domain_hull=hull,
-        )
-    )
+    reference_state = fit_calendar_v4_reference_state(ordered, config=parsed)
     predictions = _prediction_rows(
         ordered,
-        power_prior=power_prior,
-        activation_prior=activation_prior,
-        residual_fit=residual_fit,
-        training_state_sha256=training_hash,
-        calibration_state_sha256=calibration_hash,
-        quantiles=calibration_quantiles,
+        power_prior=reference_state.power_prior,
+        activation_prior=reference_state.activation_prior,
+        residual_fit=reference_state.residual_fit,
+        training_state_sha256=reference_state.training_state_sha256,
+        calibration_state_sha256=reference_state.calibration_state_sha256,
+        quantiles=reference_state.calibration_quantiles,
         config=parsed,
-        domain_hull=hull,
+        domain_hull=reference_state.domain_hull,
     )
     calendar_v4_prediction_sha256(predictions)
     return (
         predictions,
-        residual_frame,
-        calibration_scores,
-        calibration_quantiles,
-        splits,
+        reference_state.residual_crossfit,
+        reference_state.calibration_condition_scores,
+        reference_state.calibration_quantiles,
+        reference_state.condition_splits,
     )
 
 

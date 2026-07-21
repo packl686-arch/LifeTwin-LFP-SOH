@@ -4,13 +4,17 @@
 
 项目方向：储能 LFP 电池短期数据驱动的长期 SOH 动态预测
 
+立即体验：[评委三分钟简报](JUDGE_BRIEF.md) ·
+[在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/) ·
+[未来标签隔离的前缀预测入口](showcase/product_demo/README.md)
+
 ## 1. 一分钟概览
 
 储能电站设计寿命可达 15-25 年，而公开 LFP 日历老化数据通常只有数年。
 LifeTwin 将问题从“一次性外推一个远期点值”改写为“随数据增长持续修正的寿命
 数字孪生”：先学习温度、SOC 等工况下的共性规律，再根据目标对象短期表现
 个性化更新；遇到低 SOC 早期容量回升时启用专用偏移模型，证据不足则回退
-稳定主模型；最终同时输出 SOH 曲线、合理区间和数据充分性提示。
+稳定主模型；最终输出研究均值轨迹、回顾诊断区间或机器可读的拒绝原因。
 
 “目标电芯/单电芯”更新是产品架构目标。当前公开数据没有单电芯轨迹，实际实验对象
 只是 target condition-mean trajectories（目标条件均值轨迹）：共 17 条条件均值轨迹，
@@ -36,7 +40,7 @@ LifeTwin 将问题从“一次性外推一个远期点值”改写为“随数�
 | 证据门控 | 异常证据 + 观测数量 | 模型选择与回退原因 | 只在确有证据时增加复杂度 |
 | 有界残差 | 训练条件交叉拟合误差 | 小幅曲率修正 | 修正结构误差但不替代机理主模型 |
 | 路由化校准 | 条件轨迹级误差与模型路由 | 诊断区间或拒绝原因 | 避免把时间点伪装成独立样本 |
-| 风险输出 | 预测分布、证据状态与业务阈值 | SOH、区间、越限时间、提示 | 支持研发、质保和运维决策 |
+| 风险输出 | 预测分布与证据状态 | SOH、区间状态、拒绝提示 | 为研发、质保和运维接口提供可审计输入 |
 
 ## 4. 可核验结果
 
@@ -121,6 +125,10 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
 
 | 材料 | 链接 | 评审价值 |
 |---|---|---|
+| V0.13 三分钟简报 | [JUDGE_BRIEF.md](JUDGE_BRIEF.md) | 一屏查看问题、入口、四个结果和边界 |
+| 零安装评审控制台 | [在线打开](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)；[离线单文件](docs/judge-console/index.html) | 交互回放路由、区间和负迁移，不伪装实时推理 |
+| 真实前缀预测入口 | [showcase/product_demo/README.md](showcase/product_demo/README.md) | 提交不含未来容量的 JSON，生成预测和拒绝决定 |
+| V0.13 入口报告 | [reports/product_entry_v013_2026-07-22.md](reports/product_entry_v013_2026-07-22.md) | 解释契约、防火墙、域外拒绝和下一项实验 |
 | 相关项目经验 | [docs/project_experience.md](docs/project_experience.md) | 展示从数据治理到模型审计的完整积累 |
 | 数据分析样本 | [docs/data_analysis_sample.md](docs/data_analysis_sample.md) | 展示数据、指标、图表和结论链 |
 | 可运行分析脚本 | [showcase/analyze_phase8_results.py](showcase/analyze_phase8_results.py) | 一条命令重建核心图表 |
@@ -144,8 +152,11 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
 
 ## 7. 建议演示路径
 
-1. 打开首页架构图，说明“共性先验 + 个性更新 + 异常门控”。
-2. 在使用 Python 3.12.x、按 `requirements/reproduction.txt` 安装冻结依赖的
+1. 打开[评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)，切换三个冻结案例，说明
+   “短期前缀 + 自动路由 + 区间或拒绝”。
+2. 运行一次[真实前缀请求](showcase/product_demo/README.md)，展示 `forecast.csv`、
+   `decision.json` 和未来标签防火墙。
+3. 如需完整审计，在使用 Python 3.12.x、按 `requirements/reproduction.txt` 安装冻结依赖的
    fresh clone 中运行：
 
    ```powershell
@@ -158,13 +169,13 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
    .venv/bin/python scripts/reproduce_public_release.py --mode full --output artifacts/reproduction
    ```
 
-3. 打开 V0.12 总图，先说明原区间依赖校准切分、外部均值依赖少数电芯，再展示
+4. 打开 V0.12 总图，先说明原区间依赖校准切分、外部均值依赖少数电芯，再展示
    长期数据资格与预注册规则。
-4. 打开 V0.11 报告，展示 `p=10` 只是回顾性 landmark，以及为何大多数区间
+5. 打开 V0.11 报告，展示 `p=10` 只是回顾性 landmark，以及为何大多数区间
    被拒绝发行。
-5. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
-6. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
-7. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
+6. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
+7. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
+8. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
 
 GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)，
@@ -178,4 +189,5 @@ GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 高温队列暴露了 100% SOC 迁移风险，不能代替长期验证。下一步应冻结现有规则，
 在许可明确的独立长期 LFP 队列和海辰目标产品数据上一次性验证，而不是继续对
 同一公开数据调参。v0.12 进一步证明当前校准宽度和外部均值对有限条件/电芯敏感，
-所以“主动拒绝”不是附加功能，而是模型落地前不可取消的核心能力。
+所以“主动拒绝”不是附加功能，而是模型落地前不可取消的核心能力。v0.13 已把这条
+边界做成可调用 API/CLI 和零安装控制台；它提高了可操作性，没有提高证据等级。

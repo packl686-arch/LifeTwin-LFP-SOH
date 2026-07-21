@@ -13,16 +13,21 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 
 ## 评委快速入口
 
-建议按以下顺序阅读：
+先用三分钟看到系统如何工作，再按需深入证据：
 
-1. [开题报告补充材料](SUBMISSION_SUPPLEMENT.md)：一页了解问题、方案、结果与边界。
-2. [V0.12 稳健性与长期数据报告](reports/robustness_and_long_term_protocol_2026-07-21.md)：查看校准切分敏感性、逐电芯负迁移诊断和长期数据资格。
-3. [V0.11 新证据报告](reports/landmark_v4_external_evidence_2026-07-20.md)：查看动态 landmark、保守区间和独立外部负结果。
-4. [独立长期验证预注册](docs/independent_long_term_lfp_preregistration.md)：查看拿到新数据前已经冻结的资格、评分和拒绝规则。
-5. [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md)：查看未来标签攻击、独立复算、故障回退和失败条件表。
-6. [数据分析样本](docs/data_analysis_sample.md)：从公开数据到结论的完整示例。
-7. [相关项目经验](docs/project_experience.md)：仓库中可核验的研究与工程积累。
-8. [参考资料](docs/references.md)：论文、数据集、代码来源和许可状态。
+1. [评委三分钟简报](JUDGE_BRIEF.md)：一屏了解问题、方法、四个关键结果和边界。
+2. [在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
+3. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
+
+前缀 CLI 面向源码或 editable checkout；当前版本不把冻结参考数据拆离 Git 仓库包装成
+standalone wheel 推理服务。
+
+深入证据：[V0.13 可操作入口报告](reports/product_entry_v013_2026-07-22.md) ·
+[开题报告补充材料](SUBMISSION_SUPPLEMENT.md) ·
+[V0.12 稳健性报告](reports/robustness_and_long_term_protocol_2026-07-21.md) ·
+[独立长期验证预注册](docs/independent_long_term_lfp_preregistration.md) ·
+[Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md) ·
+[参考资料](docs/references.md)
 
 ## 核心方法
 
@@ -55,7 +60,7 @@ flowchart LR
 - **受约束的残差学习**：残差只从训练条件的交叉拟合误差中学习，在 landmark
   处锚定为零，并受时间支持和幅度上限约束，不允许黑盒修正吞掉机理主模型。
 - **路由化校准与拒绝发行**：specialist 和 fallback 分开按条件轨迹校准；样本量、
-  域支持或长期独立证据不足时，不输出貌似精确的运营区间。
+  工况域、前缀轨迹支持或长期独立证据不足时，不输出貌似精确的运营区间。
 
 ## 回顾性开发结果
 
@@ -160,11 +165,14 @@ Geisbauer 的逐电芯复核在 `1e-12 pp` 数值零阈值下得到 8 个候选�
 LifeTwin-LFP-SOH/
 ├── src/lifetwin/              原型代码
 ├── configs/experiments/       冻结实验协议
+├── configs/inference/         前缀推理请求 Schema
 ├── configs/validation/        长期数据资格与预注册 Schema/模板
 ├── data/interim/              CC BY 4.0 的规范化 Naumann 表
 ├── data/external/             CC BY 4.0 的 Geisbauer LFP 外部应力数据
 ├── scripts/                   实验、审计与一键复现入口
+├── showcase/product_demo/     不含未来容量的真实推理请求
 ├── showcase/                  数据分析样本与公开审计产物
+├── docs/judge-console/        自包含中文评审控制台
 ├── docs/                      补充材料、研究笔记与参考资料
 ├── reports/                   技术阶段报告与对抗性审计报告
 ├── tests/                     GitHub 公开版复现测试
@@ -180,6 +188,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -c requirements\reproduction.txt -e ".[dev,showcase]"
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe showcase\analyze_phase8_results.py --output artifacts\quick\phase8_results.png
+.\.venv\Scripts\lifetwin.exe calendar-prefix-predict --request showcase\product_demo\naumann_t40_soc37_5_request.json --output-dir artifacts\prefix-demo
 ```
 
 Linux/macOS：
@@ -189,6 +198,7 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -c requirements/reproduction.txt -e '.[dev,showcase]'
 .venv/bin/python -m pytest -q
 .venv/bin/python showcase/analyze_phase8_results.py --output artifacts/quick/phase8_results.png
+.venv/bin/lifetwin calendar-prefix-predict --request showcase/product_demo/naumann_t40_soc37_5_request.json --output-dir artifacts/prefix-demo
 ```
 
 安装依赖后，推荐用一个命令完成发布预检、Phase 8、动态 landmark、V4 区间与
@@ -255,6 +265,7 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - 机理层级模型、LOCO 有界残差、路由化区间与拒绝发行：完成回顾性实现。
 - 15 个独立 LFP 电芯的 120 天、60 C 外部应力筛查：完成，主候选未胜出。
 - V4 全部 210 个校准划分与 Geisbauer 逐电芯/LOCO 稳健性审计：完成，未形成确认性结论。
+- 严格请求 Schema、真实前缀推理 API/CLI、域外/异常前缀失败关闭与零安装评审控制台：完成。
 - 长期 LFP 数据集资格登记、数据无关 Schema 与预注册模板：完成；当前合格公开确认集为 0。
 - Ubuntu/Windows fresh-clone CI：已配置，状态由仓库徽章和对应提交记录公开显示。
 - 独立长期 LFP 队列验证：待完成。
@@ -263,4 +274,4 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 提交人：Jincheng Liu
 
-版本：`0.12.0`，2026-07-21
+版本：`0.13.0`，2026-07-22

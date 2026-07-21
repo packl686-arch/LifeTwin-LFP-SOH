@@ -4,8 +4,11 @@ import argparse
 import hashlib
 from importlib import metadata as importlib_metadata
 import json
+import os
 from pathlib import Path
+import shutil
 import sys
+import uuid
 
 import pandas as pd
 
@@ -55,6 +58,7 @@ from lifetwin.evaluation.reference_cells import reference_cell_support, support_
 from lifetwin.features.early import extract_early_cycle_features
 from lifetwin.features.curves import extract_delta_q_features
 from lifetwin.features.external_curves import extract_external_delta_q_features
+from lifetwin.inference.calendar_prefix import predict_calendar_prefix
 from lifetwin.models.baselines import run_baselines
 
 
@@ -1776,6 +1780,111 @@ def _batch_reference_sensitivity(args: argparse.Namespace) -> int:
     return 0
 
 
+def _calendar_prefix_predict(args: argparse.Namespace) -> int:
+    request_path = Path(args.request)
+    reference_path = Path(args.reference)
+    config_path = Path(args.config)
+    schema_path = Path(args.schema)
+    output_dir = Path(args.output_dir)
+    if output_dir.exists():
+        raise FileExistsError(
+            "Calendar-prefix inference never overwrites an evidence bundle: "
+            f"{output_dir}"
+        )
+    request = json.loads(request_path.read_text(encoding="utf-8"))
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    reference = pd.read_csv(reference_path)
+    decision, forecast = predict_calendar_prefix(
+        request,
+        reference_observations=reference,
+        config=config,
+        schema=schema,
+    )
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging = output_dir.parent / f".{output_dir.name}.staging-{uuid.uuid4().hex}"
+    staging.mkdir()
+    try:
+        forecast_path = staging / "forecast.csv"
+        _write_frozen_prediction_csv(forecast, forecast_path)
+        forecast_sha256 = _sha256_file(forecast_path)
+        expected_forecast_sha256 = str(
+            decision["provenance"]["forecast_content_sha256"]
+        )
+        if forecast_sha256 != expected_forecast_sha256:
+            raise RuntimeError("Written forecast disagrees with the in-memory freeze")
+
+        project_root = Path(__file__).resolve().parents[2]
+        source_hashes = _source_tree_hashes(project_root)
+        decision["provenance"].update(
+            {
+                "request_path": request_path.as_posix(),
+                "request_file_sha256": _sha256_file(request_path),
+                "reference_path": reference_path.as_posix(),
+                "reference_file_sha256": _sha256_file(reference_path),
+                "config_path": config_path.as_posix(),
+                "config_file_sha256": _sha256_file(config_path),
+                "schema_path": schema_path.as_posix(),
+                "schema_file_sha256": _sha256_file(schema_path),
+                "source_tree_sha256": _source_tree_sha256(source_hashes),
+                "python": sys.version,
+                "packages": {
+                    package: importlib_metadata.version(package)
+                    for package in (
+                        "numpy",
+                        "pandas",
+                        "scipy",
+                        "scikit-learn",
+                        "jsonschema",
+                    )
+                },
+            }
+        )
+        decision["artifacts"] = {
+            "forecast": {
+                "path": (output_dir / "forecast.csv").as_posix(),
+                "row_count": len(forecast),
+                "sha256": forecast_sha256,
+            }
+        }
+        decision_path = staging / "decision.json"
+        decision_path.write_text(
+            json.dumps(
+                decision,
+                indent=2,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.replace(staging, output_dir)
+    except BaseException:
+        if staging.exists():
+            shutil.rmtree(staging)
+        raise
+
+    print(
+        json.dumps(
+            {
+                "status": decision["status"],
+                "request_id": decision["request_id"],
+                "mean_route": decision["mean_prediction"]["route"],
+                "diagnostic_interval": decision["diagnostic_interval"]["status"],
+                "operational_issuance": decision["operational_decision"][
+                    "issuance_status"
+                ],
+                "decision": (output_dir / "decision.json").as_posix(),
+                "forecast": (output_dir / "forecast.csv").as_posix(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lifetwin")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -2118,6 +2227,41 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ipcw_parser.add_argument("--overwrite", action="store_true")
     ipcw_parser.set_defaults(handler=_synthetic_ipcw_validation_command)
+
+    prefix_parser = subparsers.add_parser(
+        "calendar-prefix-predict",
+        help=(
+            "run the future-label-free Calendar V4 demo from a source or "
+            "editable checkout"
+        ),
+    )
+    prefix_parser.add_argument("--request", required=True)
+    prefix_parser.add_argument(
+        "--reference",
+        default=str(
+            Path(__file__).resolve().parents[2]
+            / "data/interim/naumann_calendar_observations.csv"
+        ),
+    )
+    prefix_parser.add_argument(
+        "--config",
+        default=str(
+            Path(__file__).resolve().parents[2]
+            / "configs/experiments/naumann_calendar_v4_hybrid_development.json"
+        ),
+    )
+    prefix_parser.add_argument(
+        "--schema",
+        default=str(
+            Path(__file__).resolve().parents[2]
+            / "configs/inference/calendar_prefix_request.schema.json"
+        ),
+    )
+    prefix_parser.add_argument(
+        "--output-dir",
+        default="artifacts/calendar-prefix-demo",
+    )
+    prefix_parser.set_defaults(handler=_calendar_prefix_predict)
     return parser
 
 

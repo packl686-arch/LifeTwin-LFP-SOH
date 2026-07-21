@@ -130,6 +130,8 @@ PHASE1_AUDIT_FILES = (
     "failure_condition_table.csv",
 )
 PACKAGE_IMPORTS = {
+    "duckdb": "duckdb",
+    "jsonschema": "jsonschema",
     "numpy": "numpy",
     "pandas": "pandas",
     "scipy": "scipy",
@@ -497,7 +499,14 @@ def _preflight(project_root: Path, mode: str) -> dict[str, object]:
             "Reproduction constraints are not frozen in release_manifest.json"
         )
 
-    required_packages = {"numpy", "pandas", "scipy", "scikit-learn"}
+    required_packages = {
+        "duckdb",
+        "jsonschema",
+        "numpy",
+        "pandas",
+        "scipy",
+        "scikit-learn",
+    }
     if mode in {"experiment", "full"}:
         required_packages.add("matplotlib")
     if mode in {"tests", "full"}:
@@ -2558,7 +2567,8 @@ def main() -> int:
         help=(
             "full runs Phase 8, the V0.11 landmark/V4/external evidence, the "
             "V0.12 calibration/external robustness audits, the Phase 1 "
-            "adversarial audit, both headless figures, and pytest"
+            "adversarial audit, both headless figures, and pytest including "
+            "the future-label-free prefix demo and Judge Console checks"
         ),
     )
     parser.add_argument(

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/packl686-arch/LifeTwin-LFP-SOH/raw/main/configs/inference/calendar_prefix_request.schema.json",
+  "title": "LifeTwin calendar-prefix prediction request",
+  "description": "A future-label-free request on the exact Naumann p=10 coordinate grid. Structural and coordinate constraints match the runtime contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "model_id",
+    "chemistry",
+    "statistical_unit",
+    "temperature_c",
+    "storage_soc_fraction",
+    "requested_coverage",
+    "prefix",
+    "forecast"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "lifetwin.calendar_prefix_request.v1"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "model_id": {
+      "const": "naumann_calendar_v4_hybrid_development_v1"
+    },
+    "chemistry": {
+      "const": "LFP/graphite"
+    },
+    "statistical_unit": {
+      "const": "temperature_soc_condition_mean_trajectory"
+    },
+    "temperature_c": {
+      "type": "number",
+      "minimum": -80,
+      "maximum": 120
+    },
+    "storage_soc_fraction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "requested_coverage": {
+      "type": "number",
+      "enum": [0.8, 0.9, 0.95]
+    },
+    "prefix": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "prefixItems": [
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 0}, "elapsed_days": {"const": 0}, "capacity_retention_pct": {"const": 100}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 1}, "elapsed_days": {"const": 6.680416666666667}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 2}, "elapsed_days": {"const": 11.540833333333335}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 3}, "elapsed_days": {"const": 17.04125}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 4}, "elapsed_days": {"const": 29.504583333333333}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 5}, "elapsed_days": {"const": 42.045833333333334}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 6}, "elapsed_days": {"const": 53.56666666666667}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 7}, "elapsed_days": {"const": 81.04166666666667}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 8}, "elapsed_days": {"const": 107.46666666666667}}},
+        {"$ref": "#/$defs/prefixRow", "properties": {"observation_index": {"const": 9}, "elapsed_days": {"const": 136.94583333333333}}}
+      ],
+      "items": false
+    },
+    "forecast": {
+      "description": "Exact requested timestamps only. Capacity, SOH, loss, resistance, and every other future outcome are forbidden.",
+      "type": "array",
+      "minItems": 25,
+      "maxItems": 25,
+      "prefixItems": [
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 10}, "elapsed_days": {"const": 161.3625}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 11}, "elapsed_days": {"const": 186.79166666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 12}, "elapsed_days": {"const": 213.275}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 13}, "elapsed_days": {"const": 239.7125}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 14}, "elapsed_days": {"const": 266.17083333333335}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 15}, "elapsed_days": {"const": 292.77916666666664}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 16}, "elapsed_days": {"const": 319.30833333333334}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 17}, "elapsed_days": {"const": 345.8375}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 18}, "elapsed_days": {"const": 376.31666666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 19}, "elapsed_days": {"const": 402.7416666666667}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 20}, "elapsed_days": {"const": 429.25}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 21}, "elapsed_days": {"const": 455.7916666666667}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 22}, "elapsed_days": {"const": 482.2916666666667}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 23}, "elapsed_days": {"const": 508.7916666666667}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 24}, "elapsed_days": {"const": 535.1666666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 25}, "elapsed_days": {"const": 561.7083333333334}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 26}, "elapsed_days": {"const": 588.2916666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 27}, "elapsed_days": {"const": 612.2916666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 28}, "elapsed_days": {"const": 631.1666666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 29}, "elapsed_days": {"const": 658.7916666666666}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 30}, "elapsed_days": {"const": 708.375}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 31}, "elapsed_days": {"const": 759.9583333333334}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 32}, "elapsed_days": {"const": 799.5833333333334}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 33}, "elapsed_days": {"const": 840.125}}},
+        {"$ref": "#/$defs/forecastRow", "properties": {"forecast_index": {"const": 34}, "elapsed_days": {"const": 885.0416666666666}}}
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "prefixRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation_index", "elapsed_days", "capacity_retention_pct"],
+      "properties": {
+        "observation_index": {"type": "integer", "minimum": 0, "maximum": 9},
+        "elapsed_days": {"type": "number", "minimum": 0},
+        "capacity_retention_pct": {"type": "number", "minimum": 0, "maximum": 110}
+      }
+    },
+    "forecastRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forecast_index", "elapsed_days"],
+      "properties": {
+        "forecast_index": {"type": "integer", "minimum": 10, "maximum": 34},
+        "elapsed_days": {"type": "number", "exclusiveMinimum": 0}
+      }
+    }
+  }
+}

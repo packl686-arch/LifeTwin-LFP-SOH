@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>LifeTwin · 评审证据控制台</title>
+  <style>
+    :root {
+      --ink: #17201f;
+      --muted: #61706d;
+      --paper: #f3f4ef;
+      --panel: #ffffff;
+      --line: #d9ded9;
+      --teal: #087b72;
+      --teal-soft: #dcefeb;
+      --orange: #c76618;
+      --orange-soft: #fff0df;
+      --red: #b93831;
+      --red-soft: #fae9e6;
+      --green: #397a49;
+      --green-soft: #e5f1e7;
+      --charcoal: #26312f;
+      --grid: #e6e9e5;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+    button, input { font: inherit; }
+    .topbar {
+      min-height: 70px;
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      background: var(--charcoal);
+      color: #fff;
+      border-bottom: 4px solid var(--orange);
+    }
+    .brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+    .brand strong { font-size: 22px; font-weight: 750; }
+    .brand span { color: #bec9c5; font-size: 13px; }
+    .mode-badge {
+      padding: 6px 9px;
+      border: 1px solid #899692;
+      border-radius: 4px;
+      color: #fff;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    .scopebar {
+      min-height: 48px;
+      padding: 8px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff7ee;
+      border-bottom: 1px solid #e2c4a9;
+      overflow-x: auto;
+    }
+    .scopebar strong { color: #8d3d12; white-space: nowrap; }
+    .scope-tag {
+      padding: 5px 8px;
+      border: 1px solid #d8b18d;
+      border-radius: 4px;
+      background: #fff;
+      color: #694633;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    .shell { max-width: 1540px; margin: 0 auto; padding: 14px 18px 18px; }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .tab {
+      min-height: 48px;
+      padding: 8px 14px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+    }
+    .tab:last-child { border-right: 0; }
+    .tab strong { display: block; color: var(--ink); font-size: 14px; }
+    .tab span { display: block; margin-top: 2px; font-size: 11px; }
+    .tab[aria-selected="true"] { box-shadow: inset 0 -4px 0 var(--teal); background: #f7fbfa; }
+    .tab:focus-visible, .truth-control:focus-within { outline: 3px solid #f2aa69; outline-offset: 2px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 350px;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      min-width: 0;
+    }
+    .visual-panel { padding: 15px 17px 12px; }
+    .visual-head {
+      min-height: 52px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .visual-head h1 { margin: 0; font-size: 19px; line-height: 1.3; }
+    .visual-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .truth-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      white-space: nowrap;
+      color: var(--charcoal);
+      cursor: pointer;
+    }
+    .truth-control input { width: 16px; height: 16px; accent-color: var(--teal); }
+    .prefix-strip {
+      display: grid;
+      grid-template-columns: 155px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 42px;
+      padding: 7px 9px;
+      margin: 9px 0 5px;
+      border: 1px solid var(--line);
+      background: #f8f9f6;
+    }
+    .prefix-label strong { display: block; font-size: 12px; }
+    .prefix-label span { color: var(--muted); font-size: 10px; }
+    .prefix-dots { display: grid; grid-template-columns: repeat(10, minmax(12px, 1fr)); gap: 5px; }
+    .prefix-dot {
+      aspect-ratio: 1;
+      max-width: 18px;
+      min-width: 12px;
+      border: 2px solid #7b8985;
+      background: #fff;
+      border-radius: 50%;
+      position: relative;
+    }
+    .prefix-dot::after {
+      content: attr(data-index);
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: #7b8985;
+    }
+    .prefix-end { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .chart-wrap { width: 100%; aspect-ratio: 820 / 340; min-height: 285px; }
+    #chart { display: block; width: 100%; height: 100%; overflow: visible; }
+    .chart-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .legend-line { width: 18px; height: 3px; background: var(--teal); }
+    .legend-band { width: 18px; height: 9px; background: var(--teal-soft); border: 1px solid #82b9b2; }
+    .legend-truth { width: 9px; height: 9px; border-radius: 50%; background: var(--orange); }
+    .decision-panel { display: flex; flex-direction: column; }
+    .decision-head { padding: 14px 15px 12px; border-bottom: 1px solid var(--line); }
+    .eyebrow { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    .decision-title { margin-top: 5px; font-size: 21px; font-weight: 760; color: var(--red); }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+    .status-cell { min-height: 72px; padding: 10px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .status-cell:nth-child(2n) { border-right: 0; }
+    .status-cell:nth-last-child(-n+2) { border-bottom: 0; }
+    .status-cell span { display: block; color: var(--muted); font-size: 10px; }
+    .status-cell strong { display: block; margin-top: 5px; font-size: 13px; line-height: 1.35; }
+    .grade { color: var(--orange); }
+    .reasons { padding: 12px 15px; flex: 1; }
+    .reasons h2 { margin: 0 0 8px; font-size: 12px; }
+    .reasons ul { margin: 0; padding: 0; list-style: none; }
+    .reasons li {
+      padding: 7px 0 7px 16px;
+      position: relative;
+      border-bottom: 1px solid #edf0ec;
+      color: #495753;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .reasons li:last-child { border-bottom: 0; }
+    .reasons li::before { content: ""; position: absolute; left: 0; top: 13px; width: 7px; height: 7px; background: var(--red); }
+    .metrics {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .metric { min-height: 78px; padding: 12px 14px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric span { color: var(--muted); font-size: 11px; }
+    .metric strong { display: block; margin-top: 8px; font-size: 18px; }
+    .auditline {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-left: 4px solid var(--orange);
+      background: #fff;
+      color: #52605c;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .auditline code { font-family: Consolas, monospace; font-size: 10px; color: #34413e; }
+    .attribution { margin-top: 5px; color: #65716e; }
+    .attribution a { color: #087b72; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .provenance { text-align: right; white-space: nowrap; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+    @media (max-width: 980px) {
+      .workspace { grid-template-columns: 1fr; }
+      .decision-panel { min-height: 360px; }
+      .chart-wrap { min-height: 250px; }
+    }
+    @media (max-width: 680px) {
+      .topbar { align-items: flex-start; flex-direction: column; padding: 11px 14px; }
+      .brand { display: block; }
+      .brand span { display: block; margin-top: 3px; }
+      .scopebar { padding: 7px 14px; }
+      .shell { padding: 10px; }
+      .tabs { grid-template-columns: 1fr; }
+      .tab { border-right: 0; border-bottom: 1px solid var(--line); }
+      .tab:last-child { border-bottom: 0; }
+      .visual-head { display: block; }
+      .truth-control { margin-top: 9px; width: fit-content; }
+      .prefix-strip { grid-template-columns: 1fr; padding-bottom: 18px; }
+      .prefix-dots {
+        grid-template-columns: repeat(5, minmax(20px, 1fr));
+        row-gap: 16px;
+        max-width: 260px;
+        padding-bottom: 10px;
+      }
+      .prefix-end { white-space: normal; }
+      .chart-wrap { height: 220px; min-height: 0; aspect-ratio: auto; }
+      .chart-note { display: block; }
+      .chart-note > div:last-child { margin-top: 7px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric:nth-child(2) { border-right: 0; }
+      .metric { border-bottom: 1px solid var(--line); }
+      .metric:nth-last-child(-n+2) { border-bottom: 0; }
+      .auditline { grid-template-columns: 1fr; }
+      .provenance { text-align: left; white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><strong>LifeTwin</strong><span>评审证据控制台</span></div>
+    <div class="mode-badge">回顾性证据回放 · 非实时推理</div>
+  </header>
+  <section class="scopebar" aria-label="结论边界">
+    <strong>结论边界</strong>
+    <span class="scope-tag">公开 LFP</span>
+    <span class="scope-tag">条件均值 / 短时外部筛查</span>
+    <span class="scope-tag">最长 885 天</span>
+    <span class="scope-tag">非海辰产品证据</span>
+    <span class="scope-tag">不可支持 15–25 年</span>
+  </section>
+
+  <main class="shell">
+    <nav id="tabs" class="tabs" aria-label="预置证据案例" role="tablist"></nav>
+    <section class="workspace">
+      <article class="panel visual-panel">
+        <div class="visual-head">
+          <div>
+            <h1 id="case-title"></h1>
+            <p id="case-subtitle"></p>
+          </div>
+          <label class="truth-control" id="truth-control" title="只揭示冻结证据中可交叉核对的最终真值点">
+            <input id="truth-toggle" type="checkbox">
+            <span>揭盲最终真值</span>
+          </label>
+        </div>
+        <div class="prefix-strip" id="prefix-strip">
+          <div class="prefix-label"><strong>前 10 点观测前缀</strong><span>已用于预测，未来结果未作输入</span></div>
+          <div class="prefix-dots" id="prefix-dots" aria-label="十个前缀观测位置"></div>
+          <div class="prefix-end" id="prefix-end"></div>
+        </div>
+        <div class="chart-wrap"><svg id="chart" viewBox="0 0 820 340" role="img"></svg></div>
+        <div class="chart-note">
+          <div class="legend" id="legend"></div>
+          <div id="truth-note"></div>
+        </div>
+      </article>
+
+      <aside class="panel decision-panel">
+        <div class="decision-head">
+          <div class="eyebrow">运营结论</div>
+          <div class="decision-title" id="decision-title"></div>
+        </div>
+        <div class="status-grid">
+          <div class="status-cell"><span>自动路由</span><strong id="route"></strong></div>
+          <div class="status-cell"><span>区间状态</span><strong id="interval-status"></strong></div>
+          <div class="status-cell"><span>证据等级</span><strong class="grade" id="evidence-grade"></strong></div>
+          <div class="status-cell"><span>证据窗口</span><strong id="horizon"></strong></div>
+        </div>
+        <div class="reasons">
+          <h2>拒绝原因 / 风险信号</h2>
+          <ul id="reasons"></ul>
+        </div>
+      </aside>
+    </section>
+
+    <section class="metrics" id="metrics" aria-label="关键指标"></section>
+    <footer class="auditline">
+      <div>
+        <strong>审计口径：</strong><span id="audit-copy"></span> E2/E1 是本控制台的证据成熟度标记，不是行业标准等级。
+        <div class="attribution">
+          数据归属：Naumann <a href="https://doi.org/10.17632/kxh42bfgtj.1">DOI 10.17632/kxh42bfgtj.1</a>；
+          Geisbauer <a href="https://doi.org/10.5281/zenodo.6685365">DOI 10.5281/zenodo.6685365</a>；
+          两份上游数据均按 <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> 标注。
+          本页是 LifeTwin 派生证据回放，处理与归属见
+          <a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH/blob/main/NOTICE.md">NOTICE</a> 和
+          <a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">证据仓库</a>。
+        </div>
+      </div>
+      <div class="provenance"><span id="source-count"></span> 个冻结证据文件<br><code id="source-sha"></code></div>
+    </footer>
+  </main>
+
+  <noscript>此自包含证据控制台需要浏览器启用 JavaScript 才能绘图。</noscript>
+  <script id="evidence-data" type="application/json">{"cases":[{"curve":[{"day":161.3625,"lower":96.036618,"prediction":96.391288,"upper":96.745959},{"day":186.791667,"lower":95.676483,"prediction":96.068569,"upper":96.460654},{"day":213.275,"lower":95.315962,"prediction":95.751325,"upper":96.186688},{"day":239.7125,"lower":94.96894,"prediction":95.450562,"upper":95.932184},{"day":266.170833,"lower":94.633041,"prediction":95.163056,"upper":95.693071},{"day":292.779167,"lower":94.305528,"prediction":94.88565,"upper":95.465771},{"day":319.308333,"lower":93.988258,"prediction":94.619302,"upper":95.250345},{"day":345.8375,"lower":93.679389,"prediction":94.361987,"upper":95.044585},{"day":376.316667,"lower":93.333958,"prediction":94.076265,"upper":94.818573},{"day":402.741667,"lower":93.04193,"prediction":93.836234,"upper":94.630539},{"day":429.25,"lower":92.75537,"prediction":93.601925,"upper":94.448481},{"day":455.791667,"lower":92.474384,"prediction":93.373261,"upper":94.272139},{"day":482.291667,"lower":92.199344,"prediction":93.150403,"upper":94.101463},{"day":508.791667,"lower":91.929432,"prediction":92.932569,"upper":93.935705},{"day":535.166667,"lower":91.665558,"prediction":92.720387,"upper":93.775216},{"day":561.708333,"lower":91.404516,"prediction":92.511199,"upper":93.617882},{"day":588.291667,"lower":91.14732,"prediction":92.305753,"upper":93.464185},{"day":612.291667,"lower":90.918574,"prediction":92.123556,"upper":93.328537},{"day":631.166667,"lower":90.740867,"prediction":91.982338,"upper":93.223809},{"day":658.791667,"lower":90.484093,"prediction":91.778773,"upper":93.073453},{"day":708.375,"lower":90.032489,"prediction":91.422073,"upper":92.811657},{"day":759.958333,"lower":89.57433,"prediction":91.061813,"upper":92.549296},{"day":799.583333,"lower":89.229809,"prediction":90.791916,"upper":92.354024},{"day":840.125,"lower":88.883518,"prediction":90.521458,"upper":92.159398},{"day":885.041667,"lower":88.506707,"prediction":90.228059,"upper":91.949412}],"dataset":"Naumann 2021 公开 LFP 日历老化","decision":{"code":"abstained","reasons":["校准证据并非独立确认队列","缺少独立长期 LFP 证据"],"status":"拒绝运营签发"},"evidence":{"confirmed":false,"grade":"E2","horizon":"136.9 → 885.0 天","label":"回顾性条件均值诊断"},"final_truth":{"day":885.041667,"retention":90.735839,"scope":"冻结证据仅提供最终揭盲值；中间真值不补造"},"id":"naumann-fallback","interval":{"available":true,"coverage":0.8,"mean_width":1.934664288559021,"reasons":[],"status":"诊断区间可用"},"kind":"naumann","metrics":[{"label":"未来点 MAE","value":"0.305 pp"},{"label":"末点绝对误差","value":"0.508 pp"},{"label":"80% 同时覆盖","value":"是（诊断）"},{"label":"运营区间","value":"0 条签发"}],"prefix":{"count":10,"end_day":136.946,"values_available_in_evidence_pack":false},"route":"通用幂律回退","route_code":"hierarchical_power_fallback","soc":37.5,"subtitle":"证据不足触发通用幂律；80% 诊断区间可画但不可运营签发","target":"T40_SOC37.5","temperature":40.0,"title":"T40 · SOC 37.5% · 回退","truth_note":"仅显示冻结 evidence 中可交叉核对的最终真值点。"},{"curve":[{"day":161.3625,"lower":null,"prediction":98.356884,"upper":null},{"day":186.791667,"lower":null,"prediction":98.159777,"upper":null},{"day":213.275,"lower":null,"prediction":97.963841,"upper":null},{"day":239.7125,"lower":null,"prediction":97.77599,"upper":null},{"day":266.170833,"lower":null,"prediction":97.594451,"upper":null},{"day":292.779167,"lower":null,"prediction":97.417432,"upper":null},{"day":319.308333,"lower":null,"prediction":97.24574,"upper":null},{"day":345.8375,"lower":null,"prediction":97.078262,"upper":null},{"day":376.316667,"lower":null,"prediction":96.890455,"upper":null},{"day":402.741667,"lower":null,"prediction":96.731205,"upper":null},{"day":429.25,"lower":null,"prediction":96.574472,"upper":null},{"day":455.791667,"lower":null,"prediction":96.42032,"upper":null},{"day":482.291667,"lower":null,"prediction":96.26897,"upper":null},{"day":508.791667,"lower":null,"prediction":96.119998,"upper":null},{"day":535.166667,"lower":null,"prediction":95.973931,"upper":null},{"day":561.708333,"lower":null,"prediction":95.829022,"upper":null},{"day":588.291667,"lower":null,"prediction":95.685856,"upper":null},{"day":612.291667,"lower":null,"prediction":95.558205,"upper":null},{"day":631.166667,"lower":null,"prediction":95.458831,"upper":null},{"day":658.791667,"lower":null,"prediction":95.314936,"upper":null},{"day":708.375,"lower":null,"prediction":95.061004,"upper":null},{"day":759.958333,"lower":null,"prediction":94.802326,"upper":null},{"day":799.583333,"lower":null,"prediction":94.607142,"upper":null},{"day":840.125,"lower":null,"prediction":94.410407,"upper":null},{"day":885.041667,"lower":null,"prediction":94.195737,"upper":null}],"dataset":"Naumann 2021 公开 LFP 日历老化","decision":{"code":"abstained","reasons":["该路由没有可用校准量","校准证据并非独立确认队列","同路由校准条件不足","缺少独立长期 LFP 证据","区间宽度不可用"],"status":"拒绝运营签发"},"evidence":{"confirmed":false,"grade":"E2","horizon":"136.9 → 885.0 天","label":"回顾性条件均值诊断"},"final_truth":{"day":885.041667,"retention":93.492343,"scope":"冻结证据仅提供最终揭盲值；中间真值不补造"},"id":"naumann-specialist","interval":{"available":false,"coverage":0.8,"mean_width":null,"reasons":["同路由校准条件不足"],"status":"诊断区间拒绝"},"kind":"naumann","metrics":[{"label":"未来点 MAE","value":"0.323 pp"},{"label":"末点绝对误差","value":"0.703 pp"},{"label":"80% 同时覆盖","value":"不可计算"},{"label":"运营区间","value":"0 条签发"}],"prefix":{"count":10,"end_day":136.946,"values_available_in_evidence_pack":false},"route":"激活残差专用路由","route_code":"hierarchical_activation_residual","soc":12.5,"subtitle":"激活残差路由被选中；同路由校准仅 1 条，因此主动拒绝区间","target":"T40_SOC12.5","temperature":40.0,"title":"T40 · SOC 12.5% · 专用路由","truth_note":"仅显示冻结 evidence 中可交叉核对的最终真值点。"},{"bars":[{"cell":"#007","delta":-0.3964,"outcome":"candidate_better","soc":20},{"cell":"#008","delta":-0.766991,"outcome":"candidate_better","soc":20},{"cell":"#025","delta":-0.312517,"outcome":"candidate_better","soc":50},{"cell":"#026","delta":-0.348768,"outcome":"candidate_better","soc":50},{"cell":"#043","delta":1.462091,"outcome":"candidate_worse_negative_transfer","soc":100},{"cell":"#044","delta":1.392605,"outcome":"candidate_worse_negative_transfer","soc":100},{"cell":"#071","delta":0.02816,"outcome":"candidate_worse_negative_transfer","soc":20},{"cell":"#072","delta":0.023289,"outcome":"candidate_worse_negative_transfer","soc":20},{"cell":"#083","delta":-0.002899,"outcome":"candidate_better","soc":50},{"cell":"#084","delta":-0.00219,"outcome":"candidate_better","soc":50},{"cell":"#095","delta":0.180717,"outcome":"candidate_worse_negative_transfer","soc":100},{"cell":"#096","delta":-0.188177,"outcome":"candidate_better","soc":100},{"cell":"#112","delta":0.224685,"outcome":"candidate_worse_negative_transfer","soc":100},{"cell":"#115","delta":-0.002201,"outcome":"candidate_better","soc":50},{"cell":"#118","delta":0.032135,"outcome":"candidate_worse_negative_transfer","soc":20}],"dataset":"Geisbauer 2022 公开 LFP 日历老化","decision":{"code":"abstained","reasons":["候选方法平均误差较简单前缀基线增加","均值、中央値与逐电芯胜负方向冲突","缺少独立长期确认队列"],"status":"拒绝迁移上线"},"evidence":{"confirmed":false,"grade":"E1","horizon":"59 → 120 天","label":"探索性外部压力筛查"},"external_summary":{"interpretation":"Observed transfer harm belongs to the hierarchical-power fallback route; the activation specialist was never eligible. Mean, median, cell-win counts, SOC strata, and leave-one-cell-out results must be read together because the small cohort is heterogeneous.","loo_flips":2,"mean_delta":0.088236,"median_delta":-0.00219,"permutation_p":0.575012},"id":"geisbauer-negative-transfer","interval":{"available":false,"coverage":null,"mean_width":null,"reasons":["跨数据集适用域未确认","仅 120 天，不是长期确认"],"status":"未设计可签发区间"},"kind":"external","metrics":[{"label":"平均配对差","value":"+0.088 pp（更差）"},{"label":"中位配对差","value":"-0.002 pp"},{"label":"逐电芯胜 / 负","value":"8 / 7"},{"label":"精确符号翻转 p","value":"0.575"}],"route":"通用幂律回退（专用路由 0/15 就绪）","route_code":"hierarchical_power_fallback_only","subtitle":"15 个物理电芯 · 60°C · 仅 120 天压力筛查","target":"跨数据集压力筛查","title":"Geisbauer 外部负迁移","truth_note":"正值表示候选方法的轨迹误差更大；这是一项负结果压力筛查。"}],"console_version":"judge-console-v1","evidence_scale":{"E1":"短时外部探索性压力筛查；可暴露负迁移，不能确认长期性能。","E2":"复用公开队列的回顾性条件均值诊断；结果已被项目查看，非确认性验证。"},"mode":"retrospective_evidence_replay_not_live_inference","scope":{"chemistry":"公开 LFP 数据","maximum_horizon":"885 天","prohibited":"不代表海辰产品，不支持储能电站或 15–25 年结论","unit":"Naumann 为条件均值；Geisbauer 为 15 个物理电芯压力筛查"},"sources":[{"path":"showcase/evidence_v011/v4/label_free_predictions.csv","sha256":"ac0bd25154954a603eab6dbbbcfd3a1f281b4ec59d0ce5207a95c015a87c4d0c"},{"path":"showcase/evidence_v011/v4/condition_metrics.csv","sha256":"a2d37470698fd12979e287c983445ce994a1fa91e7513310df27274da2e3f117"},{"path":"showcase/evidence_v011/v4/result.json","sha256":"49d10a86e1acc63eefce83e7784cd04ccb41f8ac092cd549e9732f7c86b90599"},{"path":"showcase/evidence_v011/landmark/common_support_metrics.csv","sha256":"ac2251a0a63c23ba6c777434a4e93a87c32dbedd869ed10b72b77f9708186140"},{"path":"showcase/evidence_v012/geisbauer_robustness/cell_paired_deltas.csv","sha256":"e71864b51bd4bea0a2d3dcb97700e9d6e05a734a56eb397db72294df8627a0a6"},{"path":"showcase/evidence_v012/geisbauer_robustness/stratum_diagnostics.csv","sha256":"b45d3d566c6bc88fc4d38ce64e0c6e4f7d60355ea617235285d496cedbc6c805"},{"path":"showcase/evidence_v012/geisbauer_robustness/leave_one_cell_out.csv","sha256":"028a0e4f9f72bb0b58ecd6aec006c53271df10f959858ea6f74e509344ff5308"},{"path":"showcase/evidence_v012/geisbauer_robustness/result.json","sha256":"c3fc8d0a455ccb45461dbea86dc32a7af559f22e45b351059b39af73e95c0fe1"}]}</script>
+  <script>
+    "use strict";
+    const DATA = JSON.parse(document.getElementById("evidence-data").textContent);
+    const NS = "http://www.w3.org/2000/svg";
+    const requestedCase = decodeURIComponent(window.location.hash.slice(1));
+    const requestedIndex = DATA.cases.findIndex(item => item.id === requestedCase);
+    const state = { active: requestedIndex >= 0 ? requestedIndex : 0, truth: false };
+
+    function el(name, attrs = {}, text = "") {
+      const node = document.createElementNS(NS, name);
+      Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
+      if (text) node.textContent = text;
+      return node;
+    }
+
+    function fmt(value, digits = 1) {
+      return Number(value).toFixed(digits);
+    }
+
+    function renderTabs() {
+      const tabs = document.getElementById("tabs");
+      tabs.replaceChildren();
+      DATA.cases.forEach((item, index) => {
+        const button = document.createElement("button");
+        button.className = "tab";
+        button.type = "button";
+        button.role = "tab";
+        button.id = `tab-${item.id}`;
+        button.setAttribute("aria-selected", index === state.active ? "true" : "false");
+        button.setAttribute("aria-controls", "chart");
+        const strong = document.createElement("strong");
+        strong.textContent = item.title;
+        const span = document.createElement("span");
+        span.textContent = index < 2 ? item.route : "外部负结果审计";
+        button.append(strong, span);
+        button.addEventListener("click", () => {
+          state.active = index;
+          state.truth = false;
+          window.history.replaceState(null, "", `#${item.id}`);
+          render();
+        });
+        button.addEventListener("keydown", event => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          const step = event.key === "ArrowRight" ? 1 : -1;
+          state.active = (state.active + step + DATA.cases.length) % DATA.cases.length;
+          state.truth = false;
+          window.history.replaceState(null, "", `#${DATA.cases[state.active].id}`);
+          render();
+          document.querySelectorAll(".tab")[state.active].focus();
+        });
+        tabs.appendChild(button);
+      });
+    }
+
+    function renderPrefix(item) {
+      const strip = document.getElementById("prefix-strip");
+      if (item.kind !== "naumann") {
+        strip.hidden = true;
+        return;
+      }
+      strip.hidden = false;
+      const dots = document.getElementById("prefix-dots");
+      dots.replaceChildren();
+      for (let index = 1; index <= item.prefix.count; index += 1) {
+        const dot = document.createElement("span");
+        dot.className = "prefix-dot";
+        dot.dataset.index = index;
+        dot.title = `观测位置 ${index}：逐点 SOH 未包含在冻结展示包中，故不伪造纵坐标`;
+        dots.appendChild(dot);
+      }
+      document.getElementById("prefix-end").textContent = `截止 ${fmt(item.prefix.end_day, 1)} 天 · 逐点值未在展示包再分发`;
+    }
+
+    function drawAxes(svg, xScale, yScale, xTicks, yTicks, xLabel, yLabel) {
+      xTicks.forEach(value => {
+        const x = xScale(value);
+        svg.appendChild(el("line", { x1: x, y1: 18, x2: x, y2: 295, stroke: "#e6e9e5", "stroke-width": 1 }));
+        svg.appendChild(el("text", { x, y: 316, fill: "#61706d", "font-size": 11, "text-anchor": "middle" }, String(Math.round(value))));
+      });
+      yTicks.forEach(value => {
+        const y = yScale(value);
+        svg.appendChild(el("line", { x1: 58, y1: y, x2: 800, y2: y, stroke: "#e6e9e5", "stroke-width": 1 }));
+        svg.appendChild(el("text", { x: 49, y: y + 4, fill: "#61706d", "font-size": 11, "text-anchor": "end" }, fmt(value, 0)));
+      });
+      svg.appendChild(el("line", { x1: 58, y1: 295, x2: 800, y2: 295, stroke: "#7b8985", "stroke-width": 1.2 }));
+      svg.appendChild(el("line", { x1: 58, y1: 18, x2: 58, y2: 295, stroke: "#7b8985", "stroke-width": 1.2 }));
+      svg.appendChild(el("text", { x: 429, y: 338, fill: "#61706d", "font-size": 11, "text-anchor": "middle" }, xLabel));
+      svg.appendChild(el("text", { x: 13, y: 158, fill: "#61706d", "font-size": 11, "text-anchor": "middle", transform: "rotate(-90 13 158)" }, yLabel));
+    }
+
+    function renderNaumannChart(item) {
+      const svg = document.getElementById("chart");
+      svg.replaceChildren();
+      svg.setAttribute("aria-label", `${item.title}：前十点之后的条件均值 SOH 预测曲线`);
+      const points = item.curve;
+      const xMin = item.prefix.end_day;
+      const xMax = Math.max(...points.map(point => point.day));
+      const values = points.flatMap(point => [point.prediction, point.lower, point.upper]).filter(value => value !== null);
+      if (state.truth) values.push(item.final_truth.retention);
+      const yMin = Math.floor(Math.min(...values) - 1);
+      const yMax = Math.min(101, Math.ceil(Math.max(...values) + 1));
+      const xScale = value => 58 + (value - xMin) / (xMax - xMin) * 742;
+      const yScale = value => 295 - (value - yMin) / (yMax - yMin) * 277;
+      const xTicks = [xMin, xMin + (xMax - xMin) / 3, xMin + 2 * (xMax - xMin) / 3, xMax];
+      const yTicks = Array.from({ length: 5 }, (_, index) => yMin + index * (yMax - yMin) / 4);
+      drawAxes(svg, xScale, yScale, xTicks, yTicks, "日历时间（天）", "容量保持率（%）");
+
+      const boundaryX = xScale(xMin);
+      svg.appendChild(el("line", { x1: boundaryX, y1: 18, x2: boundaryX, y2: 295, stroke: "#c76618", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+      svg.appendChild(el("text", { x: boundaryX + 7, y: 32, fill: "#9a4c12", "font-size": 10 }, "前缀截止 / 预测起点"));
+
+      if (item.interval.available) {
+        const upper = points.map(point => `${xScale(point.day)},${yScale(point.upper)}`).join(" ");
+        const lower = [...points].reverse().map(point => `${xScale(point.day)},${yScale(point.lower)}`).join(" ");
+        svg.appendChild(el("polygon", { points: `${upper} ${lower}`, fill: "#dcefeb", stroke: "#82b9b2", "stroke-width": 1 }));
+      }
+
+      const pathData = points.map((point, index) => `${index ? "L" : "M"}${xScale(point.day)},${yScale(point.prediction)}`).join(" ");
+      svg.appendChild(el("path", { d: pathData, fill: "none", stroke: "#087b72", "stroke-width": 3, "stroke-linejoin": "round" }));
+      points.forEach((point, index) => {
+        if (index % 4 === 0 || index === points.length - 1) {
+          svg.appendChild(el("circle", { cx: xScale(point.day), cy: yScale(point.prediction), r: 3.2, fill: "#fff", stroke: "#087b72", "stroke-width": 2 }));
+        }
+      });
+
+      if (state.truth) {
+        const truth = item.final_truth;
+        const cx = xScale(truth.day);
+        const cy = yScale(truth.retention);
+        svg.appendChild(el("circle", { cx, cy, r: 6, fill: "#c76618", stroke: "#fff", "stroke-width": 2 }));
+        svg.appendChild(el("text", { x: cx - 8, y: cy - 12, fill: "#9a4c12", "font-size": 11, "font-weight": 700, "text-anchor": "end" }, `末点真值 ${fmt(truth.retention, 2)}%`));
+      }
+    }
+
+    function renderExternalChart(item) {
+      const svg = document.getElementById("chart");
+      svg.replaceChildren();
+      svg.setAttribute("aria-label", "Geisbauer 十五个物理电芯的候选减基线轨迹误差配对差");
+      const points = item.bars;
+      const xMin = -0.9;
+      const xMax = 1.6;
+      const xScale = value => 110 + (value - xMin) / (xMax - xMin) * 675;
+      const rowHeight = 17;
+      const yStart = 27;
+      const zeroX = xScale(0);
+      [-0.5, 0, 0.5, 1, 1.5].forEach(value => {
+        const x = xScale(value);
+        svg.appendChild(el("line", { x1: x, y1: 12, x2: x, y2: 282, stroke: value === 0 ? "#26312f" : "#e6e9e5", "stroke-width": value === 0 ? 1.5 : 1 }));
+        svg.appendChild(el("text", { x, y: 306, fill: "#61706d", "font-size": 11, "text-anchor": "middle" }, fmt(value, 1)));
+      });
+      points.forEach((point, index) => {
+        const y = yStart + index * rowHeight;
+        const endpoint = xScale(point.delta);
+        const left = Math.min(zeroX, endpoint);
+        const width = Math.max(1.5, Math.abs(endpoint - zeroX));
+        const harm = point.delta > 0;
+        svg.appendChild(el("text", { x: 47, y: y + 4, fill: "#52605c", "font-size": 10, "text-anchor": "end" }, point.cell));
+        svg.appendChild(el("text", { x: 72, y: y + 4, fill: "#87918e", "font-size": 9, "text-anchor": "middle" }, `${point.soc}%`));
+        svg.appendChild(el("rect", { x: left, y: y - 5, width, height: 10, fill: harm ? "#b93831" : "#397a49" }));
+      });
+      const meanX = xScale(item.external_summary.mean_delta);
+      svg.appendChild(el("line", { x1: meanX, y1: 12, x2: meanX, y2: 282, stroke: "#c76618", "stroke-width": 2, "stroke-dasharray": "5 3" }));
+      svg.appendChild(el("text", { x: meanX + 5, y: 16, fill: "#9a4c12", "font-size": 10 }, `均值 +${fmt(item.external_summary.mean_delta, 3)} pp`));
+      svg.appendChild(el("text", { x: 448, y: 334, fill: "#61706d", "font-size": 11, "text-anchor": "middle" }, "轨迹误差配对差（候选 − 前缀基线，pp；正值为负迁移）"));
+      svg.appendChild(el("text", { x: 72, y: 306, fill: "#61706d", "font-size": 9, "text-anchor": "middle" }, "SOC"));
+    }
+
+    function renderLegend(item) {
+      const legend = document.getElementById("legend");
+      if (item.kind === "naumann") {
+        legend.innerHTML = '<span class="legend-item"><i class="legend-line"></i>条件均值预测</span>' +
+          (item.interval.available ? '<span class="legend-item"><i class="legend-band"></i>80% 诊断区间</span>' : '') +
+          '<span class="legend-item"><i class="legend-truth"></i>最终揭盲点</span>';
+      } else {
+        legend.innerHTML = '<span class="legend-item"><i class="legend-line" style="background:#397a49"></i>候选更好</span>' +
+          '<span class="legend-item"><i class="legend-line" style="background:#b93831"></i>候选更差</span>';
+      }
+    }
+
+    function render() {
+      const item = DATA.cases[state.active];
+      renderTabs();
+      document.getElementById("case-title").textContent = item.title;
+      document.getElementById("case-subtitle").textContent = item.subtitle;
+      document.getElementById("decision-title").textContent = item.decision.status;
+      document.getElementById("route").textContent = item.route;
+      document.getElementById("interval-status").textContent = item.interval.status;
+      document.getElementById("evidence-grade").textContent = `${item.evidence.grade} · ${item.evidence.label}`;
+      document.getElementById("horizon").textContent = item.evidence.horizon;
+      document.getElementById("truth-note").textContent = item.truth_note;
+
+      const truthControl = document.getElementById("truth-control");
+      truthControl.hidden = item.kind !== "naumann";
+      const truthToggle = document.getElementById("truth-toggle");
+      truthToggle.checked = state.truth;
+      truthToggle.disabled = item.kind !== "naumann";
+
+      const reasons = [...item.decision.reasons, ...item.interval.reasons.filter(reason => !item.decision.reasons.includes(reason))];
+      const reasonList = document.getElementById("reasons");
+      reasonList.replaceChildren();
+      reasons.forEach(reason => {
+        const li = document.createElement("li");
+        li.textContent = reason;
+        reasonList.appendChild(li);
+      });
+
+      const metrics = document.getElementById("metrics");
+      metrics.replaceChildren();
+      item.metrics.forEach(metric => {
+        const div = document.createElement("div");
+        div.className = "metric";
+        const label = document.createElement("span");
+        label.textContent = metric.label;
+        const value = document.createElement("strong");
+        value.textContent = metric.value;
+        div.append(label, value);
+        metrics.appendChild(div);
+      });
+
+      renderPrefix(item);
+      renderLegend(item);
+      if (item.kind === "naumann") renderNaumannChart(item); else renderExternalChart(item);
+      document.getElementById("audit-copy").textContent = DATA.evidence_scale[item.evidence.grade];
+      document.getElementById("source-count").textContent = DATA.sources.length;
+      document.getElementById("source-sha").textContent = `页面证据指纹 ${DATA.sources[0].sha256.slice(0, 12)}…`;
+    }
+
+    document.getElementById("truth-toggle").addEventListener("change", event => {
+      state.truth = event.target.checked;
+      renderNaumannChart(DATA.cases[state.active]);
+    });
+    render();
+  </script>
+</body>
+</html>
