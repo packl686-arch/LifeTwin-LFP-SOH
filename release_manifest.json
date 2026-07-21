@@ -169,7 +169,7 @@
     "tests/test_phase1_adversarial_audit.py": "74c9bd7cbb57e9e187290ad6ab348855eba4dc710f6c5e86e436c31971440e98",
     "tests/test_prediction_scoring_integrity.py": "f9311d8d085f11c44a1448283e537ba4f18efa3e37e6d0c221fae2b328519310",
     "tests/test_public_release.py": "f62bc772e7f7891d20a8857362c7f73a681e886e93beb432dd36bc9285fdfbc0",
-    "tests/test_reproduction_entrypoint.py": "ac909c86fbf3259e3d2092e6e3a6d43a31b0fa2c12541568ccaa533b0bdd31c9",
+    "tests/test_reproduction_entrypoint.py": "3a729e4d08cdf18825ffa9a03e76449785c6acff140992d4124990725c0fd6a8",
     "tests/test_v012_showcase.py": "3a75d6293df512a2b7bf24bba0ef1223d0e091f675579a0ac83d984c2364fa95"
   },
   "forbidden_release_globs": [

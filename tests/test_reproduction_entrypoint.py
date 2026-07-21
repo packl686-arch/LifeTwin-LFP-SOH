@@ -52,7 +52,8 @@ def writable_root() -> Path:
             str(PROJECT_ROOT / "artifacts/test-scratch"),
         )
     )
-    root = scratch_root / uuid.uuid4().hex
+    # Keep nested reproduction tests below the classic Windows MAX_PATH limit.
+    root = scratch_root / uuid.uuid4().hex[:12]
     root.mkdir(parents=True)
     try:
         yield root
