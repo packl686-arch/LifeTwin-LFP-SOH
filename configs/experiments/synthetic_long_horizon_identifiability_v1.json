@@ -1,0 +1,649 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "status": "frozen_before_first_simulation_execution",
+  "freeze": {
+    "freeze_date": "2026-07-22",
+    "freeze_witnesses": [
+      "Jincheng Liu"
+    ],
+    "outcome_exposure_at_freeze": "no_v1_simulation_clusters_or_scores_generated",
+    "amendment_policy": "This v1 file is immutable after its first committed release. Corrections or threshold changes require a new protocol_id and a public deviation record; they may not replace v1 results.",
+    "rerun_policy": "Exact-seed reruns are reproducibility checks, not additional evidence. New seeds require a versioned protocol."
+  },
+  "scientific_question": "Can disagreement among prefix-compatible degradation structures identify unsafe 25-year extrapolations better than outcome-independent random rejection when only the first 730 days are observed?",
+  "evidence_role": "synthetic_mechanism_identifiability_stress_test_only",
+  "design_status": "preregistered_before_implementation_and_simulation_outcome_generation",
+  "explicitly_deferred_questions": {
+    "time_exponent_shrinkage_bias_audit": "deferred_to_a_separate_versioned_protocol_with_a_disjoint_prior_learning_partition",
+    "reason": "V1 isolates structure-disagreement selective prediction and makes no claim about exponent-shrinkage benefit or harm."
+  },
+  "time_grid": {
+    "time_unit": "day",
+    "days_per_year_for_labels": 365.25,
+    "prefix_days": [
+      0.0,
+      7.0,
+      14.0,
+      30.0,
+      60.0,
+      90.0,
+      120.0,
+      180.0,
+      270.0,
+      365.0,
+      540.0,
+      730.0
+    ],
+    "forecast_days": [
+      1095.75,
+      1461.0,
+      1826.25,
+      2556.75,
+      3652.5,
+      5478.75,
+      7305.0,
+      9131.25
+    ],
+    "primary_prefix_end_day": 730.0,
+    "primary_endpoint_day": 9131.25,
+    "prefix_observation_count": 12,
+    "positive_time_prefix_observation_count": 11,
+    "forecast_point_count": 8,
+    "future_capacity_or_soh_visible_to_predictor": false
+  },
+  "truth_generation": {
+    "retention_unit": "percentage_point_with_day_zero_normalized_to_100",
+    "time_scale_days": 365.25,
+    "random_generator": "numpy.random.Generator(PCG64DXSM)_under_the_frozen_environment",
+    "log_uniform_definition": "exp(uniform(log(minimum),log(maximum)))",
+    "softplus_definition": "log1p(exp(x))_evaluated_with_a_numerically_stable_equivalent",
+    "family_sampling": "equal_count_within_every_partition",
+    "family_label_visible_to_predictor": false,
+    "parameter_sampling": "independent_within_declared_ranges_then_filtered_only_by_the_predeclared_admissibility_rules",
+    "truth_families": [
+      {
+        "family_id": "single_power",
+        "formula": "q(t)=100-a*(t/365.25)^b",
+        "parameters": {
+          "a": {
+            "distribution": "uniform",
+            "minimum": 0.2,
+            "maximum": 1.2
+          },
+          "b": {
+            "distribution": "uniform",
+            "minimum": 0.35,
+            "maximum": 0.8
+          }
+        },
+        "mechanism_role": "well_specified_smooth_reference"
+      },
+      {
+        "family_id": "dual_power",
+        "formula": "q(t)=100-a1*(t/365.25)^b1-a2*(t/365.25)^b2",
+        "parameters": {
+          "a1": {
+            "distribution": "uniform",
+            "minimum": 0.1,
+            "maximum": 0.8
+          },
+          "b1": {
+            "distribution": "uniform",
+            "minimum": 0.25,
+            "maximum": 0.65
+          },
+          "a2": {
+            "distribution": "uniform",
+            "minimum": 0.02,
+            "maximum": 0.25
+          },
+          "b2": {
+            "distribution": "uniform",
+            "minimum": 0.9,
+            "maximum": 1.4
+          }
+        },
+        "mechanism_role": "unresolved_fast_and_slow_components"
+      },
+      {
+        "family_id": "saturating_plus_slow",
+        "formula": "q(t)=100-a_sat*(1-exp(-(t/tau_sat)^b_sat))-a_slow*(t/365.25)^b_slow",
+        "parameters": {
+          "a_sat": {
+            "distribution": "uniform",
+            "minimum": 0.5,
+            "maximum": 4.0
+          },
+          "tau_sat_days": {
+            "distribution": "log_uniform",
+            "minimum": 60.0,
+            "maximum": 730.0
+          },
+          "b_sat": {
+            "distribution": "uniform",
+            "minimum": 0.5,
+            "maximum": 1.5
+          },
+          "a_slow": {
+            "distribution": "uniform",
+            "minimum": 0.05,
+            "maximum": 0.5
+          },
+          "b_slow": {
+            "distribution": "uniform",
+            "minimum": 0.3,
+            "maximum": 0.8
+          }
+        },
+        "mechanism_role": "early_saturation_with_persistent_slow_loss"
+      },
+      {
+        "family_id": "early_activation_plus_power",
+        "formula": "q(t)=100-a*(t/365.25)^b+activation_amplitude_pp*(1-exp(-t/tau_rise))*exp(-t/tau_decay)",
+        "parameters": {
+          "a": {
+            "distribution": "uniform",
+            "minimum": 0.2,
+            "maximum": 1.2
+          },
+          "b": {
+            "distribution": "uniform",
+            "minimum": 0.35,
+            "maximum": 0.8
+          },
+          "activation_amplitude_pp": {
+            "distribution": "uniform",
+            "minimum": 0.1,
+            "maximum": 1.5
+          },
+          "tau_rise_days": {
+            "distribution": "log_uniform",
+            "minimum": 3.0,
+            "maximum": 30.0
+          },
+          "tau_decay_days": {
+            "distribution": "log_uniform",
+            "minimum": 60.0,
+            "maximum": 365.0
+          }
+        },
+        "mechanism_role": "temporary_early_capacity_rise_without_long_term_reversal"
+      },
+      {
+        "family_id": "late_knee",
+        "formula": "q(t)=100-a*(t/365.25)^b-k*w*(softplus((t-t_knee)/w)-softplus(-t_knee/w))",
+        "parameters": {
+          "a": {
+            "distribution": "uniform",
+            "minimum": 0.15,
+            "maximum": 0.9
+          },
+          "b": {
+            "distribution": "uniform",
+            "minimum": 0.3,
+            "maximum": 0.75
+          },
+          "k_pp_per_day": {
+            "distribution": "log_uniform",
+            "minimum": 0.0005,
+            "maximum": 0.004
+          },
+          "t_knee_days": {
+            "distribution": "uniform",
+            "minimum": 1095.75,
+            "maximum": 5478.75
+          },
+          "w_days": {
+            "distribution": "log_uniform",
+            "minimum": 30.0,
+            "maximum": 365.0
+          }
+        },
+        "mechanism_role": "post_prefix_acceleration_that_is_not_directly_observed"
+      }
+    ],
+    "admissibility_rules": {
+      "day_zero_retention_exact": 100.0,
+      "minimum_truth_retention_pct_over_full_grid": 50.0,
+      "maximum_truth_retention_pct_over_full_grid": 105.0,
+      "finite_at_every_grid_point": true,
+      "nonincreasing_required_except_family": "early_activation_plus_power",
+      "maximum_single_interval_change_pp": 12.0,
+      "rejected_draw_handling": "resample_from_the_same_cluster_specific_truth_stream_until_valid",
+      "maximum_draw_attempts_per_cluster": 10000,
+      "attempt_limit_result": "protocol_execution_failure_not_cluster_exclusion"
+    }
+  },
+  "observation_model": {
+    "primary_score_target": "latent_noise_free_truth",
+    "secondary_score_target": "noisy_future_measurement",
+    "day_zero_observation_exact": 100.0,
+    "noise_process": "stationary_gaussian_ar1_then_subtract_day_zero_noise_to_preserve_normalization",
+    "noise_recurrence": "After drawing sigma then rho, draw z_0 through z_19 as independent standard normals in ascending combined prefix-then-forecast grid order. Set e_0=sigma*z_0 and e_i=rho*e_(i-1)+sigma*sqrt(1-rho^2)*z_i for i=1..19. Observed retention at grid index i is latent_q_i+e_i-e_0, with index 0 reset exactly to 100. AR steps follow observation-grid index, not elapsed-day gaps.",
+    "rng_consumption_order": "Draw sigma_pp once, rho once, then exactly 20 standard-normal innovations; no rejection or candidate fitting may consume this measurement-noise stream.",
+    "sigma_pp": {
+      "distribution": "uniform",
+      "minimum": 0.05,
+      "maximum": 0.25
+    },
+    "ar1_correlation": {
+      "distribution": "uniform",
+      "minimum": 0.0,
+      "maximum": 0.8
+    },
+    "missingness_in_primary_experiment": false,
+    "rounding_before_model_fit": false
+  },
+  "partitions": {
+    "independent_unit": "one_latent_truth_trajectory_with_one_truth_seed_and_one_measurement_seed",
+    "within_cluster_timepoints_are_independent_units": false,
+    "truth_family_is_a_reporting_stratum_not_an_independent_replication": true,
+    "partition_overlap_allowed": false,
+    "cluster_counts_per_truth_family": {
+      "development": 100,
+      "calibration": 100,
+      "test": 200,
+      "audit": 100
+    },
+    "total_cluster_counts": {
+      "development": 500,
+      "calibration": 500,
+      "test": 1000,
+      "audit": 500
+    },
+    "partition_seed_roots": {
+      "development": 2026072201,
+      "calibration": 2026072202,
+      "test": 2026072203,
+      "audit": 2026072204,
+      "matched_prefix_counterexamples": 2026072205,
+      "random_rejection_comparator": 2026072206,
+      "bootstrap": 2026072207
+    },
+    "generation_seed_derivation": "For truth_parameters and measurement_noise only, take the first 16 hexadecimal digits of SHA256(protocol_id|partition_seed_root|partition|family_id|zero_based_family_cluster_index|stream_name), interpret as an unsigned integer, and reduce modulo 2^63-1.",
+    "predictor_initialization_derivation": "Predictor starts are the declared deterministic Sobol points and use no random seed. Truth family, truth parameters, partition root, future values, and cluster ID are forbidden fitting, disagreement, and issuance inputs.",
+    "predictor_identity_firewall": "Predictor-visible cluster IDs are opaque labels and are never inputs to fitting, disagreement, or issuance. Relabeling IDs and reordering rows while preserving prefix content must preserve predictions and disagreement after key normalization.",
+    "seed_collision_policy": "Any collision across partition, cluster, or stream is a protocol execution failure.",
+    "test_truth_access": "Test truth and family labels remain unavailable to the predictor and gate until the prediction bundle is hashed and frozen."
+  },
+  "candidate": {
+    "model_id": "lifetwin_bounded_structure_disagreement_gate_v1",
+    "fit_data": "one_target_cluster_prefix_only",
+    "uses_future_outcomes": false,
+    "structure_members": [
+      "target_prefix_persistence",
+      "target_prefix_sqrt_time",
+      "target_prefix_bounded_power_law",
+      "target_prefix_saturating_plus_slow",
+      "target_prefix_dual_power",
+      "target_prefix_late_knee_prior_grid"
+    ],
+    "structure_member_specs": [
+      {
+        "model_id": "target_prefix_persistence",
+        "formula": "q(t)=last_observed_prefix_retention",
+        "free_parameters": []
+      },
+      {
+        "model_id": "target_prefix_sqrt_time",
+        "formula": "q(t)=100-c*sqrt(t/365.25)",
+        "parameter_bounds": {
+          "c": [
+            0.0,
+            5.0
+          ]
+        }
+      },
+      {
+        "model_id": "target_prefix_bounded_power_law",
+        "formula": "q(t)=100-a*(t/365.25)^b",
+        "parameter_bounds": {
+          "a": [
+            0.0,
+            5.0
+          ],
+          "b": [
+            0.05,
+            1.5
+          ]
+        }
+      },
+      {
+        "model_id": "target_prefix_saturating_plus_slow",
+        "formula": "q(t)=100-a_sat*(1-exp(-(t/tau_sat)^b_sat))-a_slow*(t/365.25)^b_slow",
+        "parameter_bounds": {
+          "a_sat": [
+            0.0,
+            8.0
+          ],
+          "tau_sat_days": [
+            30.0,
+            1826.25
+          ],
+          "b_sat": [
+            0.25,
+            2.0
+          ],
+          "a_slow": [
+            0.0,
+            2.0
+          ],
+          "b_slow": [
+            0.05,
+            1.2
+          ]
+        }
+      },
+      {
+        "model_id": "target_prefix_dual_power",
+        "formula": "q(t)=100-a1*(t/365.25)^b1-a2*(t/365.25)^b2",
+        "parameter_bounds": {
+          "a1": [
+            0.0,
+            3.0
+          ],
+          "b1": [
+            0.05,
+            0.8
+          ],
+          "a2": [
+            0.0,
+            3.0
+          ],
+          "b2": [
+            0.8,
+            1.5
+          ]
+        },
+        "identifiability_constraint": "b1_less_than_or_equal_to_b2"
+      },
+      {
+        "model_id": "target_prefix_late_knee_prior_grid",
+        "formula": "q(t)=100-a*(t/365.25)^b-k*w*(softplus((t-t_knee)/w)-softplus(-t_knee/w))",
+        "fitted_parameter_bounds": {
+          "a": [
+            0.0,
+            3.0
+          ],
+          "b": [
+            0.05,
+            1.5
+          ]
+        },
+        "fixed_grid": {
+          "k_pp_per_day": [
+            0.0005,
+            0.001,
+            0.002,
+            0.004
+          ],
+          "t_knee_days": [
+            1095.75,
+            1826.25,
+            3652.5,
+            5478.75,
+            7305.0
+          ],
+          "w_days": [
+            30.0,
+            90.0,
+            180.0,
+            365.0
+          ]
+        },
+        "grid_variant_policy": "retain_every_prefix_credible_variant_for_the_family_envelope"
+      }
+    ],
+    "optimizer": {
+      "objective": "unweighted_prefix_squared_error_in_percentage_points",
+      "bounded_parameters": true,
+      "algorithm": "scipy.optimize.least_squares_method_trf_with_linear_loss",
+      "deterministic_multistart_count": 16,
+      "multistart_design": "First 16 unscrambled scipy.stats.qmc.Sobol points in parameter dimension, generated by random_base2(m=4), mapped affinely to each declared finite bound; no outcome-dependent starts and no random seed.",
+      "parameter_transform": "native_declared_parameter_scale_without_log_transform",
+      "maximum_function_evaluations_per_start": 10000,
+      "relative_parameter_tolerance": 1e-10,
+      "relative_objective_tolerance": 1e-10,
+      "best_fit_rule": "minimum prefix SSE across successful finite starts; ties within 1e-12 absolute SSE use lexicographically ascending parameter vector",
+      "closed_form_exceptions": "Persistence uses the last prefix value and sqrt-time uses bounded one-parameter least squares. Every late-knee fixed-grid variant fits only its declared a and b with the same 16-start rule.",
+      "fit_failure_rule": "A start is unsuccessful when the solver reports failure or parameters, residuals, or forecasts are nonfinite. A model variant fails only when every start is unsuccessful; failures are recorded and never deleted."
+    },
+    "credible_member_rule": {
+      "maximum_rmse_above_best_prefix_rmse_pp": 0.1,
+      "maximum_prefix_absolute_residual_pp": 0.5,
+      "minimum_structurally_distinct_family_ids": 2,
+      "forecast_retention_bounds_pct": [
+        40.0,
+        105.0
+      ],
+      "forecast_bounds_application": "credibility_filter_on_raw_unclipped_member_forecasts_at_every_declared_forecast_day",
+      "member_fit_failure": "exclude_member_and_record_failure"
+    },
+    "family_aggregation": "Each structure family has equal weight. Its representative is the coordinatewise median of its credible variants; its envelope retains the minimum and maximum across those variants.",
+    "point_forecast": "coordinatewise_median_of_raw_unclipped_credible_structure_family_representatives; if fewer than two family ids are credible, use the raw bounded_power_law forecast as a recorded fallback",
+    "disagreement_score_pp": "maximum_over_forecast_days_of_global_maximum_family_envelope_minus_global_minimum_family_envelope; set to positive_infinity when fewer than two family ids are credible",
+    "primary_issuance_policy": {
+      "type": "batch_ranked_selective_prediction_for_evaluation_only",
+      "target_issuance_fraction": 0.5,
+      "ranking": "ascending_disagreement_score",
+      "hard_eligibility": "credible_structure_family_count_at_least_2_and_finite_disagreement_and_finite_point_forecast_at_every_forecast_day",
+      "tie_break": "ascending_SHA256(protocol_id|canonical_prefix_content_sha256); a tie-break collision is a protocol execution failure",
+      "truth_family_or_future_outcome_used": false,
+      "required_eligible_test_cluster_count": 500,
+      "ineligible_cluster_policy": "always_abstain_and_never_fill_the_issued_quota_with_infinite_or_failed_cases",
+      "minimum_finite_point_forecast_fraction": 0.95,
+      "deployment_threshold_claim_allowed": false
+    }
+  },
+  "comparators": {
+    "mean_forecast_baselines": [
+      {
+        "model_id": "target_prefix_persistence",
+        "fit_data": "target_prefix_only"
+      },
+      {
+        "model_id": "target_prefix_sqrt_time",
+        "fit_data": "target_prefix_only"
+      },
+      {
+        "model_id": "target_prefix_bounded_power_law",
+        "fit_data": "target_prefix_only"
+      }
+    ],
+    "strongest_mean_baseline_selection": "lowest_calibration_partition_mean_trajectory_iae_with_model_id_lexicographic_tie_break_then_frozen_before_test_scoring",
+    "rejection_baselines": [
+      {
+        "policy_id": "random_rejection_at_50_percent",
+        "definition": "On the same hard-eligible pool, 10000 deterministic rankings ordered by SHA256(2026072206|ranking_index|canonical_prefix_content_sha256); each issues exactly 500 test clusters and uses the candidate point forecast. Tie collisions fail execution."
+      },
+      {
+        "policy_id": "prefix_fit_error_rejection_at_50_percent",
+        "definition": "On the same hard-eligible pool, issue exactly 500 test clusters with the smallest best-member prefix RMSE using the same prefix-content hash tie break"
+      }
+    ],
+    "policy_comparability_rule": "Candidate, random, and prefix-fit policies use the identical hard-eligible pool and issue exactly 500 test clusters. Ineligible clusters remain abstained under every policy.",
+    "bootstrap_random_baseline": "Within each bootstrap resample, the exact expectation of matched-count random issuance risk is the hard-eligible pre-policy catastrophic prevalence. Do not nest the 10000 published random rankings inside bootstrap resamples."
+  },
+  "matched_prefix_counterexample_audit": {
+    "statistical_unit": "one_matched_pair_cluster",
+    "family_pairs": [
+      [
+        "single_power",
+        "late_knee"
+      ]
+    ],
+    "required_pairs_per_family_pair": 200,
+    "required_total_pair_clusters": 200,
+    "matching_uses_candidate_predictions": false,
+    "prefix_comparison_grid": "every_integer_day_from_0_through_730_inclusive_using_latent_noise_free_curves",
+    "construction_algorithm": "For pair index 0..199 derive one pair seed from SHA256(protocol_id|2026072205|single_power|late_knee|pair_index). Draw shared a uniformly on [0.2,0.9] and shared b uniformly on [0.35,0.75], then draw late-knee t_knee_days uniformly on [1826.25,3652.5] and k_pp_per_day uniformly on [0.0015,0.0030], with w_days fixed at 30.0. The left curve is q=100-a*(t/365.25)^b; the right curve uses exactly the same a,b plus the declared late-knee term. Consume draws in that order, make exactly one proposal per pair, and never optimize, search, rank, or select by future separation or candidate output.",
+    "measurement_noise_seed": "For each pair derive SHA256(protocol_id|2026072205|pair_id|measurement_noise), convert by the ordinary first-16-hex modulo rule, and use the resulting single noise realization for both members.",
+    "bundle_integration": "Both members appear in prefix_pack.csv, forecast_coordinates.csv, prediction_bundle.csv, decision_bundle.csv, member_fit_diagnostics.csv, and truth_pack.csv with partition exactly matched_prefix_counterexamples. Their opaque cluster IDs do not encode family or side and are never model inputs. Pair ID, side, and family mapping remain sealed until prediction_commitment.json is written and are first exposed through matched_prefix_pairs.csv during scoring.",
+    "latent_prefix_rmse_max_pp": 0.1,
+    "latent_prefix_max_absolute_difference_pp": 0.1,
+    "minimum_25_year_truth_separation_pp": 5.0,
+    "minimum_maximum_forecast_grid_truth_separation_pp": 5.0,
+    "noise_policy": "both members receive the same measurement-noise realization so the audit isolates structural ambiguity",
+    "proposal_count_per_pair": 1,
+    "invalid_constructed_pair_result": "protocol_execution_failure_not_resampling_or_threshold_relaxation",
+    "rejection_threshold": "the disagreement score of rank 250 among ascending hard-eligible calibration clusters, required finite and frozen before counterexample scoring; at least 250 hard-eligible calibration clusters are required",
+    "rejection_comparison": "finite_candidate_disagreement_score_strictly_greater_than_threshold",
+    "nonfinite_pair_disagreement": "does_not_count_as_endpoint_success_and_is_reported_as_a_model_failure"
+  },
+  "endpoints": {
+    "catastrophic_error_definition": "absolute_candidate_point_forecast_error_at_day_9131.25_greater_than_or_equal_to_5.0_pp_or_an_unavailable_nonfinite_forecast_if_the_policy_attempts_issuance",
+    "trajectory_iae_definition": "trapezoidal_absolute_error_over_forecast_days_divided_by_9131.25_minus_1095.75",
+    "primary": [
+      {
+        "endpoint_id": "catastrophic_risk_reduction_at_50_percent_issuance",
+        "estimand": "1-minus_candidate_disagreement_issued_catastrophic_rate_divided_by_mean_random_rejection_issued_catastrophic_rate",
+        "threshold": 0.3,
+        "comparison": "greater_than_or_equal",
+        "additional_gate": "family_stratified_cluster_bootstrap_one_sided_95_percent_lower_bound_greater_than_0"
+      },
+      {
+        "endpoint_id": "matched_prefix_both_members_rejected",
+        "estimand": "fraction_of_qualified_matched_pair_clusters_for_which_both_members_exceed_the_frozen_calibration_disagreement_threshold",
+        "threshold": 0.8,
+        "comparison": "greater_than_or_equal"
+      },
+      {
+        "endpoint_id": "issued_trajectory_iae_noninferiority",
+        "estimand": "candidate_minus_frozen_strongest_mean_baseline_mean_trajectory_iae_on_the_candidate_issued_test_clusters",
+        "threshold_pp": 0.1,
+        "comparison": "less_than_or_equal"
+      }
+    ],
+    "secondary": [
+      "catastrophic_error_rate_by_truth_family",
+      "endpoint_absolute_error_pp_by_truth_family",
+      "trajectory_iae_pp_by_truth_family",
+      "risk_coverage_curve_and_area",
+      "disagreement_score_auroc_for_catastrophic_error",
+      "prefix_fit_error_rejection_comparison",
+      "credible_member_count_and_fit_failure_rate",
+      "noise_free_versus_noisy_future_score_sensitivity",
+      "results_at_25_50_75_percent_issuance_marked_secondary",
+      "audit_partition_replication_without_retuning"
+    ],
+    "bootstrap": {
+      "resamples": 5000,
+      "unit": "independent_test_cluster",
+      "stratify_by_truth_family": true,
+      "seed_root": 2026072207,
+      "confidence_level": 0.95,
+      "recompute_ranked_issuance_and_the_full_estimand_within_each_resample": true,
+      "resampling_algorithm": "Within each truth family sample clusters with replacement to the original family count, concatenate the five strata, and preserve duplicate occurrences as distinct bootstrap rows. Rank by disagreement, canonical prefix hash, then within-resample draw-order occurrence ordinal; duplicate draws of one original row are allowed and only a hash collision between distinct original prefixes fails execution. Recompute hard eligibility and the exact 500-cluster disagreement ranking, and compare issued risk with the resample hard-eligible catastrophe prevalence as the analytic matched-count random expectation.",
+      "one_sided_lower_bound": "numpy quantile at probability 0.05 with method=linear over the 5000 finite risk-reduction replicates",
+      "zero_random_risk_rule": "A replicate with zero hard-eligible random-expected catastrophe risk has undefined risk reduction and is reported; if any such replicate occurs, the one-sided gate is inconclusive_not_success rather than silently dropping it.",
+      "insufficient_eligible_resample_rule": "A replicate with fewer than 500 hard-eligible occurrences is undefined and reported; if any occurs, the one-sided gate is inconclusive_not_success rather than silently dropping it.",
+      "multiplicity_claim": "descriptive_gate_diagnostic_not_confirmatory_p_value"
+    }
+  },
+  "decision_rules": {
+    "minimum_hard_eligible_test_catastrophic_cluster_count_before_rejection": 30,
+    "minimum_eligible_test_cluster_count": 500,
+    "minimum_eligible_calibration_cluster_count": 250,
+    "minimum_eligible_audit_cluster_count": 250,
+    "minimum_qualified_counterexample_pair_count": 200,
+    "all_primary_endpoints_required": true,
+    "minimum_finite_point_forecast_fraction": 0.95,
+    "audit_directional_consistency": "On the untouched 500-cluster audit partition, use the frozen rules and issue exactly the 250 lowest-disagreement hard-eligible clusters; catastrophic risk reduction versus the analytic matched-count random expectation must be greater than 0 without retuning.",
+    "success": "All three primary endpoints and every minimum-count/data-integrity gate pass on the untouched test and matched-pair audit partitions; the audit partition is directionally consistent without retuning.",
+    "failure": "Any primary endpoint misses its threshold, any required integrity gate fails, or the audit partition reverses the sign of catastrophic-risk reduction.",
+    "inconclusive_not_success": "Fewer than 30 hard-eligible pre-policy catastrophic test clusters, fewer than 500 hard-eligible test clusters, fewer than 250 hard-eligible calibration clusters, fewer than 250 hard-eligible audit clusters, fewer than 200 qualified matched pairs, fewer than 95 percent finite point forecasts, or an undefined bootstrap lower bound. Thresholds may not be relaxed under v1.",
+    "nonfinite_scoring_policy": "Nonfinite or model-failed clusters are hard-abstained. A comparator implementation that attempts to issue one counts it as catastrophic; trajectory IAE is unavailable and separately reported, never dropped. Every candidate-issued trajectory must be finite for the IAE endpoint to be evaluable.",
+    "void": "Seed collision, test-truth access before prediction freeze, code or protocol hash mismatch, partition overlap, undeclared exclusion, or loss of a required artifact.",
+    "negative_result_policy": "Publish failure or inconclusive results with the same aggregate and per-family tables; do not tune v1 on test or audit truth."
+  },
+  "firewall_and_artifacts": {
+    "generation_order": [
+      "freeze_protocol_code_environment_and_seed_roots",
+      "generate_prefix_pack_forecast_coordinates_and_sealed_truth_pack",
+      "publish_truth_pack_sha256_commitment_without_truth_values",
+      "fit_models_and_freeze_prediction_bundle_and_decisions",
+      "verify_prediction_hash_then_link_truth",
+      "score_once_and_publish_all_predeclared_outputs"
+    ],
+    "required_artifacts": [
+      "prefix_pack.csv",
+      "forecast_coordinates.csv",
+      "truth_commitment.json",
+      "prediction_bundle.csv",
+      "decision_bundle.csv",
+      "prediction_commitment.json",
+      "member_fit_diagnostics.csv",
+      "truth_pack.csv",
+      "matched_prefix_pairs.csv",
+      "score_report.json",
+      "environment.json",
+      "exposure_log.json"
+    ],
+    "exact_csv_column_allowlists": {
+      "prefix_pack.csv": ["protocol_id", "partition", "cluster_id", "prefix_day", "observed_retention_pct"],
+      "forecast_coordinates.csv": ["protocol_id", "partition", "cluster_id", "forecast_day"],
+      "prediction_bundle.csv": ["protocol_id", "partition", "cluster_id", "forecast_day", "candidate_point_forecast_pct", "persistence_forecast_pct", "sqrt_time_forecast_pct", "bounded_power_forecast_pct", "structure_envelope_lower_pct", "structure_envelope_upper_pct", "canonical_prefix_content_sha256"],
+      "decision_bundle.csv": ["protocol_id", "partition", "cluster_id", "canonical_prefix_content_sha256", "credible_structure_family_count", "fit_failure_count", "best_prefix_rmse_pp", "disagreement_score_pp", "hard_eligible", "primary_issuance_rank", "primary_issued", "abstention_reasons"],
+      "member_fit_diagnostics.csv": ["protocol_id", "partition", "cluster_id", "model_id", "variant_id", "fit_status", "credible_variant", "prefix_rmse_pp", "prefix_max_abs_residual_pp", "forecast_min_pct", "forecast_max_pct", "canonical_prefix_content_sha256"],
+      "truth_pack.csv": ["protocol_id", "partition", "cluster_id", "truth_family", "truth_parameters_json", "forecast_day", "latent_retention_pct", "noisy_retention_pct"],
+      "matched_prefix_pairs.csv": ["protocol_id", "pair_id", "left_cluster_id", "right_cluster_id", "left_family", "right_family", "latent_prefix_rmse_pp", "latent_prefix_max_abs_difference_pp", "truth_separation_25y_pp", "max_forecast_truth_separation_pp"]
+    },
+    "unknown_column_policy": "reject_before_fitting_or_scoring_for_every_allowlisted_bundle; aliases and extra oracle or truth fields are not ignored",
+    "bundle_key_contracts": {
+      "prefix_pack.csv": "exactly one row per partition,cluster_id,prefix_day and the exact 12 declared prefix days",
+      "forecast_coordinates.csv": "exactly one row per partition,cluster_id,forecast_day and the exact 8 declared forecast days",
+      "prediction_bundle.csv": "exactly one row per partition,cluster_id,forecast_day matching forecast_coordinates.csv",
+      "decision_bundle.csv": "exactly one row per partition,cluster_id matching the prediction cluster set",
+      "member_fit_diagnostics.csv": "at least one explicit status row for every declared structure family per partition,cluster_id; failed variants remain rows",
+      "truth_pack.csv": "exactly one row per partition,cluster_id,forecast_day matching forecast_coordinates.csv",
+      "matched_prefix_pairs.csv": "exactly 200 unique pair_id rows; every left and right cluster appears exactly once and maps to one of the 400 matched_prefix_counterexamples clusters present in every ordinary bundle"
+    },
+    "exact_json_key_allowlists": {
+      "truth_commitment.json": ["protocol_id", "config_sha256", "truth_pack_byte_sha256", "truth_pack_row_count", "created_utc", "truth_values_withheld_until_prediction_commitment"],
+      "prediction_commitment.json": ["protocol_id", "config_sha256", "prefix_pack_byte_sha256", "forecast_coordinates_byte_sha256", "prediction_bundle_byte_sha256", "decision_bundle_byte_sha256", "member_fit_diagnostics_byte_sha256", "row_counts", "created_utc", "truth_pack_opened_before_commitment"]
+    },
+    "scorer_freeze_contract": "Before any truth table is opened, write prediction_bundle.csv and decision_bundle.csv, compute their byte SHA256 values, and write prediction_commitment.json. The independent scorer receives the expected hashes as explicit arguments, verifies exact allowlisted columns, keys, coordinates, completeness, and both byte hashes, and only then opens and joins truth_pack.csv. Rehashing a tampered or incomplete bundle is not a valid freeze.",
+    "hash_algorithm": "sha256",
+    "nonfinite_json_allowed": false,
+    "post_generation_exclusions_allowed": false,
+    "model_failures_are_recorded_as_abstentions_not_deleted": true
+  },
+  "reporting": {
+    "primary_table_unit": "independent_test_cluster",
+    "matched_pair_table_unit": "independent_pair_cluster",
+    "required_slices": [
+      "all_truth_families",
+      "each_truth_family",
+      "each_forecast_day",
+      "credible_member_count",
+      "model_fit_failure_status"
+    ],
+    "required_negative_reporting": [
+      "all_failed_primary_gates",
+      "all_family_specific_reversals",
+      "all_model_fit_failures",
+      "all_protocol_deviations",
+      "random_rejection_distribution_not_only_its_mean"
+    ]
+  },
+  "claim_boundaries": {
+    "allowed_if_successful": [
+      "On the frozen synthetic families, structure disagreement reduced 25-year catastrophic extrapolation risk under the predeclared selective-prediction protocol.",
+      "The experiment demonstrates a falsifiable software and identifiability stress test on known synthetic truth."
+    ],
+    "prohibited_regardless_of_result": [
+      "real_lfp_25_year_accuracy",
+      "hithium_product_accuracy_or_validation",
+      "utility_scale_storage_station_validation",
+      "individual_physical_cell_validation",
+      "formal_operational_coverage",
+      "independent_external_dataset_confirmation",
+      "synthetic_truth_families_are_complete_battery_physics",
+      "batch_ranked_50_percent_issuance_is_a_deployment_threshold"
+    ],
+    "failure_interpretation": "Failure falsifies readiness of the v1 structure-disagreement gate for these declared synthetic hazards; it does not establish that every long-horizon model is impossible.",
+    "success_does_not_raise_current_lifetwin_evidence_grade": true,
+    "fifteen_to_twenty_five_year_product_claim_allowed": false
+  }
+}
