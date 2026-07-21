@@ -24,6 +24,7 @@ import uuid
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PHASE8_RUNNER = Path("scripts/run_calendar_v3_activation_development.py")
 PHASE8_ANALYZER = Path("showcase/analyze_phase8_results.py")
+V012_ANALYZER = Path("showcase/analyze_v012_robustness.py")
 PHASE1_AUDIT_RUNNER = Path("scripts/run_phase1_adversarial_audit.py")
 PHASE8_INPUT = Path("data/interim/naumann_calendar_observations.csv")
 REPRODUCTION_CONSTRAINTS = Path("requirements/reproduction.txt")
@@ -31,18 +32,24 @@ PHASE8_CONFIG = Path(
     "configs/experiments/naumann_calendar_v3_activation_development.json"
 )
 LANDMARK_RUNNER = Path("scripts/run_calendar_landmark_readiness.py")
-LANDMARK_CONFIG = Path(
-    "configs/experiments/naumann_calendar_landmark_readiness.json"
-)
+LANDMARK_CONFIG = Path("configs/experiments/naumann_calendar_landmark_readiness.json")
 V4_RUNNER = Path("scripts/run_calendar_v4_hybrid_development.py")
-V4_CONFIG = Path(
-    "configs/experiments/naumann_calendar_v4_hybrid_development.json"
-)
+V4_CONFIG = Path("configs/experiments/naumann_calendar_v4_hybrid_development.json")
 GEISBAUER_RUNNER = Path("scripts/run_geisbauer_external_stress.py")
 GEISBAUER_CONFIG = Path(
     "configs/experiments/geisbauer_lfp_calendar_external_stress.json"
 )
 GEISBAUER_INPUT = Path("data/external/geisbauer_2022/LFP_Data.csv")
+V4_CALIBRATION_ROBUSTNESS_RUNNER = Path(
+    "scripts/run_calendar_v4_calibration_robustness.py"
+)
+V4_CALIBRATION_ROBUSTNESS_CONFIG = Path(
+    "configs/experiments/naumann_calendar_v4_calibration_robustness.json"
+)
+GEISBAUER_ROBUSTNESS_RUNNER = Path("scripts/run_geisbauer_robustness_audit.py")
+GEISBAUER_ROBUSTNESS_CONFIG = Path(
+    "configs/experiments/geisbauer_lfp_calendar_robustness_audit.json"
+)
 V011_PUBLISHED_ROOT = Path("showcase/evidence_v011")
 V011_RESULT_FILES = {
     "landmark": "decision.json",
@@ -72,6 +79,41 @@ V011_VOLATILE_SHA256_COLUMNS = {
     ("v4", "calibration_condition_scores.csv"): frozenset(
         {"training_state_sha256", "calibration_prediction_state_sha256"}
     ),
+}
+V012_PUBLISHED_ROOT = Path("showcase/evidence_v012")
+V012_RESULT_FILES = {
+    "v4_calibration_robustness": "result.json",
+    "geisbauer_robustness": "result.json",
+}
+V012_CORE_CSVS = {
+    "v4_calibration_robustness": (
+        "candidate_label_free_predictions.csv",
+        "candidate_condition_scores.csv",
+        "baseline_route_metrics.csv",
+        "baseline_condition_metrics.csv",
+        "loco_route_metrics.csv",
+        "loco_condition_metrics.csv",
+        "partition_catalog.csv",
+        "partition_route_metrics.csv",
+        "partition_condition_metrics.csv",
+        "sensitivity_summary.csv",
+    ),
+    "geisbauer_robustness": (
+        "cell_paired_deltas.csv",
+        "cell_day_paired_deltas.csv",
+        "stratum_diagnostics.csv",
+        "leave_one_cell_out.csv",
+    ),
+}
+V012_VOLATILE_SHA256_COLUMNS = {
+    (
+        "v4_calibration_robustness",
+        "candidate_label_free_predictions.csv",
+    ): frozenset({"training_state_sha256", "condition_prediction_state_sha256"}),
+    (
+        "v4_calibration_robustness",
+        "candidate_condition_scores.csv",
+    ): frozenset({"training_state_sha256", "condition_prediction_state_sha256"}),
 }
 CORE_PHASE8_CSVS = (
     "comparison_summary.csv",
@@ -106,9 +148,7 @@ PHASE1_FRACTION_ABSOLUTE_TOLERANCE = 1e-4
 PHASE1_AUDIT_RESIDUAL_RELATIVE_TOLERANCE = 0.0
 PHASE1_AUDIT_RESIDUAL_ABSOLUTE_TOLERANCE = 1e-10
 PHASE1_FAILURE_CLASSIFICATION_TOLERANCE = 1e-12
-STATE_HASH_COLUMNS = frozenset(
-    {"training_state_sha256", "prediction_state_sha256"}
-)
+STATE_HASH_COLUMNS = frozenset({"training_state_sha256", "prediction_state_sha256"})
 FUTURE_ATTACK_HASH_PAIRS = (
     ("prediction_sha256_baseline", "prediction_sha256_attacked"),
     ("sensitivity_sha256_baseline", "sensitivity_sha256_attacked"),
@@ -344,9 +384,9 @@ def _tracked_files(project_root: Path) -> set[str]:
         raise ReproductionError(f"Git tracked-file preflight failed: {detail}")
     return {
         value
-        for value in completed.stdout.decode(
-            "utf-8", errors="surrogateescape"
-        ).split("\0")
+        for value in completed.stdout.decode("utf-8", errors="surrogateescape").split(
+            "\0"
+        )
         if value
     }
 
@@ -416,15 +456,20 @@ def _preflight(project_root: Path, mode: str) -> dict[str, object]:
     required_paths = (
         PHASE8_RUNNER,
         PHASE8_ANALYZER,
+        V012_ANALYZER,
         PHASE1_AUDIT_RUNNER,
         LANDMARK_RUNNER,
         V4_RUNNER,
         GEISBAUER_RUNNER,
+        V4_CALIBRATION_ROBUSTNESS_RUNNER,
+        GEISBAUER_ROBUSTNESS_RUNNER,
         PHASE8_INPUT,
         PHASE8_CONFIG,
         LANDMARK_CONFIG,
         V4_CONFIG,
         GEISBAUER_CONFIG,
+        V4_CALIBRATION_ROBUSTNESS_CONFIG,
+        GEISBAUER_ROBUSTNESS_CONFIG,
         GEISBAUER_INPUT,
         REPRODUCTION_CONSTRAINTS,
     )
@@ -465,9 +510,7 @@ def _preflight(project_root: Path, mode: str) -> dict[str, object]:
             missing_packages.append(distribution)
             continue
         try:
-            package_versions[distribution] = importlib_metadata.version(
-                distribution
-            )
+            package_versions[distribution] = importlib_metadata.version(distribution)
         except importlib_metadata.PackageNotFoundError:
             missing_packages.append(distribution)
     if missing_packages:
@@ -595,8 +638,7 @@ def _csv_semantically_equal(
         return False
     header = published_rows[0]
     if any(
-        len(row) != len(header)
-        for row in (*published_rows[1:], *generated_rows[1:])
+        len(row) != len(header) for row in (*published_rows[1:], *generated_rows[1:])
     ):
         return False
     volatile_indexes = {
@@ -607,12 +649,8 @@ def _csv_semantically_equal(
     if volatile_sha256_columns - set(header):
         return False
     for index in volatile_indexes:
-        published_topology = _sha256_equivalence_topology(
-            published_rows[1:], index
-        )
-        generated_topology = _sha256_equivalence_topology(
-            generated_rows[1:], index
-        )
+        published_topology = _sha256_equivalence_topology(published_rows[1:], index)
+        generated_topology = _sha256_equivalence_topology(generated_rows[1:], index)
         if (
             published_topology is None
             or generated_topology is None
@@ -752,9 +790,7 @@ def _phase1_row_invariant_mismatch(
             temperatures.append(float(row[indexes["temperature_c"]]))
         for keys in grouped_keys.values():
             values = {
-                key: float(
-                    indexed_rows[key][indexes["candidate_trajectory_iae_pp"]]
-                )
+                key: float(indexed_rows[key][indexes["candidate_trajectory_iae_pp"]])
                 for key in keys
             }
             for key, value in values.items():
@@ -763,8 +799,7 @@ def _phase1_row_invariant_mismatch(
                 )
                 failure_group_size[key] = len(keys)
         failure_occurrences = {
-            key: len(scenarios)
-            for key, scenarios in occurrence_scenarios.items()
+            key: len(scenarios) for key, scenarios in occurrence_scenarios.items()
         }
         failure_minimum_temperature = min(temperatures)
         failure_maximum_temperature = max(temperatures)
@@ -819,9 +854,7 @@ def _phase1_row_invariant_mismatch(
 
         checks: list[dict[str, object] | None] = []
         if filename == "independent_metric_audit.csv":
-            for official, recomputed, difference in (
-                _INDEPENDENT_METRIC_RELATIONSHIPS
-            ):
+            for official, recomputed, difference in _INDEPENDENT_METRIC_RELATIONSHIPS:
                 checks.append(
                     numeric_check(
                         difference,
@@ -881,12 +914,8 @@ def _phase1_row_invariant_mismatch(
                     )
             primary_delta = candidate_iae - comparator_iae
             gate_ready = row[indexes["activation_gate_ready"]] == "True"
-            component_selected = (
-                row[indexes["activation_component_selected"]] == "True"
-            )
-            negative_loss_evidence = (
-                row[indexes["negative_loss_evidence"]] == "True"
-            )
+            component_selected = row[indexes["activation_component_selected"]] == "True"
+            negative_loss_evidence = row[indexes["negative_loss_evidence"]] == "True"
             positive_count = number("positive_time_observation_count")
             occurrence_key = (
                 row[indexes["prefix_checkups"]],
@@ -898,20 +927,15 @@ def _phase1_row_invariant_mismatch(
                 failure_group_size[key] * 0.25
             )
             temperature = number("temperature_c")
-            expected_outside_hull = (
-                "temperature" in row[indexes["scenario"]]
-                and temperature
-                in (
-                    failure_minimum_temperature,
-                    failure_maximum_temperature,
-                )
+            expected_outside_hull = "temperature" in row[
+                indexes["scenario"]
+            ] and temperature in (
+                failure_minimum_temperature,
+                failure_maximum_temperature,
             )
-            ungated_delta = (
-                number("ungated_target_trajectory_iae_pp") - comparator_iae
-            )
+            ungated_delta = number("ungated_target_trajectory_iae_pp") - comparator_iae
             gated_hierarchical_delta = (
-                number("gated_hierarchical_trajectory_iae_pp")
-                - comparator_iae
+                number("gated_hierarchical_trajectory_iae_pp") - comparator_iae
             )
             checks.extend(
                 [
@@ -948,8 +972,7 @@ def _phase1_row_invariant_mismatch(
                     ),
                     numeric_check(
                         "horizon_to_prefix_time_ratio",
-                        number("validation_horizon_days")
-                        / prefix_end_days,
+                        number("validation_horizon_days") / prefix_end_days,
                     ),
                     numeric_check(
                         "scenario_occurrence_count",
@@ -1017,10 +1040,7 @@ def _phase1_row_invariant_mismatch(
             )
             if primary_delta > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
                 outcome_class = "relative_regression"
-            elif (
-                abs(primary_delta)
-                <= PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
-            ):
+            elif abs(primary_delta) <= PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
                 outcome_class = "exact_v2_fallback"
             else:
                 outcome_class = "retrospective_improvement"
@@ -1028,9 +1048,7 @@ def _phase1_row_invariant_mismatch(
             observed_failure = primary_delta > (
                 PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
             ) or (
-                gate_ready
-                and primary_delta
-                >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+                gate_ready and primary_delta >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
             )
             if observed_failure:
                 trust_status = "observed_relative_failure"
@@ -1052,15 +1070,13 @@ def _phase1_row_invariant_mismatch(
                 risk_flags.append("fallback_same_as_v2")
             else:
                 risk_flags.append("retrospective_improvement_signal")
-            if (
-                gate_ready
-                and primary_delta
-                >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
-            ):
+            if gate_ready and primary_delta >= -PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
                 risk_flags.append("gate_triggered_without_trajectory_gain")
-            if number("candidate_final_absolute_error_pp") > number(
-                "comparator_final_absolute_error_pp"
-            ) + PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
+            if (
+                number("candidate_final_absolute_error_pp")
+                > number("comparator_final_absolute_error_pp")
+                + PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
+            ):
                 risk_flags.append("candidate_worse_at_final_checkup")
             if number("horizon_to_prefix_time_ratio") > 5.0:
                 risk_flags.append("long_horizon_from_short_prefix")
@@ -1074,17 +1090,13 @@ def _phase1_row_invariant_mismatch(
                 risk_flags.append("scenario_duplicate_not_independent_evidence")
             if ungated_delta > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
                 risk_flags.append("ungated_specialist_would_regress")
-            if (
-                gated_hierarchical_delta
-                > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE
-            ):
+            if gated_hierarchical_delta > PHASE1_FAILURE_CLASSIFICATION_TOLERANCE:
                 risk_flags.append("alternative_hierarchical_gate_regresses")
             checks.append(exact_check("risk_flags", ";".join(risk_flags)))
 
             if trust_status == "observed_relative_failure":
                 recommended_action = (
-                    "Do not use the candidate; diagnose the specialist and "
-                    "retain V2."
+                    "Do not use the candidate; diagnose the specialist and retain V2."
                 )
             elif not gate_ready:
                 recommended_action = (
@@ -1096,9 +1108,7 @@ def _phase1_row_invariant_mismatch(
                     "Freeze the rule and test an independent cell-level cohort "
                     "before use."
                 )
-            checks.append(
-                exact_check("recommended_action", recommended_action)
-            )
+            checks.append(exact_check("recommended_action", recommended_action))
 
             if not gate_ready:
                 for candidate_column, comparator_column in (
@@ -1135,7 +1145,9 @@ def _phase1_csv_semantic_comparison(
     try:
         schema = PHASE1_CSV_SCHEMAS[filename]
     except KeyError as exc:
-        raise ReproductionError(f"No Phase 1 CSV schema declared for {filename}") from exc
+        raise ReproductionError(
+            f"No Phase 1 CSV schema declared for {filename}"
+        ) from exc
 
     tolerances = {
         column: (absolute, relative)
@@ -1383,8 +1395,7 @@ def _phase1_csv_semantic_comparison(
                 ("generated", generated_pair),
             ):
                 valid = pair == ("", "") or (
-                    pair[0] == pair[1]
-                    and SHA256_PATTERN.fullmatch(pair[0]) is not None
+                    pair[0] == pair[1] and SHA256_PATTERN.fullmatch(pair[0]) is not None
                 )
                 if not valid:
                     return result(
@@ -1392,8 +1403,12 @@ def _phase1_csv_semantic_comparison(
                             "invalid_sha256_pair",
                             key=key_report,
                             column=f"{left_column},{right_column}",
-                            published_value=(published_pair if side == "published" else None),
-                            generated_value=(generated_pair if side == "generated" else None),
+                            published_value=(
+                                published_pair if side == "published" else None
+                            ),
+                            generated_value=(
+                                generated_pair if side == "generated" else None
+                            ),
                             tolerance={"mode": "equal_sha256_or_both_blank"},
                         )
                     )
@@ -1514,8 +1529,7 @@ def _json_semantically_equal(left: object, right: object) -> bool:
         )
     if isinstance(left, list) and isinstance(right, list):
         return len(left) == len(right) and all(
-            _json_semantically_equal(a, b)
-            for a, b in zip(left, right, strict=True)
+            _json_semantically_equal(a, b) for a, b in zip(left, right, strict=True)
         )
     if (
         isinstance(left, (int, float))
@@ -1586,9 +1600,7 @@ def _compare_core_csvs(
                 "relative": NUMERIC_RELATIVE_TOLERANCE,
                 "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
             },
-            "cross_platform_volatile_sha256_columns": sorted(
-                volatile_sha256_columns
-            ),
+            "cross_platform_volatile_sha256_columns": sorted(volatile_sha256_columns),
             "row_count": row_count,
             "status": "passed" if passed else "failed",
         }
@@ -1601,7 +1613,9 @@ def _compare_core_csvs(
     return comparisons
 
 
-def _normalized_v011_result(payload: dict[str, object], group: str) -> dict[str, object]:
+def _normalized_v011_result(
+    payload: dict[str, object], group: str
+) -> dict[str, object]:
     normalized = json.loads(json.dumps(payload, allow_nan=False))
     normalized.pop("provenance", None)
     normalized.pop("artifacts", None)
@@ -1629,9 +1643,7 @@ def _compare_v011_core_csvs(
     frozen = manifest["frozen_files_sha256"]
     comparisons: list[dict[str, object]] = []
     for filename in V011_CORE_CSVS[group]:
-        published_relative = (
-            V011_PUBLISHED_ROOT / group / filename
-        ).as_posix()
+        published_relative = (V011_PUBLISHED_ROOT / group / filename).as_posix()
         published = project_root / published_relative
         generated = generated_root / filename
         if published_relative not in frozen:
@@ -1656,23 +1668,18 @@ def _compare_v011_core_csvs(
         passed = published_sha256 == expected_sha256 and semantically_equal
         comparison = {
             "path": published_relative,
-            "generated_path": (
-                Path("evidence_v011") / group / filename
-            ).as_posix(),
+            "generated_path": (Path("evidence_v011") / group / filename).as_posix(),
             "expected_release_sha256": expected_sha256,
             "published_sha256": published_sha256,
             "generated_sha256": generated_sha256,
-            "generated_sha_matches_release": generated_sha256
-            == expected_sha256,
+            "generated_sha_matches_release": generated_sha256 == expected_sha256,
             "semantic_content_equal": semantically_equal,
             "byte_equal": generated.read_bytes() == published.read_bytes(),
             "numeric_tolerance": {
                 "relative": NUMERIC_RELATIVE_TOLERANCE,
                 "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
             },
-            "cross_platform_volatile_sha256_columns": sorted(
-                volatile_sha256_columns
-            ),
+            "cross_platform_volatile_sha256_columns": sorted(volatile_sha256_columns),
             "status": "passed" if passed else "failed",
         }
         comparisons.append(comparison)
@@ -1696,9 +1703,7 @@ def _inspect_v011_group(
         result_filename = V011_RESULT_FILES[group]
     except KeyError as exc:
         raise ReproductionError(f"Unknown V0.11 evidence group: {group}") from exc
-    published_relative = (
-        V011_PUBLISHED_ROOT / group / result_filename
-    ).as_posix()
+    published_relative = (V011_PUBLISHED_ROOT / group / result_filename).as_posix()
     published_path = project_root / published_relative
     generated_path = generated_root / result_filename
     if published_relative not in manifest["frozen_files_sha256"]:
@@ -1706,9 +1711,7 @@ def _inspect_v011_group(
             f"V0.11 result JSON is not frozen: {published_relative}"
         )
     if not published_path.is_file() or not generated_path.is_file():
-        raise ReproductionError(
-            f"Missing published or generated V0.11 result: {group}"
-        )
+        raise ReproductionError(f"Missing published or generated V0.11 result: {group}")
     expected_sha256 = str(manifest["frozen_files_sha256"][published_relative])
     published_sha256 = _sha256(published_path)
     if published_sha256 != expected_sha256:
@@ -1728,8 +1731,7 @@ def _inspect_v011_group(
 
     if group == "landmark":
         guarded = (
-            generated.get("status")
-            == "retrospective_signal_only_confirmation_blocked"
+            generated.get("status") == "retrospective_signal_only_confirmation_blocked"
             and generated.get("retrospective_signal_landmark") == 10
             and generated.get("confirmed_earliest_landmark") is None
             and generated.get("model_validation_status") == "not_confirmed"
@@ -1755,13 +1757,10 @@ def _inspect_v011_group(
             and gate.get("gate_ready_physical_cell_count") == 0
             and gate.get("fallback_physical_cell_count") == 15
             and float(comparison.get("mean_paired_delta_iae_pp", -1.0)) > 0.0
-            and decision.get("independent_long_term_validation_claim_allowed")
-            is False
+            and decision.get("independent_long_term_validation_claim_allowed") is False
         )
     if not guarded:
-        raise ReproductionError(
-            f"V0.11 claim guard failed for evidence group: {group}"
-        )
+        raise ReproductionError(f"V0.11 claim guard failed for evidence group: {group}")
     return {
         "status": "passed",
         "group": group,
@@ -1777,15 +1776,303 @@ def _inspect_v011_group(
     }
 
 
-def _inspect_png(path: Path) -> dict[str, object]:
+def _normalized_v012_result(
+    payload: dict[str, object], group: str
+) -> dict[str, object]:
+    if group not in V012_RESULT_FILES:
+        raise ReproductionError(f"Unknown V0.12 evidence group: {group}")
+    normalized = json.loads(json.dumps(payload, allow_nan=False))
+    normalized.pop("provenance", None)
+    normalized.pop("artifacts", None)
+    if group == "v4_calibration_robustness":
+        normalized.pop("candidate_prediction_pack_sha256", None)
+    else:
+        base_evidence = normalized.get("base_evidence")
+        if isinstance(base_evidence, dict):
+            base_evidence.pop("label_free_prediction_sha256", None)
+    return normalized
+
+
+def _compare_v012_core_csvs(
+    project_root: Path,
+    generated_root: Path,
+    group: str,
+) -> list[dict[str, object]]:
+    manifest = json.loads(
+        (project_root / "release_manifest.json").read_text(encoding="utf-8")
+    )
+    frozen = manifest["frozen_files_sha256"]
+    try:
+        filenames = V012_CORE_CSVS[group]
+    except KeyError as exc:
+        raise ReproductionError(f"Unknown V0.12 evidence group: {group}") from exc
+    comparisons: list[dict[str, object]] = []
+    for filename in filenames:
+        published_relative = (V012_PUBLISHED_ROOT / group / filename).as_posix()
+        published = project_root / published_relative
+        generated = generated_root / filename
+        if published_relative not in frozen:
+            raise ReproductionError(
+                f"V0.12 evidence CSV is not frozen: {published_relative}"
+            )
+        if not published.is_file() or not generated.is_file():
+            raise ReproductionError(
+                f"Missing published or generated V0.12 CSV: {published_relative}"
+            )
+        expected_sha256 = str(frozen[published_relative])
+        published_sha256 = _sha256(published)
+        generated_sha256 = _sha256(generated)
+        volatile_sha256_columns = V012_VOLATILE_SHA256_COLUMNS.get(
+            (group, filename), frozenset()
+        )
+        semantically_equal = _csv_semantically_equal(
+            _csv_content(published),
+            _csv_content(generated),
+            volatile_sha256_columns=volatile_sha256_columns,
+        )
+        passed = published_sha256 == expected_sha256 and semantically_equal
+        comparison = {
+            "path": published_relative,
+            "generated_path": (Path("evidence_v012") / group / filename).as_posix(),
+            "expected_release_sha256": expected_sha256,
+            "published_sha256": published_sha256,
+            "generated_sha256": generated_sha256,
+            "generated_sha_matches_release": generated_sha256 == expected_sha256,
+            "semantic_content_equal": semantically_equal,
+            "byte_equal": generated.read_bytes() == published.read_bytes(),
+            "numeric_tolerance": {
+                "relative": NUMERIC_RELATIVE_TOLERANCE,
+                "absolute": NUMERIC_ABSOLUTE_TOLERANCE,
+            },
+            "cross_platform_volatile_sha256_columns": sorted(volatile_sha256_columns),
+            "status": "passed" if passed else "failed",
+        }
+        comparisons.append(comparison)
+        if not passed:
+            raise ReproductionError(
+                "V0.12 CSV reproduction mismatch: "
+                + json.dumps(comparison, ensure_ascii=False, sort_keys=True)
+            )
+    return comparisons
+
+
+def _finite_json_number(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    number = float(value)
+    return number if math.isfinite(number) else None
+
+
+def _has_prohibited_claims(
+    payload: dict[str, object], required: frozenset[str]
+) -> bool:
+    claims = payload.get("prohibited_claims")
+    if not isinstance(claims, list):
+        return False
+    observed = {claim for claim in claims if isinstance(claim, str)}
+    return required.issubset(observed)
+
+
+def _v012_claim_guard(payload: dict[str, object], group: str) -> bool:
+    if group == "v4_calibration_robustness":
+        design = payload.get("design")
+        interpretation = payload.get("interpretation")
+        confirmation = payload.get("confirmation")
+        if not all(
+            isinstance(value, dict) for value in (design, interpretation, confirmation)
+        ):
+            return False
+        return bool(
+            payload.get("status")
+            == "retrospective_calibration_robustness_complete_not_confirmed"
+            and payload.get("execution_status") == "completed"
+            and design.get("design_status")
+            == "retrospective_protocol_locked_after_v011_result_inspection"
+            and design.get("selection_status") == "post_hoc_robustness_audit"
+            and design.get("exhaustive_partition_count") == 210
+            and design.get("partition_outcomes_are_overlapping") is True
+            and design.get("partition_results_are_independent_replications") is False
+            and interpretation.get("operational_interval_issued") is False
+            and interpretation.get("formal_coverage_claim_allowed") is False
+            and interpretation.get("appropriate_use")
+            == "retrospective_route_support_and_partition_sensitivity_diagnostic_only"
+            and interpretation.get("coverage_fraction_denominator")
+            == "overlapping_condition_partition_evaluation_instances"
+            and interpretation.get(
+                "coverage_fraction_is_effective_independent_sample_estimate"
+            )
+            is False
+            and confirmation.get("status") == "not_confirmed"
+            and confirmation.get("independent_long_term_dataset_available") is False
+            and confirmation.get("15_to_25_year_claim_allowed") is False
+            and _has_prohibited_claims(
+                payload,
+                frozenset(
+                    {
+                        "preregistered_or_outcome_blind_analysis",
+                        "formal_finite_sample_coverage_on_reused_naumann_data",
+                        "independent_partition_replications",
+                        "15_to_25_year_extrapolation",
+                    }
+                ),
+            )
+        )
+    if group == "geisbauer_robustness":
+        scope = payload.get("scope")
+        route_reality = payload.get("route_reality")
+        overall = payload.get("overall_paired_diagnostic")
+        leave_one_out = payload.get("leave_one_cell_out")
+        diagnosis = payload.get("negative_transfer_diagnosis")
+        boundary = payload.get("claim_boundary")
+        if not all(
+            isinstance(value, dict)
+            for value in (
+                scope,
+                route_reality,
+                overall,
+                leave_one_out,
+                diagnosis,
+                boundary,
+            )
+        ):
+            return False
+        overall_delta = _finite_json_number(overall.get("mean_paired_delta_pp"))
+        minimum_loco = _finite_json_number(
+            leave_one_out.get("minimum_mean_paired_delta_pp")
+        )
+        maximum_loco = _finite_json_number(
+            leave_one_out.get("maximum_mean_paired_delta_pp")
+        )
+        return bool(
+            payload.get("status") == "retrospective_external_robustness_audit_complete"
+            and payload.get("execution_status") == "completed"
+            and payload.get("design_status")
+            == "retrospective_audit_designed_after_v011_outcome_review"
+            and payload.get("inference_status")
+            == "exploratory_nominal_diagnostics_not_confirmatory_inference"
+            and scope.get("outcomes_reviewed_before_audit_design") is True
+            and scope.get("physical_cell_count") == 15
+            and scope.get("storage_temperature_c") == 60.0
+            and scope.get("maximum_observed_days") == 120.0
+            and route_reality.get(
+                "candidate_exactly_equals_hierarchical_power_fallback"
+            )
+            is True
+            and route_reality.get("activation_gate_ready_physical_cell_count") == 0
+            and route_reality.get("activation_specialist_tested") is False
+            and overall_delta is not None
+            and overall_delta > 0.0
+            and overall.get("nominal_diagnostics_are_confirmatory") is False
+            and diagnosis.get("aggregate_mean_negative_transfer_observed") is True
+            and _finite_json_number(
+                diagnosis.get("physical_cells_with_negative_transfer")
+            )
+            is not None
+            and int(diagnosis["physical_cells_with_negative_transfer"]) > 0
+            and leave_one_out.get("scenario_count") == 15
+            and leave_one_out.get("remaining_physical_cell_count_per_scenario") == 14
+            and leave_one_out.get("scenarios_are_highly_overlapping") is True
+            and leave_one_out.get("scenarios_are_independent_replications") is False
+            and minimum_loco is not None
+            and minimum_loco < 0.0
+            and maximum_loco is not None
+            and maximum_loco > 0.0
+            and _finite_json_number(
+                leave_one_out.get("candidate_better_direction_count")
+            )
+            is not None
+            and int(leave_one_out["candidate_better_direction_count"]) > 0
+            and _finite_json_number(
+                leave_one_out.get("candidate_worse_direction_count")
+            )
+            is not None
+            and int(leave_one_out["candidate_worse_direction_count"]) > 0
+            and boundary.get("model_validation_status") == "not_confirmed"
+            and boundary.get("confirmatory_inference_allowed") is False
+            and boundary.get("independent_long_term_validation_claim_allowed") is False
+            and _has_prohibited_claims(
+                payload,
+                frozenset(
+                    {
+                        "outcome_blind_external_validation",
+                        "independent_long_term_validation",
+                        "confirmatory_p_value",
+                        "15_to_25_year_extrapolation",
+                    }
+                ),
+            )
+        )
+    raise ReproductionError(f"Unknown V0.12 evidence group: {group}")
+
+
+def _inspect_v012_group(
+    project_root: Path,
+    generated_root: Path,
+    group: str,
+) -> dict[str, object]:
+    manifest = json.loads(
+        (project_root / "release_manifest.json").read_text(encoding="utf-8")
+    )
+    try:
+        result_filename = V012_RESULT_FILES[group]
+    except KeyError as exc:
+        raise ReproductionError(f"Unknown V0.12 evidence group: {group}") from exc
+    published_relative = (V012_PUBLISHED_ROOT / group / result_filename).as_posix()
+    published_path = project_root / published_relative
+    generated_path = generated_root / result_filename
+    if published_relative not in manifest["frozen_files_sha256"]:
+        raise ReproductionError(
+            f"V0.12 result JSON is not frozen: {published_relative}"
+        )
+    if not published_path.is_file() or not generated_path.is_file():
+        raise ReproductionError(f"Missing published or generated V0.12 result: {group}")
+    expected_sha256 = str(manifest["frozen_files_sha256"][published_relative])
+    published_sha256 = _sha256(published_path)
+    if published_sha256 != expected_sha256:
+        raise ReproductionError(
+            f"Published V0.12 result hash mismatch: {published_relative}"
+        )
+    published = json.loads(published_path.read_text(encoding="utf-8"))
+    generated = json.loads(generated_path.read_text(encoding="utf-8"))
+    if not _v012_claim_guard(generated, group):
+        raise ReproductionError(f"V0.12 claim guard failed for evidence group: {group}")
+    semantic_content_equal = _json_semantically_equal(
+        _normalized_v012_result(published, group),
+        _normalized_v012_result(generated, group),
+    )
+    if not semantic_content_equal:
+        raise ReproductionError(
+            f"V0.12 result semantics changed for evidence group: {group}"
+        )
+    return {
+        "status": "passed",
+        "group": group,
+        "published_result": published_relative,
+        "expected_release_sha256": expected_sha256,
+        "published_sha256": published_sha256,
+        "generated_sha256": _sha256(generated_path),
+        "semantic_content_equal": semantic_content_equal,
+        "claim_guard_passed": True,
+        "core_csv_comparisons": _compare_v012_core_csvs(
+            project_root, generated_root, group
+        ),
+    }
+
+
+def _inspect_png(
+    path: Path,
+    *,
+    reported_path: str | Path | None = None,
+) -> dict[str, object]:
     payload = path.read_bytes() if path.is_file() else b""
     if len(payload) < 24 or payload[:8] != b"\x89PNG\r\n\x1a\n":
         raise ReproductionError(f"Headless figure is not a valid PNG: {path}")
     width, height = struct.unpack(">II", payload[16:24])
     if width <= 0 or height <= 0:
         raise ReproductionError(f"Headless figure has invalid dimensions: {path}")
+    artifact_path = path if reported_path is None else Path(reported_path)
     return {
-        "path": "showcase/phase8_results.png",
+        "path": artifact_path.as_posix(),
         "sha256": _sha256(path),
         "byte_count": len(payload),
         "width_px": width,
@@ -1857,25 +2144,23 @@ def _inspect_phase1_audit(
             published_rows = _csv_content(published)
             generated_rows = _csv_content(generated)
             volatile_sha256_columns = (
-                frozenset(column for pair in FUTURE_ATTACK_HASH_PAIRS for column in pair)
+                frozenset(
+                    column for pair in FUTURE_ATTACK_HASH_PAIRS for column in pair
+                )
                 if filename == "future_label_attack_cases.csv"
                 else frozenset()
             )
             csv_comparison = _phase1_csv_semantic_comparison(
                 filename, published_rows, generated_rows
             )
-            semantically_equal = bool(
-                csv_comparison["semantic_content_equal"]
-            )
+            semantically_equal = bool(csv_comparison["semantic_content_equal"])
             key_columns = list(csv_comparison["key_columns"])
             semantic_mismatch = csv_comparison["mismatch"]
             numeric_tolerance = {
                 "exact_by_default": True,
                 "columns": csv_comparison["numeric_tolerances"],
                 "solver_calibration_max_observed_absolute_delta_pp": (
-                    csv_comparison[
-                        "solver_calibration_max_observed_absolute_delta_pp"
-                    ]
+                    csv_comparison["solver_calibration_max_observed_absolute_delta_pp"]
                 ),
             }
         passed = published_sha256 == expected_sha256 and semantically_equal
@@ -1890,9 +2175,7 @@ def _inspect_phase1_audit(
             "numeric_tolerance": numeric_tolerance,
             "key_columns": key_columns,
             "mismatch": semantic_mismatch,
-            "cross_platform_volatile_sha256_columns": sorted(
-                volatile_sha256_columns
-            ),
+            "cross_platform_volatile_sha256_columns": sorted(volatile_sha256_columns),
             "byte_equal": generated.read_bytes() == published.read_bytes(),
             "byte_count": generated.stat().st_size,
             "status": "passed" if passed else "failed",
@@ -1915,8 +2198,7 @@ def _inspect_phase1_audit(
 def _write_json(path: Path, payload: dict[str, object]) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as stream:
         stream.write(
-            json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False)
-            + "\n"
+            json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
         )
 
 
@@ -1949,11 +2231,16 @@ def reproduce(
         command_summaries: dict[str, object] = {}
         phase8_comparisons: list[dict[str, object]] = []
         figure: dict[str, object] | None = None
+        v012_figure: dict[str, object] | None = None
         phase1_audit: dict[str, object] = {
             "status": "skipped_by_mode",
             "mode": mode,
         }
         v011_evidence: dict[str, object] = {
+            "status": "skipped_by_mode",
+            "mode": mode,
+        }
+        v012_evidence: dict[str, object] = {
             "status": "skipped_by_mode",
             "mode": mode,
         }
@@ -1977,9 +2264,7 @@ def reproduce(
             command_summaries["phase8"] = {
                 key: phase8[key] for key in ("command", "returncode", "elapsed_seconds")
             }
-            phase8_comparisons = _compare_core_csvs(
-                project_root, staging / "phase8"
-            )
+            phase8_comparisons = _compare_core_csvs(project_root, staging / "phase8")
 
             analysis = _run_command(
                 [
@@ -1998,7 +2283,10 @@ def reproduce(
                 key: analysis[key]
                 for key in ("command", "returncode", "elapsed_seconds")
             }
-            figure = _inspect_png(staging / "showcase/phase8_results.png")
+            figure = _inspect_png(
+                staging / "showcase/phase8_results.png",
+                reported_path="showcase/phase8_results.png",
+            )
 
             evidence_root = staging / "evidence_v011"
             landmark = _run_command(
@@ -2039,8 +2327,7 @@ def reproduce(
             )
             _write_command_log(staging, "v4", v4)
             command_summaries["v4"] = {
-                key: v4[key]
-                for key in ("command", "returncode", "elapsed_seconds")
+                key: v4[key] for key in ("command", "returncode", "elapsed_seconds")
             }
 
             geisbauer = _run_command(
@@ -2069,13 +2356,101 @@ def reproduce(
                 "landmark": _inspect_v011_group(
                     project_root, evidence_root / "landmark", "landmark"
                 ),
-                "v4": _inspect_v011_group(
-                    project_root, evidence_root / "v4", "v4"
-                ),
+                "v4": _inspect_v011_group(project_root, evidence_root / "v4", "v4"),
                 "geisbauer": _inspect_v011_group(
                     project_root, evidence_root / "geisbauer", "geisbauer"
                 ),
             }
+
+            evidence_v012_root = staging / "evidence_v012"
+            v4_calibration_robustness = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / V4_CALIBRATION_ROBUSTNESS_RUNNER),
+                    "--input",
+                    str(project_root / PHASE8_INPUT),
+                    "--upstream-config",
+                    str(project_root / V4_CONFIG),
+                    "--audit-config",
+                    str(project_root / V4_CALIBRATION_ROBUSTNESS_CONFIG),
+                    "--output-dir",
+                    str(evidence_v012_root / "v4_calibration_robustness"),
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(
+                staging,
+                "v4_calibration_robustness",
+                v4_calibration_robustness,
+            )
+            command_summaries["v4_calibration_robustness"] = {
+                key: v4_calibration_robustness[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+
+            geisbauer_robustness = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / GEISBAUER_ROBUSTNESS_RUNNER),
+                    "--source",
+                    str(project_root / PHASE8_INPUT),
+                    "--target",
+                    str(project_root / GEISBAUER_INPUT),
+                    "--external-protocol",
+                    str(project_root / GEISBAUER_CONFIG),
+                    "--audit-protocol",
+                    str(project_root / GEISBAUER_ROBUSTNESS_CONFIG),
+                    "--output-dir",
+                    str(evidence_v012_root / "geisbauer_robustness"),
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(
+                staging,
+                "geisbauer_robustness",
+                geisbauer_robustness,
+            )
+            command_summaries["geisbauer_robustness"] = {
+                key: geisbauer_robustness[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+            v012_evidence = {
+                "status": "passed",
+                "v4_calibration_robustness": _inspect_v012_group(
+                    project_root,
+                    evidence_v012_root / "v4_calibration_robustness",
+                    "v4_calibration_robustness",
+                ),
+                "geisbauer_robustness": _inspect_v012_group(
+                    project_root,
+                    evidence_v012_root / "geisbauer_robustness",
+                    "geisbauer_robustness",
+                ),
+            }
+
+            v012_analysis = _run_command(
+                [
+                    sys.executable,
+                    str(project_root / V012_ANALYZER),
+                    "--evidence-root",
+                    str(evidence_v012_root),
+                    "--output",
+                    "showcase/v012_robustness.png",
+                ],
+                cwd=staging,
+                environment=environment,
+            )
+            _write_command_log(staging, "v012_showcase", v012_analysis)
+            command_summaries["v012_showcase"] = {
+                key: v012_analysis[key]
+                for key in ("command", "returncode", "elapsed_seconds")
+            }
+            v012_figure = _inspect_png(
+                staging / "showcase/v012_robustness.png",
+                reported_path="showcase/v012_robustness.png",
+            )
 
         if mode == "full":
             audit = _run_command(
@@ -2094,8 +2469,7 @@ def reproduce(
             )
             _write_command_log(staging, "phase1_audit", audit)
             command_summaries["phase1_audit"] = {
-                key: audit[key]
-                for key in ("command", "returncode", "elapsed_seconds")
+                key: audit[key] for key in ("command", "returncode", "elapsed_seconds")
             }
             phase1_audit = _inspect_phase1_audit(
                 staging / "phase1_audit",
@@ -2131,7 +2505,7 @@ def reproduce(
             if scratch_path.exists():
                 _rmtree(scratch_path)
         summary: dict[str, object] = {
-            "schema_version": 3,
+            "schema_version": 4,
             "status": "passed",
             "mode": mode,
             "atomic_publish": True,
@@ -2145,8 +2519,12 @@ def reproduce(
             "headless_figure": figure
             if figure is not None
             else {"status": "skipped_by_mode", "mode": mode},
+            "v012_headless_figure": v012_figure
+            if v012_figure is not None
+            else {"status": "skipped_by_mode", "mode": mode},
             "phase1_adversarial_audit": phase1_audit,
             "evidence_v011": v011_evidence,
+            "evidence_v012": v012_evidence,
             "pytest": pytest_result,
             "commands": command_summaries,
         }
@@ -2179,7 +2557,8 @@ def main() -> int:
         default="full",
         help=(
             "full runs Phase 8, the V0.11 landmark/V4/external evidence, the "
-            "Phase 1 adversarial audit, the headless figure, and pytest"
+            "V0.12 calibration/external robustness audits, the Phase 1 "
+            "adversarial audit, both headless figures, and pytest"
         ),
     )
     parser.add_argument(
@@ -2225,7 +2604,9 @@ def main() -> int:
                 "status": summary["status"],
                 "mode": summary["mode"],
                 "output": args.output.resolve().as_posix(),
-                "summary": (args.output.resolve() / "reproduction_summary.json").as_posix(),
+                "summary": (
+                    args.output.resolve() / "reproduction_summary.json"
+                ).as_posix(),
             },
             indent=2,
             ensure_ascii=False,

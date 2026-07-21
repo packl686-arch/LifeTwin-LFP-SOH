@@ -16,12 +16,13 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 建议按以下顺序阅读：
 
 1. [开题报告补充材料](SUBMISSION_SUPPLEMENT.md)：一页了解问题、方案、结果与边界。
-2. [V0.11 新证据报告](reports/landmark_v4_external_evidence_2026-07-20.md)：查看动态 landmark、保守区间和独立外部负结果。
-3. [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md)：查看未来标签攻击、独立复算、故障回退和失败条件表。
-4. [数据分析样本](docs/data_analysis_sample.md)：从公开数据到结论的完整示例。
-5. [相关项目经验](docs/project_experience.md)：仓库中可核验的研究与工程积累。
-6. [研究笔记](docs/research_notes.md)：为什么从固定曲线走到动态门控模型。
-7. [参考资料](docs/references.md)：论文、数据集、代码来源和许可状态。
+2. [V0.12 稳健性与长期数据报告](reports/robustness_and_long_term_protocol_2026-07-21.md)：查看校准切分敏感性、逐电芯负迁移诊断和长期数据资格。
+3. [V0.11 新证据报告](reports/landmark_v4_external_evidence_2026-07-20.md)：查看动态 landmark、保守区间和独立外部负结果。
+4. [独立长期验证预注册](docs/independent_long_term_lfp_preregistration.md)：查看拿到新数据前已经冻结的资格、评分和拒绝规则。
+5. [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md)：查看未来标签攻击、独立复算、故障回退和失败条件表。
+6. [数据分析样本](docs/data_analysis_sample.md)：从公开数据到结论的完整示例。
+7. [相关项目经验](docs/project_experience.md)：仓库中可核验的研究与工程积累。
+8. [参考资料](docs/references.md)：论文、数据集、代码来源和许可状态。
 
 ## 核心方法
 
@@ -128,12 +129,38 @@ fallback 路由的 5 个校准条件只足以形成 80% 诊断分位数；specia
 [完整报告](reports/landmark_v4_external_evidence_2026-07-20.md)和
 [机器可读证据包](showcase/evidence_v011/README.md)。
 
+## V0.12：先检验结论有多脆弱
+
+V0.12 不晋升新均值模型，而是对 v0.11 的两个核心结果做反证优先审计。固定 V4
+训练状态后，在 10 个非训练条件上枚举全部 `C(10,6)=210` 个校准/评估划分。
+fallback 路线只有 80% 分位数可计算，乘数范围为 `0.9243-2.1698`；specialist
+路线每个划分只有 0-2 条校准轨迹，因此 80%/90%/95% 全部不可用。原切分宽度又
+主要由 `T40_SOC50` 一条高误差轨迹支配。这证明当前区间适合做拒绝诊断，不适合
+包装成稳定覆盖保证。
+
+Geisbauer 的逐电芯复核在 `1e-12 pp` 数值零阈值下得到 8 个候选更好、7 个更差；
+采用事后 `0.05 pp` 等效界时为 5 个更好、4 个更差、6 个等效。平均配对差为
+`+0.0882 pp`，中位数为 `-0.0022 pp`；15 个彼此重叠的单电芯删除场景中有 2 个
+会使总体方向反转。负迁移风险主要位于 100% SOC，但样本不足以给出确认性推断。完整数字、
+名义检验边界和 210 个重叠划分的正确分母见
+[V0.12 报告](reports/robustness_and_long_term_protocol_2026-07-21.md)。
+
+![V0.12 robustness audit](docs/assets/v012_robustness.png)
+
+项目同时公开长期 LFP [数据集资格登记表](docs/long_term_lfp_dataset_registry.md)、
+[数据无关预注册模板](configs/validation/independent_long_term_lfp_protocol.template.json)和
+[跨字段语义验证器](src/lifetwin/validation/long_term_protocol.py)。
+当前可立即用于独立长期轨迹确认的公开数据集数量仍为 **0**。这不是搜索失败后留下
+一句“待补数据”，而是把许可、物理电芯 ID、老化模式、时长、结局接触史和证据等级
+变成机器可读门槛；获得作者数据后也不能临时修改成功标准。
+
 ## 仓库结构
 
 ```text
 LifeTwin-LFP-SOH/
 ├── src/lifetwin/              原型代码
 ├── configs/experiments/       冻结实验协议
+├── configs/validation/        长期数据资格与预注册 Schema/模板
 ├── data/interim/              CC BY 4.0 的规范化 Naumann 表
 ├── data/external/             CC BY 4.0 的 Geisbauer LFP 外部应力数据
 ├── scripts/                   实验、审计与一键复现入口
@@ -164,8 +191,9 @@ python3.12 -m venv .venv
 .venv/bin/python showcase/analyze_phase8_results.py --output artifacts/quick/phase8_results.png
 ```
 
-安装依赖后，推荐用一个命令完成发布预检、Phase 8、动态 landmark、V4 区间、
-Geisbauer 外部应力筛查、Phase 1 审计、无界面绘图和完整测试，并把证据原子化
+安装依赖后，推荐用一个命令完成发布预检、Phase 8、动态 landmark、V4 区间与
+校准切分审计、Geisbauer 外部应力与逐电芯稳健性审计、Phase 1 审计、无界面绘图
+和完整测试，并把证据原子化
 写入新目录：
 
 ```powershell
@@ -214,7 +242,8 @@ CC BY 4.0。仓库保留原始 2.7 KB LFP CSV，说明见
 
 Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明确的数据/软件
 许可，因此没有上传任何文件或代码副本，只在[参考资料](docs/references.md)中
-保留公开链接与待澄清状态。
+保留公开链接与待澄清状态。Vachenauer 十年端点、Yagci 180 Ah 储能电芯、Sui
+月度轨迹和 Aeppli Second-Life 数据也仅登记一手来源与资格，不上传请求型数据。
 
 ## 当前成熟度
 
@@ -225,6 +254,8 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - 固定共同未来窗口的动态 landmark 回顾性诊断：完成；确认性 landmark 待独立数据。
 - 机理层级模型、LOCO 有界残差、路由化区间与拒绝发行：完成回顾性实现。
 - 15 个独立 LFP 电芯的 120 天、60 C 外部应力筛查：完成，主候选未胜出。
+- V4 全部 210 个校准划分与 Geisbauer 逐电芯/LOCO 稳健性审计：完成，未形成确认性结论。
+- 长期 LFP 数据集资格登记、数据无关 Schema 与预注册模板：完成；当前合格公开确认集为 0。
 - Ubuntu/Windows fresh-clone CI：已配置，状态由仓库徽章和对应提交记录公开显示。
 - 独立长期 LFP 队列验证：待完成。
 - 海辰大容量电芯与真实电站验证：待完成。
@@ -232,4 +263,4 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 提交人：Jincheng Liu
 
-版本：`0.11.0`，2026-07-20
+版本：`0.12.0`，2026-07-21

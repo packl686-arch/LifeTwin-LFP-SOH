@@ -1,0 +1,62 @@
+{
+  "audit_id": "geisbauer_lfp_calendar_external_robustness_audit_v1",
+  "design_status": "retrospective_audit_designed_after_v011_outcome_review",
+  "evidence_role": "accelerated_external_stress_check",
+  "base_experiment_id": "geisbauer_lfp_calendar_external_stress_screen_v1",
+  "target_dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+  "statistical_unit": "individual_physical_cell_trajectory",
+  "candidate_method": "mechanism_gated_hierarchical_activation_offset_hybrid_v1",
+  "comparator_method": "target_prefix_only_sqrt_time_v1",
+  "primary_metric": "trajectory_iae_pp",
+  "point_metric": "absolute_error_pp",
+  "numerical_zero_tolerance_pp": 1e-12,
+  "strata": [
+    "all_physical_cells",
+    "storage_soc_fraction",
+    "target_elapsed_days",
+    "storage_soc_fraction_by_target_elapsed_days"
+  ],
+  "exact_diagnostics": {
+    "sign_test": "two_sided_exact_binomial_nonzero_cell_differences",
+    "mean_sign_flip": "two_sided_exhaustive_cell_level_sign_flip",
+    "maximum_exact_units": 20,
+    "mean_sign_flip_extreme_threshold": "abs_observed_mean_delta",
+    "inclusive_extreme_comparison": "machine_epsilon_scaled_floating_point_inclusive",
+    "numerical_zero_tolerance_role": "exclude_numerically_zero_deltas_only",
+    "multiplicity_adjusted": false,
+    "inference_status": "exploratory_nominal_diagnostics_not_confirmatory_inference"
+  },
+  "sensitivity": {
+    "leave_one_physical_cell_out": {
+      "enabled": true,
+      "expected_scenario_count": 15,
+      "remaining_physical_cell_count": 14,
+      "scenarios_are_highly_overlapping": true,
+      "scenarios_are_independent_replications": false
+    },
+    "post_hoc_equivalence_margin_sensitivity": {
+      "margins_pp": [0.0, 0.01, 0.05, 0.1],
+      "classification": "better_below_negative_margin_worse_above_positive_margin_equivalent_within_inclusive_margin",
+      "exploratory_only": true,
+      "engineering_acceptance_gate": false
+    },
+    "numerical_direction_definition": "paired_delta_outside_numerical_zero_tolerance"
+  },
+  "claim_boundaries": {
+    "outcomes_reviewed_before_audit_design": true,
+    "target_horizon_days": 120,
+    "target_temperature_c": 60.0,
+    "long_term_validation_eligible": false,
+    "confirmatory_inference_allowed": false
+  },
+  "prohibited_claims": [
+    "outcome_blind_external_validation",
+    "independent_long_term_validation",
+    "confirmatory_p_value",
+    "activation_mechanism_confirmation",
+    "formal_uncertainty_calibration",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

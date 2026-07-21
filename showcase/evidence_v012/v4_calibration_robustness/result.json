@@ -1,0 +1,250 @@
+{
+  "status": "retrospective_calibration_robustness_complete_not_confirmed",
+  "execution_status": "completed",
+  "experiment_id": "naumann_calendar_v4_calibration_robustness_v1",
+  "config_sha256": "1bf12b2feeb88cc4cc39713cdf74710408f3d306a4e8daf82b429ae7e92b8d5c",
+  "candidate_prediction_pack_sha256": "f54d3d93a5dac62853a0e9927b96cd8cca9b0f04760e608d8af77ddfea98aa2f",
+  "input_integrity": {
+    "canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "expected_canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "canonical_outcome_snapshot_verified": true,
+    "enforcement_scope": "top_level_run_only_build_and_score_remain_separately_testable"
+  },
+  "design": {
+    "design_status": "retrospective_protocol_locked_after_v011_result_inspection",
+    "selection_status": "post_hoc_robustness_audit",
+    "evidence_role": "reused_naumann_calibration_partition_sensitivity_only",
+    "upstream_experiment_id": "naumann_calendar_v4_hybrid_development_v1",
+    "upstream_split_id": "naumann_v4_fixed_7_train_6_calibration_4_test_v1",
+    "training_condition_count": 7,
+    "candidate_condition_count": 10,
+    "loco_scenario_count": 6,
+    "exhaustive_partition_count": 210,
+    "partition_outcomes_are_overlapping": true,
+    "partition_results_are_independent_replications": false
+  },
+  "future_label_firewall": {
+    "candidate_prediction_pack_frozen_before_candidate_scoring": true,
+    "scorer_regenerates_candidate_prediction_pack": true,
+    "candidate_future_outcome_columns_in_prediction_pack": [],
+    "protocol_was_locked_after_v011_outcome_inspection": true
+  },
+  "original_split_primary_80pct": {
+    "fallback": {
+      "audit_family": "original_fixed_split",
+      "scenario_id": "original_fixed_split",
+      "removed_condition_id": null,
+      "mean_route": "hierarchical_power_fallback",
+      "requested_coverage": 0.8,
+      "calibration_condition_count": 5,
+      "evaluation_condition_count": 3,
+      "order_statistic_rank": 5,
+      "multiplier": 2.1698424743004083,
+      "quantile_status": "finite_order_statistic",
+      "diagnostic_available_evaluation_count": 3,
+      "diagnostic_covered_evaluation_count": 3,
+      "diagnostic_coverage_fraction_among_available": 1.0,
+      "all_evaluation_diagnostic_available": true,
+      "all_evaluation_simultaneously_covered": true,
+      "all_evaluation_available_and_covered": true,
+      "diagnostic_mean_width_pp": 1.6841507351838452,
+      "diagnostic_max_width_pp": 3.4427051368367643,
+      "diagnostic_interval_score_mean": 1.6841507351838452
+    },
+    "specialist": {
+      "audit_family": "original_fixed_split",
+      "scenario_id": "original_fixed_split",
+      "removed_condition_id": null,
+      "mean_route": "hierarchical_activation_residual",
+      "requested_coverage": 0.8,
+      "calibration_condition_count": 1,
+      "evaluation_condition_count": 1,
+      "order_statistic_rank": 2,
+      "multiplier": null,
+      "quantile_status": "unavailable_finite_sample_full_physical_range",
+      "diagnostic_available_evaluation_count": 0,
+      "diagnostic_covered_evaluation_count": 0,
+      "diagnostic_coverage_fraction_among_available": null,
+      "all_evaluation_diagnostic_available": false,
+      "all_evaluation_simultaneously_covered": null,
+      "all_evaluation_available_and_covered": false,
+      "diagnostic_mean_width_pp": null,
+      "diagnostic_max_width_pp": null,
+      "diagnostic_interval_score_mean": null
+    }
+  },
+  "leave_one_calibration_condition_out_primary_80pct": {
+    "fallback_scenario_count": 6,
+    "fallback_finite_multiplier_scenario_count": 6,
+    "fallback_multiplier_min": 1.4840726147248924,
+    "fallback_multiplier_max": 2.1698424743004083,
+    "fallback_mean_width_min_pp": 1.15188176780482,
+    "fallback_mean_width_max_pp": 1.6841507351838452,
+    "specialist_finite_multiplier_scenario_count": 0
+  },
+  "exhaustive_partition_primary_80pct": {
+    "fallback": {
+      "mean_route": "hierarchical_power_fallback",
+      "requested_coverage": 0.8,
+      "scenario_count": 210,
+      "scenario_with_evaluation_count": 210,
+      "calibration_condition_count_min": 4,
+      "calibration_condition_count_max": 6,
+      "minimum_calibration_count_for_finite_quantile": 4,
+      "best_case_calibration_count_margin": 2,
+      "finite_multiplier_scenario_count": 210,
+      "finite_multiplier_scenario_fraction": 1.0,
+      "multiplier_min": 0.9243102641223191,
+      "multiplier_q25": 1.4840726147248924,
+      "multiplier_median": 2.1698424743004083,
+      "multiplier_q75": 2.1698424743004083,
+      "multiplier_max": 2.1698424743004083,
+      "diagnostic_available_evaluation_count": 672,
+      "diagnostic_total_evaluation_count": 672,
+      "diagnostic_covered_evaluation_count": 552,
+      "diagnostic_coverage_fraction_among_available": 0.8214285714285714,
+      "all_evaluation_available_and_covered_scenario_count": 126,
+      "all_evaluation_available_and_covered_scenario_fraction": 0.6,
+      "mean_width_min_pp": 0.7575125849625945,
+      "mean_width_q25_pp": 1.2884101856598587,
+      "mean_width_median_pp": 1.5770146891707342,
+      "mean_width_q75_pp": 1.7731935954580984,
+      "mean_width_max_pp": 2.125074868110639
+    },
+    "specialist": {
+      "mean_route": "hierarchical_activation_residual",
+      "requested_coverage": 0.8,
+      "scenario_count": 210,
+      "scenario_with_evaluation_count": 140,
+      "calibration_condition_count_min": 0,
+      "calibration_condition_count_max": 2,
+      "minimum_calibration_count_for_finite_quantile": 4,
+      "best_case_calibration_count_margin": -2,
+      "finite_multiplier_scenario_count": 0,
+      "finite_multiplier_scenario_fraction": 0.0,
+      "multiplier_min": null,
+      "multiplier_q25": null,
+      "multiplier_median": null,
+      "multiplier_q75": null,
+      "multiplier_max": null,
+      "diagnostic_available_evaluation_count": 0,
+      "diagnostic_total_evaluation_count": 168,
+      "diagnostic_covered_evaluation_count": 0,
+      "diagnostic_coverage_fraction_among_available": null,
+      "all_evaluation_available_and_covered_scenario_count": 0,
+      "all_evaluation_available_and_covered_scenario_fraction": 0.0,
+      "mean_width_min_pp": null,
+      "mean_width_q25_pp": null,
+      "mean_width_median_pp": null,
+      "mean_width_q75_pp": null,
+      "mean_width_max_pp": null
+    }
+  },
+  "interpretation": {
+    "mean_model_promoted": false,
+    "operational_interval_issued": false,
+    "formal_coverage_claim_allowed": false,
+    "calibration_support_assessment": "specialist_route_structurally_under_calibrated",
+    "partition_sensitivity_assessment": "fallback_interval_width_and_simultaneous_coverage_depend_on_which_condition_trajectories_enter_calibration",
+    "appropriate_use": "retrospective_route_support_and_partition_sensitivity_diagnostic_only",
+    "coverage_fraction_denominator": "overlapping_condition_partition_evaluation_instances",
+    "coverage_fraction_is_effective_independent_sample_estimate": false,
+    "all_evaluation_simultaneously_covered_is_null_when_any_interval_unavailable": true,
+    "joint_availability_and_coverage_gate": "all_evaluation_available_and_covered"
+  },
+  "confirmation": {
+    "status": "not_confirmed",
+    "independent_long_term_dataset_available": false,
+    "15_to_25_year_claim_allowed": false
+  },
+  "prohibited_claims": [
+    "preregistered_or_outcome_blind_analysis",
+    "formal_finite_sample_coverage_on_reused_naumann_data",
+    "independent_external_validation",
+    "independent_partition_replications",
+    "individual_cell_uncertainty",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ],
+  "claim_boundary": "All results reuse ten overlapping Naumann condition-mean trajectories through 885 days. The 210 partitions are a deterministic sensitivity enumeration, not independent trials, formal coverage validation, or operational uncertainty evidence.",
+  "provenance": {
+    "input_path": "data/interim/naumann_calendar_observations.csv",
+    "input_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "upstream_config_path": "configs/experiments/naumann_calendar_v4_hybrid_development.json",
+    "upstream_config_file_sha256": "92d06bb4f30b8144e0423ceb3f935e95b9f761b1ec1ff85c86d1c9cc5201bbba",
+    "audit_config_path": "configs/experiments/naumann_calendar_v4_calibration_robustness.json",
+    "audit_config_file_sha256": "08b5bbb04e3fd0d1d0108d3a90b4b8696f949254b99a115cc7299007a0addde5",
+    "source_sha256": {
+      "scripts/run_calendar_v4_calibration_robustness.py": "dfc8713d18d704412b017fa338b13fcff0c1c6a9ed516a88272dad70808f51ff",
+      "src/lifetwin/data/naumann.py": "3397745fc0b7adee4f12072cebf2a12cf90a272f5db4ae2b073649d24e141aab",
+      "src/lifetwin/models/calendar_v2.py": "7120a33a8bb64bb6d2287936a761817d1270e40d3d38f5cfe06992462ff6b97e",
+      "src/lifetwin/models/calendar_v2_uncertainty.py": "1613ee88f670c56a37fec1506d19888e6aa83ddd98a402b987b97698f6cdc1b7",
+      "src/lifetwin/models/calendar_v3_activation.py": "2121accfa57799197d6fdcb563efd081a02e013366bc2e396296af9ce1af4e6b",
+      "src/lifetwin/models/calendar_v4_hybrid.py": "4ac057ed745feae272f3241a9eb69603ea002ae933c378fb1391542ed8d100b2",
+      "src/lifetwin/experiments/calendar_v4_hybrid_development.py": "42a41f8cf307421e0e10df6bb75693198f41d3ea98324b115f2d53615ea6dda9",
+      "src/lifetwin/experiments/calendar_v4_calibration_robustness.py": "f9588536a141b75a117d59167fd557a7056f1201795123a0397228eb474bbef3"
+    },
+    "source_tree_sha256": "e2de69aa2a2f1e24a437cc84cadf5355c427c46f9573c6116ef721cfcfa4ffd6",
+    "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+    "packages": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "scipy": "1.18.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "artifacts": {
+    "candidate_label_free_predictions": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/candidate_label_free_predictions.csv",
+      "row_count": 250,
+      "sha256": "f54d3d93a5dac62853a0e9927b96cd8cca9b0f04760e608d8af77ddfea98aa2f"
+    },
+    "candidate_condition_scores": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/candidate_condition_scores.csv",
+      "row_count": 10,
+      "sha256": "01c9fd1e2d27401ebbbb2b9b7d4d57c7188b8c1aa20542edb5c07f5b80a58cf3"
+    },
+    "baseline_route_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/baseline_route_metrics.csv",
+      "row_count": 6,
+      "sha256": "0ae53d460c95c2700d3d87f5bec2ade6365e3eb3457894589839d50a2e334ad0"
+    },
+    "baseline_condition_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/baseline_condition_metrics.csv",
+      "row_count": 12,
+      "sha256": "530e7a3e507096c58e72e50abad5635f2834c454cfe8881d02cab34aab7b9f73"
+    },
+    "loco_route_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/loco_route_metrics.csv",
+      "row_count": 36,
+      "sha256": "34e260fe2d02017d339e4eb49feb4d6e3a5ae917714e6a259bf16716e475827c"
+    },
+    "loco_condition_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/loco_condition_metrics.csv",
+      "row_count": 72,
+      "sha256": "aac097839ec58f4fabc152a958484fe62329a47930371f2db587779aa2de429c"
+    },
+    "partition_catalog": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/partition_catalog.csv",
+      "row_count": 210,
+      "sha256": "78ce8461e0a5f502fbe0f5b612e9a7ca2c10ca85a7577ae4438837a28700bf59"
+    },
+    "partition_route_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/partition_route_metrics.csv",
+      "row_count": 1260,
+      "sha256": "9e699e9d5039d5cc4ecb14a63578a48f45c6a44849d466e5ba9b3336044035c4"
+    },
+    "partition_condition_metrics": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/partition_condition_metrics.csv",
+      "row_count": 2520,
+      "sha256": "68d6bf003c55749513ed40d313a2f224f0c9a3a6de53e4f31824129d03f2313a"
+    },
+    "sensitivity_summary": {
+      "path": "showcase/evidence_v012/v4_calibration_robustness/sensitivity_summary.csv",
+      "row_count": 6,
+      "sha256": "7a84c6366423d68949f6a4806d5ebf8619a1a02948715a1dc64a49c219c0b750"
+    }
+  }
+}

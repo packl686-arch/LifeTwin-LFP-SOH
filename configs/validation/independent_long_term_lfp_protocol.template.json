@@ -1,0 +1,242 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "independent_long_term_lfp_pending_v1",
+  "status": "draft",
+  "protocol_freeze": {
+    "frozen_at_utc": null,
+    "git_commit_sha": null,
+    "protocol_sha256": null,
+    "model_bundle_sha256": null,
+    "scorer_sha256": null,
+    "adapter_sha256": null,
+    "environment_lock_sha256": null,
+    "freeze_witnesses": [
+      "Jincheng Liu"
+    ],
+    "amendments": []
+  },
+  "dataset": {
+    "dataset_id": "REPLACE_BEFORE_FREEZE",
+    "title": "Replace with the exact dataset title before freeze",
+    "doi_or_persistent_url": "https://example.invalid/replace-before-freeze",
+    "repository_url": "https://example.invalid/replace-before-freeze",
+    "repository_version": "REPLACE_BEFORE_FREEZE",
+    "access_mode": "not_acquired",
+    "paper_license": {
+      "status": "unclear",
+      "identifier": null,
+      "url": null,
+      "scope_note": "The article license is tracked separately and never substitutes for data rights."
+    },
+    "data_license": {
+      "status": "unclear",
+      "identifier": null,
+      "url": null,
+      "scope_note": "Freeze is prohibited until reusable data rights or written permission are recorded."
+    },
+    "artifacts": [],
+    "cathode_chemistry": "REPLACE_BEFORE_FREEZE",
+    "anode_chemistry": "REPLACE_BEFORE_FREEZE",
+    "aging_mode": "controlled_calendar",
+    "time_unit": "day",
+    "physical_cell_id_field": "REPLACE_BEFORE_FREEZE",
+    "condition_id_fields": [
+      "temperature_c",
+      "storage_soc_pct"
+    ],
+    "outcome_fields": [
+      "capacity_retention_pct"
+    ],
+    "maximum_observed_duration_days": null,
+    "machine_readable_observations_verified": false,
+    "physical_cell_ids_verified": false,
+    "calendar_aging_separable_verified": false,
+    "observed_physical_cell_count": null,
+    "observed_independent_scoring_cluster_count": null,
+    "minimum_observed_positive_prefix_observations": null,
+    "minimum_observed_future_observations": null,
+    "minimum_observed_future_to_landmark_time_ratio": null
+  },
+  "eligibility": {
+    "minimum_duration_days": 730,
+    "requires_lfp_cathode": true,
+    "requires_graphite_anode": true,
+    "requires_individual_physical_cell_ids": true,
+    "requires_separable_calendar_aging": true,
+    "requires_machine_readable_observations": true,
+    "minimum_physical_cells": 8,
+    "minimum_independent_scoring_clusters": 8,
+    "minimum_positive_prefix_observations": 4,
+    "minimum_future_observations": 2,
+    "minimum_future_to_landmark_time_ratio": 2.0,
+    "observed_result": "pending",
+    "evidence_tier": "pending",
+    "failure_reasons": []
+  },
+  "outcome_blindness": {
+    "classification": "unclassifiable",
+    "classification_reason": "Replace after recording every project-level exposure to target outcomes.",
+    "target_outcome_exposure_log": [],
+    "allowed_claim_role": "none"
+  },
+  "partitions": {
+    "grouping_unit": "physical_cell",
+    "training_ids": [],
+    "calibration_ids": [],
+    "test_ids": [],
+    "audit_ids": [],
+    "assigned_unit_count": null,
+    "pairwise_disjoint_verified": false,
+    "cross_partition_cell_overlap_allowed": false,
+    "partition_selection_uses_target_outcomes": false
+  },
+  "landmarks": {
+    "definition_type": "positive_time_observation_count",
+    "candidate_values": [
+      5,
+      8,
+      10,
+      14
+    ],
+    "primary_value": null,
+    "common_score_start": null,
+    "common_score_end": null,
+    "prefix_inclusion_rule": "timestamp_or_order_at_or_before_landmark_only",
+    "future_outcomes_may_influence_prediction": false,
+    "earliest_landmark_confirmation_rule": "all_later_candidate_landmarks_must_also_pass_primary_success_and_no_regression_gates_on_common_future_support"
+  },
+  "candidate": {
+    "model_id": "lifetwin_locked_candidate",
+    "role": "candidate",
+    "implementation_revision": "REPLACE_BEFORE_FREEZE",
+    "config_sha256": null,
+    "fit_partition": "source_only",
+    "uses_target_future_outcomes": false,
+    "hyperparameters_frozen": false
+  },
+  "baselines": [
+    {
+      "model_id": "target_prefix_persistence",
+      "role": "mandatory_baseline",
+      "implementation_revision": "REPLACE_BEFORE_FREEZE",
+      "config_sha256": null,
+      "fit_partition": "target_prefix_only",
+      "uses_target_future_outcomes": false,
+      "hyperparameters_frozen": false
+    },
+    {
+      "model_id": "target_prefix_sqrt_time",
+      "role": "mandatory_baseline",
+      "implementation_revision": "REPLACE_BEFORE_FREEZE",
+      "config_sha256": null,
+      "fit_partition": "target_prefix_only",
+      "uses_target_future_outcomes": false,
+      "hyperparameters_frozen": false
+    },
+    {
+      "model_id": "target_prefix_bounded_power_law",
+      "role": "mandatory_baseline",
+      "implementation_revision": "REPLACE_BEFORE_FREEZE",
+      "config_sha256": null,
+      "fit_partition": "target_prefix_only",
+      "uses_target_future_outcomes": false,
+      "hyperparameters_frozen": false
+    }
+  ],
+  "metrics": {
+    "primary_metric": "trajectory_iae_pp_normalized_by_elapsed_horizon",
+    "secondary_metrics": [
+      "endpoint_absolute_error_pp",
+      "trajectory_rmse_pp",
+      "worst_cluster_iae_pp",
+      "improved_cluster_fraction",
+      "paired_cluster_iae_difference_pp",
+      "interval_coverage_by_route",
+      "mean_interval_width_pp",
+      "abstention_fraction"
+    ],
+    "statistical_unit": "physical_cell_trajectory",
+    "cluster_unit": "condition",
+    "time_weighting": "trapezoidal_elapsed_time_then_divide_by_scored_horizon",
+    "condition_weighting": "equal_weight_per_cluster_then_equal_weight_across_scenarios"
+  },
+  "decision_rules": {
+    "strongest_baseline_selection": "lowest_primary_metric_on_calibration_partition_only",
+    "minimum_mean_iae_improvement_pp": 0.1,
+    "minimum_relative_iae_improvement_fraction": 0.05,
+    "maximum_one_sided_cluster_randomization_p": 0.05,
+    "minimum_improved_cluster_fraction": 0.6,
+    "maximum_worst_cluster_regression_pp": 0.5,
+    "minimum_independent_scoring_clusters": 8,
+    "all_point_success_gates_required": true,
+    "underpowered_result": "inconclusive_not_success",
+    "negative_result_policy": "preserve_and_do_not_promote_candidate"
+  },
+  "uncertainty": {
+    "requested_coverages": [
+      0.8,
+      0.9,
+      0.95
+    ],
+    "calibration_unit": "independent_cluster",
+    "route_conditional": true,
+    "score": "cluster_maximum_standardized_error_over_frozen_future_horizon",
+    "quantile_rule": "ceil((n+1)*coverage)_higher_or_unavailable",
+    "diagnostic_interval_allowed": true,
+    "operational_issuance": {
+      "enabled_at_freeze": false,
+      "allowed_outcome_blindness_classes": [
+        "prospective_outcome_blind",
+        "public_but_project_blind"
+      ],
+      "minimum_calibration_clusters_per_route": 20,
+      "minimum_audit_clusters_per_route": 20,
+      "cluster_independence_definition": "A predeclared condition, manufacturing batch, or site cluster is one exchangeable unit; physical cells and repeated checkups inside a cluster never increase conformal n.",
+      "maximum_absolute_coverage_shortfall": 0.1,
+      "requires_horizon_match": true,
+      "requires_covariate_support": true,
+      "requires_point_success": true,
+      "requires_independent_calibration": true,
+      "all_gates_required": true
+    },
+    "rejection_reasons": [
+      "input_quality_failure",
+      "prefix_too_short",
+      "unsupported_temperature_soc_or_cell_type",
+      "specialist_gate_not_ready",
+      "same_route_calibration_insufficient",
+      "calibration_horizon_mismatch",
+      "nonfinite_quantile",
+      "prediction_interval_too_wide",
+      "independent_validation_missing",
+      "protocol_or_hash_verification_failure"
+    ]
+  },
+  "claim_boundaries": {
+    "maximum_claim_horizon_days": null,
+    "claim_horizon_within_observed_support": false,
+    "fifteen_to_twenty_five_year_claim_allowed": false,
+    "allowed_claims": [],
+    "prohibited_claims": [
+      "15_to_25_year_accuracy_without_observed_support",
+      "hithium_product_accuracy",
+      "utility_scale_station_validation_from_cell_only_data",
+      "formal_coverage_without_independent_route_calibration",
+      "outcome_blind_confirmation_from_exposed_outcomes",
+      "individual_cell_uncertainty_from_condition_means",
+      "commercial_use_rights_from_article_license_alone"
+    ]
+  },
+  "execution_record": {
+    "prediction_bundle_sha256": null,
+    "prediction_frozen_at_utc": null,
+    "truth_linked_at_utc": null,
+    "result_bundle_sha256": null,
+    "truth_linked_after_prediction_freeze": false,
+    "independent_scorer_verified": false,
+    "point_success_gates_passed": null,
+    "landmark_consistency_gates_passed": null,
+    "formal_interval_gates_passed": null,
+    "terminal_decision": "pending"
+  }
+}

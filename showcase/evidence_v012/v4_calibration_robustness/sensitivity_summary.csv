@@ -1,0 +1,7 @@
+mean_route,requested_coverage,scenario_count,scenario_with_evaluation_count,calibration_condition_count_min,calibration_condition_count_max,minimum_calibration_count_for_finite_quantile,best_case_calibration_count_margin,finite_multiplier_scenario_count,finite_multiplier_scenario_fraction,multiplier_min,multiplier_q25,multiplier_median,multiplier_q75,multiplier_max,diagnostic_available_evaluation_count,diagnostic_total_evaluation_count,diagnostic_covered_evaluation_count,diagnostic_coverage_fraction_among_available,all_evaluation_available_and_covered_scenario_count,all_evaluation_available_and_covered_scenario_fraction,mean_width_min_pp,mean_width_q25_pp,mean_width_median_pp,mean_width_q75_pp,mean_width_max_pp
+hierarchical_activation_residual,0.80000000000000004,210,140,0,2,4,-2,0,0,,,,,,0,168,0,,0,0,,,,,
+hierarchical_activation_residual,0.90000000000000002,210,140,0,2,9,-7,0,0,,,,,,0,168,0,,0,0,,,,,
+hierarchical_activation_residual,0.94999999999999996,210,140,0,2,19,-17,0,0,,,,,,0,168,0,,0,0,,,,,
+hierarchical_power_fallback,0.80000000000000004,210,210,4,6,4,2,210,1,0.92431026412231909,1.4840726147248924,2.1698424743004083,2.1698424743004083,2.1698424743004083,672,672,552,0.8214285714285714,126,0.59999999999999998,0.75751258496259455,1.2884101856598587,1.5770146891707342,1.7731935954580984,2.1250748681106391
+hierarchical_power_fallback,0.90000000000000002,210,210,4,6,9,-3,0,0,,,,,,0,672,0,,0,0,,,,,
+hierarchical_power_fallback,0.94999999999999996,210,210,4,6,19,-13,0,0,,,,,,0,672,0,,0,0,,,,,

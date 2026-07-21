@@ -68,6 +68,27 @@ LifeTwin 将问题从“一次性外推一个远期点值”改写为“随数�
 机理层级均值与受约束残差的组合、按实际模型路由进行轨迹级小样本校准，以及把域支持
 和长期独立证据直接接入区间发行决策。
 
+### 4.2 入围后的稳健性复核
+
+项目没有把一次固定切分上的区间覆盖直接写成结论。固定 V4 训练状态后，我们枚举了
+10 个非训练条件的全部 210 个 `6 calibration + 4 evaluation` 划分。fallback 的
+80% 乘数从 `0.9243` 到 `2.1698`，平均诊断宽度从 `0.7575` 到 `2.1251 pp`；原切分
+主要受 `T40_SOC50` 一条高误差轨迹支配。specialist 在所有划分中最多只有 2 条同路线
+校准轨迹，因此 80%/90%/95% 区间全部拒绝。210 个划分重叠复用相同条件，不能计作
+210 次独立覆盖验证。
+
+Geisbauer 结果也按 15 个物理电芯复核：在数值零阈值下候选为 8 better / 7 worse；
+采用事后 `0.05 pp` 等效界时为 5 better / 4 worse / 6 equivalent。平均配对差
+`+0.0882 pp`、中位数 `-0.0022 pp`；15 个重叠的单删场景中有 2 个会使 LOCO 均值
+方向反转。高 SOC 负迁移值得继续研究，但当前探索性 sign/sign-flip 诊断不支持
+确认性结论，也不能把 `1e-12 pp` 的差异称为工程实质退化。
+
+此外，项目建立了长期数据资格登记和数据无关预注册模板。当前没有一份公开数据同时
+满足许可明确、LFP/石墨、可分离日历老化、独立电芯轨迹、至少 730 天和未暴露确认
+结局。Lam/Joule 等待许可；Vachenauer 的 100 个电芯十年结果只有 6 °C、50% SOC 的
+起点/终点，最多做端点检查；Yagci 的 180 Ah 储能队列需向作者申请逐电芯数据。
+因此 v0.12 没有用不合格数据填补“长期验证”空白，也没有晋升新均值模型。
+
 ## 5. 对抗审计与真实修复
 
 为避免“代码能运行”被误当成“证据可靠”，项目增加了七项对抗检查：数据身份、
@@ -106,6 +127,11 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
 | 对抗性审计报告 | [reports/phase1_adversarial_audit_2026-07-20.md](reports/phase1_adversarial_audit_2026-07-20.md) | 逐项解释攻击、修复、失败条件和证据边界 |
 | V0.11 新证据报告 | [reports/landmark_v4_external_evidence_2026-07-20.md](reports/landmark_v4_external_evidence_2026-07-20.md) | 解释动态 landmark、V4 区间拒绝和外部负结果 |
 | V0.11 机器可读证据 | [showcase/evidence_v011/README.md](showcase/evidence_v011/README.md) | 直接查看三组冻结结果、预测和条件级指标 |
+| V0.12 稳健性报告 | [reports/robustness_and_long_term_protocol_2026-07-21.md](reports/robustness_and_long_term_protocol_2026-07-21.md) | 解释 210 个校准划分、逐电芯负迁移与长期数据资格 |
+| V0.12 机器可读证据 | [showcase/evidence_v012/README.md](showcase/evidence_v012/README.md) | 查看切分枚举、LOCO、分层指标与严格禁止宣称 |
+| 长期验证预注册 | [docs/independent_long_term_lfp_preregistration.md](docs/independent_long_term_lfp_preregistration.md) | 展示拿到新数据前冻结的资格、分区、指标、门槛和拒绝规则 |
+| 长期数据登记表 | [docs/long_term_lfp_dataset_registry.md](docs/long_term_lfp_dataset_registry.md) | 区分公开、许可、端点、轨迹和独立确认资格 |
+| 长期协议验证器 | [src/lifetwin/validation/long_term_protocol.py](src/lifetwin/validation/long_term_protocol.py) | 复算分区互斥、实际样本计数和三项强制基线，防止仅靠布尔声明绕过 Schema |
 | 机器可读审计总览 | [showcase/audit_results/phase1_adversarial_audit.json](showcase/audit_results/phase1_adversarial_audit.json) | 汇总审计状态、检查项和禁止宣称 |
 | 未来标签攻击矩阵 | [showcase/audit_results/future_label_attack_cases.csv](showcase/audit_results/future_label_attack_cases.csv) | 核对四个 landmark 的预测不变与评分改变 |
 | 独立指标复算 | [showcase/audit_results/independent_metric_audit.csv](showcase/audit_results/independent_metric_audit.csv) | 复核 504 个条件-方法指标组 |
@@ -132,11 +158,12 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
    .venv/bin/python scripts/reproduce_public_release.py --mode full --output artifacts/reproduction
    ```
 
-3. 打开 V0.11 报告，先展示 `p=10` 只是回顾性 landmark，再展示为何大多数区间
+3. 打开 V0.12 总图，先说明原区间依赖校准切分、外部均值依赖少数电芯，再展示
+   长期数据资格与预注册规则。
+4. 打开 V0.11 报告，展示 `p=10` 只是回顾性 landmark，以及为何大多数区间
    被拒绝发行。
-4. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
-5. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
-6. 打开研究笔记中的 `T40_SOC12.5` 失效链，解释为什么模型会演进。
+5. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
+6. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
 7. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
 
 GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
@@ -150,4 +177,5 @@ GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 已经具备数据接入、验证、回退、受约束残差、区间拒绝和审计框架。独立的 120 天
 高温队列暴露了 100% SOC 迁移风险，不能代替长期验证。下一步应冻结现有规则，
 在许可明确的独立长期 LFP 队列和海辰目标产品数据上一次性验证，而不是继续对
-同一公开数据调参。
+同一公开数据调参。v0.12 进一步证明当前校准宽度和外部均值对有限条件/电芯敏感，
+所以“主动拒绝”不是附加功能，而是模型落地前不可取消的核心能力。

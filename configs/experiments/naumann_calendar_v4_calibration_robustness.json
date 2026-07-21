@@ -1,0 +1,145 @@
+{
+  "experiment_id": "naumann_calendar_v4_calibration_robustness_v1",
+  "design_status": "retrospective_protocol_locked_after_v011_result_inspection",
+  "selection_status": "post_hoc_robustness_audit",
+  "dataset_id": "NAUMANN_LFP_CALENDAR_2021",
+  "dataset_snapshot_id": "celljar_5c9601a027751c84ee8346f7c0ab9c6851330202_cycle_summary_6d4fd8d102ce9605c2c9bff86662b03201ae85411af583e23f3315b52bf81bc5",
+  "label_version": "published_condition_mean_capacity_retention_v1",
+  "statistical_unit": "temperature_soc_condition_mean_trajectory",
+  "evidence_role": "reused_naumann_calibration_partition_sensitivity_only",
+  "upstream": {
+    "experiment_id": "naumann_calendar_v4_hybrid_development_v1",
+    "split_id": "naumann_v4_fixed_7_train_6_calibration_4_test_v1",
+    "canonical_protocol_sha256": "a7ab156fba62229b4223cf91c681bac2402563d1b11cc64c29668392a4182661",
+    "input_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "training_condition_ids": [
+      "NAUMANN_CAL_T0_SOC50",
+      "NAUMANN_CAL_T10_SOC50",
+      "NAUMANN_CAL_T25_SOC0",
+      "NAUMANN_CAL_T25_SOC100",
+      "NAUMANN_CAL_T60_SOC0",
+      "NAUMANN_CAL_T60_SOC50",
+      "NAUMANN_CAL_T60_SOC100"
+    ],
+    "original_calibration_condition_ids": [
+      "NAUMANN_CAL_T25_SOC50",
+      "NAUMANN_CAL_T40_SOC0",
+      "NAUMANN_CAL_T40_SOC25",
+      "NAUMANN_CAL_T40_SOC50",
+      "NAUMANN_CAL_T40_SOC75",
+      "NAUMANN_CAL_T40_SOC100"
+    ],
+    "original_test_condition_ids": [
+      "NAUMANN_CAL_T40_SOC12.5",
+      "NAUMANN_CAL_T40_SOC37.5",
+      "NAUMANN_CAL_T40_SOC62.5",
+      "NAUMANN_CAL_T40_SOC87.5"
+    ],
+    "prefix_checkups": 10,
+    "forecast_checkup_indices": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34
+    ]
+  },
+  "candidate_pool_condition_ids": [
+    "NAUMANN_CAL_T25_SOC50",
+    "NAUMANN_CAL_T40_SOC0",
+    "NAUMANN_CAL_T40_SOC12.5",
+    "NAUMANN_CAL_T40_SOC25",
+    "NAUMANN_CAL_T40_SOC37.5",
+    "NAUMANN_CAL_T40_SOC50",
+    "NAUMANN_CAL_T40_SOC62.5",
+    "NAUMANN_CAL_T40_SOC75",
+    "NAUMANN_CAL_T40_SOC87.5",
+    "NAUMANN_CAL_T40_SOC100"
+  ],
+  "condition_scoring": {
+    "route_definition": "v4_selected_mean_route_from_prefix_only",
+    "score": "maximum_standardized_error_over_checkups_10_to_34",
+    "future_truth_used_only_after_candidate_prediction_pack_freeze": true,
+    "regenerate_prediction_pack_before_scoring": true
+  },
+  "leave_one_calibration_condition_out": {
+    "baseline_calibration_condition_ids": [
+      "NAUMANN_CAL_T25_SOC50",
+      "NAUMANN_CAL_T40_SOC0",
+      "NAUMANN_CAL_T40_SOC25",
+      "NAUMANN_CAL_T40_SOC50",
+      "NAUMANN_CAL_T40_SOC75",
+      "NAUMANN_CAL_T40_SOC100"
+    ],
+    "fixed_evaluation_condition_ids": [
+      "NAUMANN_CAL_T40_SOC12.5",
+      "NAUMANN_CAL_T40_SOC37.5",
+      "NAUMANN_CAL_T40_SOC62.5",
+      "NAUMANN_CAL_T40_SOC87.5"
+    ],
+    "removal_unit": "one_calibration_condition_mean_trajectory",
+    "expected_scenario_count": 6
+  },
+  "exhaustive_partition_audit": {
+    "candidate_pool_condition_count": 10,
+    "calibration_condition_count": 6,
+    "evaluation_condition_count": 4,
+    "enumeration": "all_lexicographic_six_of_ten_calibration_combinations",
+    "partition_order": "candidate_condition_id_unicode_codepoint_ascending",
+    "expected_partition_count": 210,
+    "mean_training_state_policy": "fixed_original_seven_condition_training_state",
+    "partition_unit": "condition_mean_trajectory"
+  },
+  "uncertainty": {
+    "requested_coverages": [0.8, 0.9, 0.95],
+    "primary_coverage": 0.8,
+    "calibration_partition": "selected_mean_route",
+    "quantile_rule": "ceil((n+1)*coverage)_higher_or_unavailable",
+    "interval_rule": "mean_plus_or_minus_multiplier_times_predictive_sd_clipped_to_physical_bounds",
+    "physical_bounds_pct": [0.0, 100.0],
+    "trajectory_coverage_rule": "all_25_future_checkups_inside_interval",
+    "width_summary_rule": "mean_pointwise_width_over_each_evaluation_trajectory"
+  },
+  "reporting": {
+    "split_summary_quantiles": [0.0, 0.25, 0.5, 0.75, 1.0],
+    "split_summary_quantile_interpolation": "linear",
+    "unavailable_values_are_not_imputed": true,
+    "empty_route_calibration_is_reported_unavailable": true,
+    "joint_coverage_is_null_when_any_interval_is_unavailable": true,
+    "joint_availability_and_coverage_gate": "all_evaluation_available_and_covered",
+    "operational_issuance_enabled": false,
+    "formal_coverage_claim_allowed": false
+  },
+  "confirmation_status": "not_confirmed",
+  "prohibited_claims": [
+    "preregistered_or_outcome_blind_analysis",
+    "formal_finite_sample_coverage_on_reused_naumann_data",
+    "independent_external_validation",
+    "independent_partition_replications",
+    "individual_cell_uncertainty",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ]
+}

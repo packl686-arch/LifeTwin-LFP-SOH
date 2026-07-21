@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
@@ -18,17 +19,23 @@ from scripts.reproduce_public_release import (
     PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
     ReproductionError,
     STATE_HASH_COLUMNS,
+    V012_CORE_CSVS,
+    V012_ANALYZER,
     _clean_git_head,
     _compare_core_csvs,
     _csv_content,
     _command_environment,
     _csv_semantically_equal,
     _inspect_phase1_audit,
+    _inspect_png,
     _inspect_v011_group,
+    _inspect_v012_group,
     _locked_versions,
+    _normalized_v012_result,
     _paired_sha256_columns_valid,
     _phase1_csv_semantic_comparison,
     _rmtree,
+    _v012_claim_guard,
     reproduce,
 )
 from scripts.verify_public_release import _version_consistency, verify
@@ -70,9 +77,7 @@ def _init_release_repository(root: Path) -> None:
         "frozen_files_sha256": {"payload.txt": _sha256(payload)},
         "forbidden_release_globs": ["artifacts/**"],
     }
-    (root / "release_manifest.json").write_text(
-        json.dumps(manifest), encoding="utf-8"
-    )
+    (root / "release_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(
         ["git", "add", "payload.txt", "release_manifest.json"],
@@ -83,7 +88,16 @@ def _init_release_repository(root: Path) -> None:
 
 def _commit_repository(root: Path) -> None:
     subprocess.run(
-        ["git", "-c", "user.name=LifeTwin Tests", "-c", "user.email=test@example.com", "commit", "-qm", "fixture"],
+        [
+            "git",
+            "-c",
+            "user.name=LifeTwin Tests",
+            "-c",
+            "user.email=test@example.com",
+            "commit",
+            "-qm",
+            "fixture",
+        ],
         cwd=root,
         check=True,
     )
@@ -117,9 +131,7 @@ def test_clean_head_rejects_tracked_and_untracked_changes(
     (writable_root / "payload.txt").write_text("changed\n", encoding="utf-8")
     with pytest.raises(ReproductionError, match="modified"):
         _clean_git_head(writable_root)
-    subprocess.run(
-        ["git", "restore", "payload.txt"], cwd=writable_root, check=True
-    )
+    subprocess.run(["git", "restore", "payload.txt"], cwd=writable_root, check=True)
     (writable_root / "sitecustomize.py").write_text(
         "raise RuntimeError('polluted')\n", encoding="utf-8"
     )
@@ -232,9 +244,7 @@ def test_phase1_csv_comparison_rejects_duplicate_keys_and_header_drift() -> None
 
     assert comparison["semantic_content_equal"] is False
     assert comparison["mismatch"]["reason"] == "duplicate_key"
-    assert comparison["mismatch"]["key"] == {
-        "condition_id": duplicate[1][0]
-    }
+    assert comparison["mismatch"]["key"] == {"condition_id": duplicate[1][0]}
 
     drifted_header = [row.copy() for row in published]
     drifted_header[0][0] = "condition"
@@ -275,8 +285,7 @@ def test_phase1_csv_comparison_enforces_solver_tolerance_boundary() -> None:
     within = [row.copy() for row in published]
     for column in columns:
         within[1][column] = str(
-            float(published[1][column])
-            + 0.9 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+            float(published[1][column]) + 0.9 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
         )
     comparison = _phase1_csv_semantic_comparison(
         "independent_metric_audit.csv", published, within
@@ -286,8 +295,7 @@ def test_phase1_csv_comparison_enforces_solver_tolerance_boundary() -> None:
     beyond = [row.copy() for row in published]
     for column in columns:
         beyond[1][column] = str(
-            float(published[1][column])
-            + 1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
+            float(published[1][column]) + 1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
         )
     comparison = _phase1_csv_semantic_comparison(
         "independent_metric_audit.csv", published, beyond
@@ -298,15 +306,10 @@ def test_phase1_csv_comparison_enforces_solver_tolerance_boundary() -> None:
     assert mismatch["reason"] == "numeric_value_mismatch"
     assert mismatch["column"] == "trajectory_iae_pp"
     assert mismatch["key"] == {
-        key: published[1][published[0].index(key)]
-        for key in comparison["key_columns"]
+        key: published[1][published[0].index(key)] for key in comparison["key_columns"]
     }
-    assert mismatch["delta"] == pytest.approx(
-        1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE
-    )
-    assert mismatch["tolerance"]["absolute"] == (
-        PHASE1_SOLVER_ABSOLUTE_TOLERANCE
-    )
+    assert mismatch["delta"] == pytest.approx(1.1 * PHASE1_SOLVER_ABSOLUTE_TOLERANCE)
+    assert mismatch["tolerance"]["absolute"] == (PHASE1_SOLVER_ABSOLUTE_TOLERANCE)
 
 
 def test_phase1_csv_comparison_rejects_inconsistent_metric_witnesses() -> None:
@@ -338,12 +341,8 @@ def test_phase1_csv_comparison_recomputes_failure_risk_flags() -> None:
         for index, row in enumerate(published[1:], start=1)
         if abs(float(row[delta])) <= 1e-12
     )
-    generated[row_index][gated] = str(
-        float(published[row_index][gated]) + 0.004
-    )
-    generated[row_index][delta] = str(
-        float(published[row_index][delta]) + 0.004
-    )
+    generated[row_index][gated] = str(float(published[row_index][gated]) + 0.004)
+    generated[row_index][delta] = str(float(published[row_index][delta]) + 0.004)
 
     comparison = _phase1_csv_semantic_comparison(
         "failure_condition_table.csv", published, generated
@@ -370,9 +369,7 @@ def test_phase1_csv_comparison_rejects_zero_invariant_denominators(
     generated = [row.copy() for row in published]
     generated[1][published[0].index(column)] = "0"
 
-    comparison = _phase1_csv_semantic_comparison(
-        filename, published, generated
-    )
+    comparison = _phase1_csv_semantic_comparison(filename, published, generated)
 
     assert comparison["semantic_content_equal"] is False
     assert comparison["mismatch"]["reason"] == "zero_invariant_denominator"
@@ -383,9 +380,7 @@ def test_phase1_csv_comparison_preserves_global_hash_aliases() -> None:
     published = _phase1_csv_rows("future_label_attack_cases.csv")
     header = published[0]
     hash_columns = [
-        header.index(column)
-        for pair in FUTURE_ATTACK_HASH_PAIRS
-        for column in pair
+        header.index(column) for pair in FUTURE_ATTACK_HASH_PAIRS for column in pair
     ]
     renamed = [row.copy() for row in published]
     mapping: dict[str, str] = {}
@@ -520,6 +515,8 @@ def test_verifier_scans_git_tracked_files_only(writable_root: Path) -> None:
     assert result["forbidden_files"] == []
     assert result["oversized_files"] == []
     assert result["broken_markdown_links"] == []
+    assert result["require_all_tracked_files_frozen"] is False
+    assert result["unfrozen_tracked_files"] == []
 
 
 def test_verifier_rejects_untracked_frozen_file(writable_root: Path) -> None:
@@ -535,6 +532,73 @@ def test_verifier_rejects_untracked_frozen_file(writable_root: Path) -> None:
 
     assert result["status"] == "failed"
     assert result["untracked_frozen_files"] == ["local-only.txt"]
+
+
+def test_verifier_freeze_gate_rejects_unfrozen_tracked_file(
+    writable_root: Path,
+) -> None:
+    _init_release_repository(writable_root)
+    unfrozen = writable_root / "unfrozen.py"
+    unfrozen.write_text("VALUE = 1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "unfrozen.py"], cwd=writable_root, check=True)
+    manifest_path = writable_root / "release_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["require_all_tracked_files_frozen"] = True
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = verify(writable_root)
+
+    assert result["status"] == "failed"
+    assert result["unfrozen_tracked_files"] == ["unfrozen.py"]
+    assert result["unfrozen_tracked_allowlist_errors"] == []
+
+
+def test_verifier_freeze_gate_accepts_allowlisted_tracked_file(
+    writable_root: Path,
+) -> None:
+    _init_release_repository(writable_root)
+    unfrozen = writable_root / "unfrozen.py"
+    unfrozen.write_text("VALUE = 1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "unfrozen.py"], cwd=writable_root, check=True)
+    manifest_path = writable_root / "release_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["require_all_tracked_files_frozen"] = True
+    manifest["unfrozen_tracked_allowlist"] = ["unfrozen.py"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = verify(writable_root)
+
+    assert result["status"] == "passed", result
+    assert result["unfrozen_tracked_allowlist"] == ["unfrozen.py"]
+    assert result["unfrozen_tracked_files"] == []
+
+
+@pytest.mark.parametrize(
+    ("allowlist", "reason"),
+    [
+        (["../outside.txt"], "not_a_canonical_relative_path"),
+        (["missing.txt"], "not_a_tracked_regular_file"),
+        (["payload.txt", "payload.txt"], "duplicate_path"),
+    ],
+)
+def test_verifier_freeze_gate_rejects_invalid_allowlist(
+    writable_root: Path,
+    allowlist: list[str],
+    reason: str,
+) -> None:
+    _init_release_repository(writable_root)
+    manifest_path = writable_root / "release_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["require_all_tracked_files_frozen"] = True
+    manifest["unfrozen_tracked_allowlist"] = allowlist
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = verify(writable_root)
+
+    assert result["status"] == "failed"
+    assert reason in {
+        error["reason"] for error in result["unfrozen_tracked_allowlist_errors"]
+    }
 
 
 def test_core_csv_comparison_checks_manifest_hash_and_content(
@@ -596,9 +660,7 @@ def test_failed_reproduction_leaves_no_partial_output(
         readonly.chmod(stat.S_IREAD)
         raise ReproductionError("intentional failure")
 
-    monkeypatch.setattr(
-        "scripts.reproduce_public_release._run_command", fail_command
-    )
+    monkeypatch.setattr("scripts.reproduce_public_release._run_command", fail_command)
     with pytest.raises(ReproductionError, match="intentional failure"):
         reproduce(writable_root, output, "tests")
 
@@ -622,14 +684,10 @@ def test_failed_reproduction_can_retain_unpublished_diagnostics(
 
     def fail_command(*_args: object, **_kwargs: object) -> dict[str, object]:
         staging = Path(_kwargs["environment"]["LIFETWIN_TEST_SCRATCH"]).parent
-        (staging / "diagnostic.txt").write_text(
-            "failure evidence\n", encoding="utf-8"
-        )
+        (staging / "diagnostic.txt").write_text("failure evidence\n", encoding="utf-8")
         raise ReproductionError("intentional failure")
 
-    monkeypatch.setattr(
-        "scripts.reproduce_public_release._run_command", fail_command
-    )
+    monkeypatch.setattr("scripts.reproduce_public_release._run_command", fail_command)
     with pytest.raises(ReproductionError, match="diagnostic staging retained"):
         reproduce(
             writable_root,
@@ -724,8 +782,7 @@ def test_v011_evidence_reproduction_preserves_claim_guards(
         assert result["semantic_content_equal"] is True
         assert result["claim_guard_passed"] is True
         assert all(
-            row["semantic_content_equal"]
-            for row in result["core_csv_comparisons"]
+            row["semantic_content_equal"] for row in result["core_csv_comparisons"]
         )
 
     external_path = generated_root / "geisbauer/result.json"
@@ -740,3 +797,278 @@ def test_v011_evidence_reproduction_preserves_claim_guards(
             generated_root / "geisbauer",
             "geisbauer",
         )
+
+
+def test_reproduction_summary_schema_v4_adds_v012_without_changing_v011(
+    writable_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._preflight",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._release_verification",
+        lambda *_: {"status": "passed"},
+    )
+
+    def successful_command(command: list[str], **_kwargs: object) -> dict[str, object]:
+        return {
+            "command": command,
+            "returncode": 0,
+            "elapsed_seconds": 0.0,
+            "stdout": "",
+            "stderr": "",
+        }
+
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._run_command", successful_command
+    )
+    output = writable_root / "reproduction"
+
+    summary = reproduce(writable_root, output, "tests")
+
+    assert summary["schema_version"] == 4
+    assert summary["evidence_v011"] == {
+        "status": "skipped_by_mode",
+        "mode": "tests",
+    }
+    assert summary["evidence_v012"] == {
+        "status": "skipped_by_mode",
+        "mode": "tests",
+    }
+    assert summary["v012_headless_figure"] == {
+        "status": "skipped_by_mode",
+        "mode": "tests",
+    }
+    persisted = json.loads(
+        (output / "reproduction_summary.json").read_text(encoding="utf-8")
+    )
+    assert persisted["schema_version"] == 4
+    assert persisted["evidence_v011"] == summary["evidence_v011"]
+    assert persisted["evidence_v012"] == summary["evidence_v012"]
+    assert persisted["v012_headless_figure"] == summary["v012_headless_figure"]
+
+
+def test_experiment_reproduction_runs_and_records_v012_figure(
+    writable_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._preflight",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._release_verification",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._compare_core_csvs", lambda *_: []
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._inspect_v011_group",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._inspect_v012_group",
+        lambda *_: {"status": "passed"},
+    )
+
+    observed_commands: list[list[str]] = []
+
+    def successful_command(command: list[str], **kwargs: object) -> dict[str, object]:
+        observed_commands.append(command)
+        if "--output" in command:
+            output_arg = Path(command[command.index("--output") + 1])
+            output_path = (
+                output_arg
+                if output_arg.is_absolute()
+                else Path(kwargs["cwd"]) / output_arg
+            )
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            source_name = (
+                "v012_robustness.png"
+                if Path(command[1]) == PROJECT_ROOT / V012_ANALYZER
+                else "phase8_results.png"
+            )
+            shutil.copy2(PROJECT_ROOT / "docs/assets" / source_name, output_path)
+        return {
+            "command": command,
+            "returncode": 0,
+            "elapsed_seconds": 0.0,
+            "stdout": "",
+            "stderr": "",
+        }
+
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._run_command", successful_command
+    )
+    output = writable_root / "reproduction"
+
+    summary = reproduce(PROJECT_ROOT, output, "experiment")
+
+    assert any(
+        Path(command[1]) == PROJECT_ROOT / V012_ANALYZER
+        for command in observed_commands
+    )
+    assert summary["v012_headless_figure"]["status"] == "passed"
+    assert summary["v012_headless_figure"]["path"] == ("showcase/v012_robustness.png")
+    assert (output / "showcase/v012_robustness.png").is_file()
+    assert "v012_showcase" in summary["commands"]
+
+
+def test_inspect_png_uses_caller_reported_path() -> None:
+    inspected = _inspect_png(
+        PROJECT_ROOT / "docs/assets/v012_robustness.png",
+        reported_path="showcase/v012_robustness.png",
+    )
+
+    assert inspected["path"] == "showcase/v012_robustness.png"
+    assert inspected["width_px"] > 0
+    assert inspected["height_px"] > 0
+
+
+def test_v012_json_normalization_removes_cross_platform_state_hashes() -> None:
+    v4 = {
+        "status": "unchanged",
+        "candidate_prediction_pack_sha256": "a" * 64,
+        "provenance": {"source_tree_sha256": "b" * 64},
+        "artifacts": {"result": {"sha256": "c" * 64}},
+    }
+    normalized_v4 = _normalized_v012_result(v4, "v4_calibration_robustness")
+    assert normalized_v4 == {"status": "unchanged"}
+    assert "candidate_prediction_pack_sha256" in v4
+
+    geisbauer = {
+        "status": "unchanged",
+        "base_evidence": {
+            "label_free_prediction_sha256": "d" * 64,
+            "target_outcome_sha256": "e" * 64,
+        },
+        "provenance": {"source_tree_sha256": "f" * 64},
+        "artifacts": {"result": {"sha256": "0" * 64}},
+    }
+    normalized_geisbauer = _normalized_v012_result(geisbauer, "geisbauer_robustness")
+    assert normalized_geisbauer == {
+        "status": "unchanged",
+        "base_evidence": {"target_outcome_sha256": "e" * 64},
+    }
+    assert "label_free_prediction_sha256" in geisbauer["base_evidence"]
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "tampered_value"),
+    [
+        ("scope", "physical_cell_count", 14),
+        ("scope", "storage_temperature_c", 25.0),
+        (
+            "route_reality",
+            "candidate_exactly_equals_hierarchical_power_fallback",
+            False,
+        ),
+        ("route_reality", "activation_gate_ready_physical_cell_count", 1),
+        ("route_reality", "activation_specialist_tested", True),
+        ("leave_one_cell_out", "scenario_count", 14),
+        ("leave_one_cell_out", "scenarios_are_highly_overlapping", False),
+        ("leave_one_cell_out", "scenarios_are_independent_replications", True),
+    ],
+)
+def test_geisbauer_v012_claim_guard_locks_route_and_cohort_boundaries(
+    section: str,
+    field: str,
+    tampered_value: object,
+) -> None:
+    payload = json.loads(
+        (
+            PROJECT_ROOT / "showcase/evidence_v012/geisbauer_robustness/result.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert _v012_claim_guard(payload, "geisbauer_robustness") is True
+
+    payload[section][field] = tampered_value
+
+    assert _v012_claim_guard(payload, "geisbauer_robustness") is False
+
+
+@pytest.fixture
+def generated_v012(writable_root: Path) -> Path:
+    generated_root = writable_root / "generated_v012"
+    shutil.copytree(PROJECT_ROOT / "showcase/evidence_v012", generated_root)
+    return generated_root
+
+
+def test_v012_evidence_reproduction_accepts_semantic_copy(
+    generated_v012: Path,
+) -> None:
+    for group in V012_CORE_CSVS:
+        result_path = generated_v012 / group / "result.json"
+        result_payload = json.loads(result_path.read_text(encoding="utf-8"))
+        result_payload["provenance"] = {"generated_in": "reproduction_staging"}
+        result_payload["artifacts"] = {"paths": "reproduction_relative"}
+        if group == "v4_calibration_robustness":
+            result_payload["candidate_prediction_pack_sha256"] = "f" * 64
+        else:
+            result_payload["base_evidence"]["label_free_prediction_sha256"] = "f" * 64
+        result_path.write_text(json.dumps(result_payload), encoding="utf-8")
+
+        result = _inspect_v012_group(
+            PROJECT_ROOT,
+            generated_v012 / group,
+            group,
+        )
+
+        assert result["status"] == "passed"
+        assert result["semantic_content_equal"] is True
+        assert result["claim_guard_passed"] is True
+        assert len(result["core_csv_comparisons"]) == len(V012_CORE_CSVS[group])
+        assert all(
+            row["semantic_content_equal"] for row in result["core_csv_comparisons"]
+        )
+
+
+@pytest.mark.parametrize(
+    ("group", "section", "field", "tampered_value"),
+    [
+        (
+            "v4_calibration_robustness",
+            "confirmation",
+            "status",
+            "confirmed",
+        ),
+        (
+            "geisbauer_robustness",
+            "claim_boundary",
+            "confirmatory_inference_allowed",
+            True,
+        ),
+    ],
+)
+def test_v012_evidence_reproduction_rejects_claim_tampering(
+    generated_v012: Path,
+    group: str,
+    section: str,
+    field: str,
+    tampered_value: object,
+) -> None:
+    result_path = generated_v012 / group / "result.json"
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+    payload[section][field] = tampered_value
+    result_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ReproductionError, match="claim guard failed"):
+        _inspect_v012_group(PROJECT_ROOT, generated_v012 / group, group)
+
+
+def test_v012_evidence_reproduction_rejects_core_csv_drift(
+    generated_v012: Path,
+) -> None:
+    group = "geisbauer_robustness"
+    csv_path = generated_v012 / group / "cell_paired_deltas.csv"
+    rows = _csv_content(csv_path)
+    value_index = rows[0].index("candidate_trajectory_iae_pp")
+    rows[1][value_index] = "999"
+    with csv_path.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream, lineterminator="\n").writerows(rows)
+
+    with pytest.raises(ReproductionError, match="V0.12 CSV reproduction mismatch"):
+        _inspect_v012_group(PROJECT_ROOT, generated_v012 / group, group)

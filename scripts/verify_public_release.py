@@ -8,7 +8,7 @@ import json
 import re
 import subprocess
 import tomllib
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import unquote, urlparse
 
 
@@ -44,21 +44,15 @@ def _version_consistency(
             "manifest": manifest_version,
             "pyproject": str(pyproject["project"]["version"]),
             "citation": (
-                citation_version_match.group(1)
-                if citation_version_match
-                else None
+                citation_version_match.group(1) if citation_version_match else None
             ),
             "package": (
-                package_version_match.group(1)
-                if package_version_match
-                else None
+                package_version_match.group(1) if package_version_match else None
             ),
         }
         dates = {
             "manifest": str(manifest["release_date"]),
-            "citation": (
-                citation_date_match.group(1) if citation_date_match else None
-            ),
+            "citation": (citation_date_match.group(1) if citation_date_match else None),
         }
         version_values = list(versions.values())
         date_values = list(dates.values())
@@ -111,9 +105,9 @@ def _git_tracked_files(project_root: Path) -> list[Path] | None:
         return None
     return [
         project_root / relative
-        for relative in completed.stdout.decode("utf-8", errors="surrogateescape").split(
-            "\0"
-        )
+        for relative in completed.stdout.decode(
+            "utf-8", errors="surrogateescape"
+        ).split("\0")
         if relative
     ]
 
@@ -127,6 +121,68 @@ def _release_files(project_root: Path) -> tuple[list[Path], str]:
         for path in project_root.rglob("*")
         if path.is_file() and ".git" not in path.parts
     ], "filesystem_fallback"
+
+
+def _is_canonical_relative_path(value: object) -> bool:
+    if not isinstance(value, str) or not value or "\\" in value or "\0" in value:
+        return False
+    posix_path = PurePosixPath(value)
+    windows_path = PureWindowsPath(value)
+    return (
+        not posix_path.is_absolute()
+        and not windows_path.drive
+        and value == posix_path.as_posix()
+        and bool(posix_path.parts)
+        and all(part not in {".", ".."} for part in posix_path.parts)
+    )
+
+
+def _unfrozen_tracked_allowlist(
+    manifest: dict[str, object],
+    tracked_regular_files: set[str],
+) -> tuple[set[str], list[dict[str, object]]]:
+    raw_allowlist = manifest.get("unfrozen_tracked_allowlist", [])
+    if not isinstance(raw_allowlist, list):
+        return set(), [
+            {
+                "reason": "must_be_an_array",
+                "value": raw_allowlist,
+            }
+        ]
+
+    allowlist: set[str] = set()
+    errors: list[dict[str, object]] = []
+    for index, value in enumerate(raw_allowlist):
+        if not _is_canonical_relative_path(value):
+            errors.append(
+                {
+                    "index": index,
+                    "path": value,
+                    "reason": "not_a_canonical_relative_path",
+                }
+            )
+            continue
+        assert isinstance(value, str)
+        if value in allowlist:
+            errors.append(
+                {
+                    "index": index,
+                    "path": value,
+                    "reason": "duplicate_path",
+                }
+            )
+            continue
+        if value not in tracked_regular_files:
+            errors.append(
+                {
+                    "index": index,
+                    "path": value,
+                    "reason": "not_a_tracked_regular_file",
+                }
+            )
+            continue
+        allowlist.add(value)
+    return allowlist, errors
 
 
 def _broken_markdown_links(project_root: Path, files: list[Path]) -> list[str]:
@@ -212,6 +268,39 @@ def verify(project_root: Path) -> dict[str, object]:
         if scan_mode == "git_tracked_files"
         else []
     )
+    freeze_gate_value = manifest.get("require_all_tracked_files_frozen", False)
+    freeze_gate_errors: list[dict[str, object]] = []
+    if not isinstance(freeze_gate_value, bool):
+        freeze_gate_errors.append(
+            {
+                "field": "require_all_tracked_files_frozen",
+                "reason": "must_be_boolean",
+                "value": freeze_gate_value,
+            }
+        )
+    freeze_gate_required = freeze_gate_value is True
+    allowlist: set[str] = set()
+    allowlist_errors: list[dict[str, object]] = []
+    unfrozen_tracked: list[str] = []
+    if freeze_gate_required:
+        if scan_mode != "git_tracked_files":
+            freeze_gate_errors.append(
+                {
+                    "field": "require_all_tracked_files_frozen",
+                    "reason": "git_tracked_files_unavailable",
+                }
+            )
+        else:
+            allowlist, allowlist_errors = _unfrozen_tracked_allowlist(
+                manifest,
+                release_file_set,
+            )
+            unfrozen_tracked = sorted(
+                release_file_set
+                - set(manifest["frozen_files_sha256"])
+                - {"release_manifest.json"}
+                - allowlist
+            )
     result = {
         "release_id": manifest["release_id"],
         "status": (
@@ -222,7 +311,11 @@ def verify(project_root: Path) -> dict[str, object]:
             and not broken_links
             and manifest_tracked is not False
             and not untracked_frozen
-            and version_consistency["status"] in {
+            and not freeze_gate_errors
+            and not allowlist_errors
+            and not unfrozen_tracked
+            and version_consistency["status"]
+            in {
                 "passed",
                 "not_applicable_legacy_manifest",
             }
@@ -233,6 +326,11 @@ def verify(project_root: Path) -> dict[str, object]:
         "manifest_tracked": manifest_tracked,
         "frozen_file_count": len(manifest["frozen_files_sha256"]),
         "untracked_frozen_files": untracked_frozen,
+        "require_all_tracked_files_frozen": freeze_gate_required,
+        "tracked_file_freeze_gate_errors": freeze_gate_errors,
+        "unfrozen_tracked_allowlist": sorted(allowlist),
+        "unfrozen_tracked_allowlist_errors": allowlist_errors,
+        "unfrozen_tracked_files": unfrozen_tracked,
         "hash_mismatches": mismatches,
         "forbidden_files": sorted(forbidden_matches),
         "oversized_files": sorted(oversized),

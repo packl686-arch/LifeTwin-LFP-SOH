@@ -1,0 +1,342 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "lifetwin_long_term_lfp_dataset_registry_2026_07_21",
+  "audited_at_utc": "2026-07-21T00:00:00Z",
+  "scope": "Primary-source search for independent long-horizon LFP/graphite calendar-aging evidence",
+  "qualification_summary": {
+    "qualified_public_independent_trajectory_datasets": 0,
+    "best_trajectory_candidate": "lam_joule_2025_osf",
+    "best_decade_endpoint_candidate": "vachenauer_tum_2025_shelf",
+    "highest_domain_match_request_only_candidate": "yagci_offenburg_2025_stationary",
+    "binding_blocker": "No dataset found that simultaneously has explicit reusable data rights, independent physical-cell trajectories, LFP/graphite chemistry, separable calendar aging, at least 730 days, and an unexposed confirmatory outcome partition."
+  },
+  "evidence_tiers": {
+    "D0_ineligible_or_blocked": "Cannot currently be scored under the independent protocol.",
+    "D1_auxiliary_stress_or_field": "Useful for stress, rejection, or operational diagnostics, but not long-term calendar confirmation.",
+    "D2_long_horizon_endpoint": "Can test a long-horizon endpoint only; cannot confirm a dynamic landmark or trajectory.",
+    "D3_long_horizon_trajectory_retrospective": "Can support a locked retrospective trajectory replication, not outcome-blind confirmation.",
+    "D4_locked_external_trajectory": "Protocol and predictions were frozen before project-level outcome access.",
+    "D5_prospective_operational": "Outcomes were generated after freeze and operational issuance gates passed."
+  },
+  "datasets": [
+    {
+      "dataset_id": "naumann_mendeley_2021_calendar",
+      "title": "Data for: Analysis and modeling of calendar aging of a commercial LiFePO4/graphite cell",
+      "primary_sources": [
+        "https://doi.org/10.17632/kxh42bfgtj.1",
+        "https://doi.org/10.1016/j.est.2018.01.019"
+      ],
+      "duration_days": 885,
+      "duration_note": "29 months; the paper reports 885 days.",
+      "chemistry": "LiFePO4/graphite",
+      "aging_mode": "controlled_calendar",
+      "grain": "17 temperature-SOC test points with three physical cells per point in the source study; the released evaluation files are grouped by test point and repository metadata do not establish a reusable physical-cell identifier field.",
+      "data_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "availability": "public_download",
+      "project_outcome_status": "development_outcomes_exposed",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D3_long_horizon_trajectory_retrospective",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "source_overlap_with_model_development",
+        "outcomes_already_used_for_model_and_landmark_development",
+        "physical_cell_id_field_not_verified_in_public_evaluation_files"
+      ],
+      "recommended_action": "Retain as development evidence only; never relabel it as independent confirmation."
+    },
+    {
+      "dataset_id": "geisbauer_zenodo_2022_calendar",
+      "title": "Experimental Calendar Ageing Data for Lithium-Ion Battery Chemistries",
+      "primary_sources": [
+        "https://doi.org/10.5281/zenodo.6685365"
+      ],
+      "duration_days": 120,
+      "duration_note": "Checkups at 0, 39, 59, 84, and 120 days for the LFP subset.",
+      "chemistry": "LFP/graphitic-carbon subset",
+      "aging_mode": "controlled_accelerated_calendar",
+      "grain": "15 physical LFP cells at 60 C across 20%, 50%, and 100% SOC.",
+      "data_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "availability": "public_download",
+      "project_outcome_status": "locked_retrospective_replication",
+      "current_evidence_tier": "D1_auxiliary_stress_or_field",
+      "maximum_possible_tier_after_action": "D1_auxiliary_stress_or_field",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "duration_below_730_days",
+        "single_accelerated_temperature_only",
+        "too_few_positive_time_prefix_observations_for_dynamic_landmark_confirmation"
+      ],
+      "recommended_action": "Keep the negative-transfer result as an accelerated external stress check only."
+    },
+    {
+      "dataset_id": "lam_joule_2025_osf",
+      "title": "Stanford Long Term Calendar Aging Dataset",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.joule.2024.11.013",
+        "https://osf.io/ju325/",
+        "https://github.com/viveklam/Joule-Decade-Calendar-Aging",
+        "https://chuehlab.stanford.edu/datasets"
+      ],
+      "duration_days": 4745,
+      "duration_note": "Up to 13 years across 232 commercial cells and eight cell types; an LFP subset is present.",
+      "chemistry": "mixed commercial chemistries including LFP; per-cell anode chemistry must be confirmed before eligibility",
+      "aging_mode": "controlled_calendar",
+      "grain": "Per-cell raw and summary JSON files with a published cell-ID crosswalk.",
+      "data_license": {
+        "status": "unclear",
+        "identifier": null,
+        "url": null
+      },
+      "availability": "publicly_visible_but_reuse_rights_unresolved",
+      "license_audit": {
+        "audited_at_utc": "2026-07-21T00:00:00Z",
+        "osf_node_license": null,
+        "osf_node_last_modified": "2025-03-31T15:32:36.903932",
+        "github_detected_license": null,
+        "github_last_push": "2025-02-28T22:18:58Z"
+      },
+      "project_outcome_status": "target_summary_schema_and_cohort_previously_inspected",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D3_long_horizon_trajectory_retrospective",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "dataset_license_unclear",
+        "code_license_unclear",
+        "target_outcome_structure_previously_inspected_by_project"
+      ],
+      "recommended_action": "Wait for written data and code permission. If granted, freeze a dataset-specific protocol and run only a locked retrospective replication; do not claim outcome-blind confirmation."
+    },
+    {
+      "dataset_id": "vachenauer_tum_2025_shelf",
+      "title": "Shelf life of lithium-ion batteries: Recommissioning LiFePO4/C cells after ten years of uninterrupted calendar aging",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.jpowsour.2025.237779",
+        "https://portal.fis.tum.de/en/publications/shelf-life-of-lithium-ion-batteries-recommissioning-lifeposub4sub/"
+      ],
+      "duration_days": 3650,
+      "duration_note": "Ten uninterrupted years at 6 degrees Celsius and 50% SOC, followed by endpoint characterization.",
+      "chemistry": "commercial 26650 LiFePO4/graphite",
+      "aging_mode": "controlled_calendar_endpoint",
+      "storage_temperature_c": 6.0,
+      "storage_soc_pct": 50.0,
+      "grain": "100 physical cells; publication reports 96%-98% retained capacity, but no intermediate checkups exist during uninterrupted storage.",
+      "paper_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "data_license": {
+        "status": "not_published",
+        "identifier": null,
+        "url": null
+      },
+      "availability": "available_on_request",
+      "project_outcome_status": "published_aggregate_endpoints_seen",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D2_long_horizon_endpoint",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "raw_individual_cell_data_not_public",
+        "data_license_or_permission_not_yet_granted",
+        "endpoint_only_no_dynamic_landmark_trajectory"
+      ],
+      "recommended_action": "Request individual BOL and ten-year endpoint values plus explicit reuse permission. Use only as a decade endpoint check, never as dynamic-landmark confirmation."
+    },
+    {
+      "dataset_id": "sui_aalborg_2021_calendar",
+      "title": "The Degradation Behavior of LiFePO4/C Batteries during Long-Term Calendar Aging",
+      "primary_sources": [
+        "https://doi.org/10.3390/en14061732"
+      ],
+      "duration_days": 1309,
+      "duration_note": "43 months for three cases and 27 months for two cases, with approximately monthly reference tests.",
+      "chemistry": "LiFePO4/graphite",
+      "aging_mode": "controlled_accelerated_calendar",
+      "grain": "15 physical cells, five conditions, three cells per condition; article analysis emphasizes median curves and variability summaries.",
+      "paper_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "data_license": {
+        "status": "not_published",
+        "identifier": null,
+        "url": null
+      },
+      "availability": "paper_only_data_availability_not_applicable",
+      "project_outcome_status": "published_figures_seen",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D3_long_horizon_trajectory_retrospective",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "machine_readable_raw_trajectory_data_not_public",
+        "individual_cell_values_not_available_for_scoring",
+        "published_outcomes_already_visible"
+      ],
+      "recommended_action": "Ask the authors for the monthly individual-cell capacity table and explicit research/competition reuse terms."
+    },
+    {
+      "dataset_id": "yagci_offenburg_2025_stationary",
+      "title": "Degradation modes of large-format stationary-storage LFP-based lithium-ion cells during calendaric and cyclic aging",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.est.2025.116774",
+        "https://www.sciencedirect.com/science/article/pii/S2352152X25014872"
+      ],
+      "duration_days": 850,
+      "duration_note": "Approximately 850 days of calendar aging at 35 C or 50 C and 75% or 100% SOC.",
+      "chemistry": "commercial 180 Ah stationary-storage LFP/graphite",
+      "aging_mode": "controlled_calendar_and_separate_cycle_campaign",
+      "grain": "Large-format individual cells; exact reusable cell-level table and replicate support are not publicly deposited.",
+      "paper_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "data_license": {
+        "status": "not_published",
+        "identifier": null,
+        "url": null
+      },
+      "availability": "available_on_request",
+      "project_outcome_status": "published_figures_seen",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D3_long_horizon_trajectory_retrospective",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "raw_individual_cell_data_not_public",
+        "data_license_or_permission_not_yet_granted",
+        "published_outcomes_already_visible"
+      ],
+      "recommended_action": "High-priority author request because the 180 Ah stationary-storage form factor is the closest domain match."
+    },
+    {
+      "dataset_id": "aeppli_empa_2025_second_life",
+      "title": "Aging behavior of LiFePO4-based battery cells at stack level: A Second-Life cycling study",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.est.2025.117135",
+        "https://www.dora.lib4ri.ch/empa/islandora/object/empa%3A41733"
+      ],
+      "duration_days": 5110,
+      "duration_note": "More than 14 years total cell age, including seven years of measured Second-Life use and up to 9600 cycles.",
+      "chemistry": "100 Ah LiFePO4-based cells; graphite anode is not established as a reusable eligibility field",
+      "aging_mode": "mixed_unknown_first_life_and_second_life_cycling",
+      "grain": "Nine selected physical cells with long cycling trajectories; First-Life voltage, current, capacity, and temperature histories were not recorded.",
+      "paper_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "data_license": {
+        "status": "not_published",
+        "identifier": null,
+        "url": null
+      },
+      "availability": "available_on_request",
+      "project_outcome_status": "published_trajectories_seen",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D1_auxiliary_stress_or_field",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "calendar_and_cycle_aging_not_separable",
+        "first_life_operating_history_missing",
+        "data_license_or_permission_not_yet_granted"
+      ],
+      "recommended_action": "Request data only for mixed-aging transfer and rejection diagnostics, not calendar confirmation."
+    },
+    {
+      "dataset_id": "figgener_rwth_2024_home_storage",
+      "title": "Data for: Multi-year field measurements of home storage systems and their use in capacity estimation",
+      "primary_sources": [
+        "https://doi.org/10.5281/zenodo.12091223",
+        "https://doi.org/10.1038/s41560-024-01620-9"
+      ],
+      "duration_days": 2920,
+      "duration_note": "Up to eight years, 106 system-years total.",
+      "chemistry": "system cohort includes LFP, NMC, and LMO-NMC blend; chemistry is not a uniform LFP/graphite cohort",
+      "aging_mode": "mixed_field_operation",
+      "grain": "21 home-storage system IDs with one-second pack-level measurements and periodic field capacity tests; no individual physical-cell trajectories.",
+      "data_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "availability": "public_download_21_1_gb",
+      "project_outcome_status": "not_inspected_for_model_development",
+      "current_evidence_tier": "D1_auxiliary_stress_or_field",
+      "maximum_possible_tier_after_action": "D1_auxiliary_stress_or_field",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "system_level_not_individual_cell",
+        "mixed_chemistry_cohort",
+        "calendar_and_cycle_aging_not_separable"
+      ],
+      "recommended_action": "Potential later system-level operational plausibility study; do not use to confirm cell-level calendar landmarks."
+    },
+    {
+      "dataset_id": "schaeffer_zenodo_2024_lfp_field",
+      "title": "Lithium-Ion Battery Field Data: 28 LFP battery systems with 8 cells in series, up to 5 years of operation",
+      "primary_sources": [
+        "https://doi.org/10.5281/zenodo.13715694",
+        "https://doi.org/10.1016/j.xcrp.2024.102258"
+      ],
+      "duration_days": 1825,
+      "duration_note": "One month to five years depending on system.",
+      "chemistry": "LFP systems; anode composition is anonymized/not established in repository metadata",
+      "aging_mode": "unknown_mixed_field_operation",
+      "grain": "28 system IDs and 224 cell-voltage channels; only pack current is measured and individual-cell capacity/SOH labels are absent.",
+      "data_license": {
+        "status": "explicit_noncommercial",
+        "identifier": "CC-BY-NC-4.0",
+        "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+      },
+      "availability": "public_download_1_7_gb",
+      "project_outcome_status": "not_inspected_for_model_development",
+      "current_evidence_tier": "D1_auxiliary_stress_or_field",
+      "maximum_possible_tier_after_action": "D1_auxiliary_stress_or_field",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "calendar_and_cycle_aging_not_separable",
+        "individual_cell_capacity_outcomes_absent",
+        "biased_returned_faulty_system_sample",
+        "commercial_use_not_permitted"
+      ],
+      "recommended_action": "Useful for future route rejection, fault, and field-shift diagnostics under non-commercial terms only."
+    },
+    {
+      "dataset_id": "wmg_zenodo_2025_lgm50_calendar",
+      "title": "WMG Calendar Ageing Dataset - LGM50 Commercial Cells (39 Storage Conditions)",
+      "primary_sources": [
+        "https://doi.org/10.5281/zenodo.14577286",
+        "https://doi.org/10.1016/j.apenergy.2024.125221"
+      ],
+      "duration_days": 770,
+      "duration_note": "496-770 days across conditions; described as about two years on average.",
+      "chemistry": "NMC811/SiOx-graphite LGM50T, not LFP",
+      "aging_mode": "controlled_calendar",
+      "grain": "117 physical cells, 39 storage conditions, three cells per condition.",
+      "data_license": {
+        "status": "explicit",
+        "identifier": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "availability": "public_download_10_3_gb",
+      "project_outcome_status": "not_inspected_for_model_development",
+      "current_evidence_tier": "D0_ineligible_or_blocked",
+      "maximum_possible_tier_after_action": "D1_auxiliary_stress_or_field",
+      "qualifies_now": false,
+      "failure_reasons": [
+        "cathode_not_lfp",
+        "anode_contains_silicon_oxide"
+      ],
+      "recommended_action": "Do not spend 10.3 GB on the LFP confirmation task; retain as a possible cross-chemistry negative control."
+    }
+  ]
+}

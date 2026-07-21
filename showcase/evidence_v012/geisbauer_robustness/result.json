@@ -1,0 +1,276 @@
+{
+  "status": "retrospective_external_robustness_audit_complete",
+  "execution_status": "completed",
+  "audit_id": "geisbauer_lfp_calendar_external_robustness_audit_v1",
+  "design_status": "retrospective_audit_designed_after_v011_outcome_review",
+  "inference_status": "exploratory_nominal_diagnostics_not_confirmatory_inference",
+  "config_sha256": "583e88ec2fdd27dda7483c3e337125f2f7d76c1cb4ce53df63931cb9fa07e1dc",
+  "numerical_zero_tolerance_pp": 1e-12,
+  "scope": {
+    "dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+    "evidence_role": "accelerated_external_stress_check",
+    "statistical_unit": "individual_physical_cell_trajectory",
+    "physical_cell_count": 15,
+    "storage_temperature_c": 60.0,
+    "maximum_observed_days": 120.0,
+    "target_scoring_days": [
+      84,
+      120
+    ],
+    "outcomes_reviewed_before_audit_design": true
+  },
+  "route_reality": {
+    "candidate_method": "mechanism_gated_hierarchical_activation_offset_hybrid_v1",
+    "comparator_method": "target_prefix_only_sqrt_time_v1",
+    "candidate_exactly_equals_hierarchical_power_fallback": true,
+    "activation_gate_ready_physical_cell_count": 0,
+    "activation_specialist_tested": false
+  },
+  "overall_paired_diagnostic": {
+    "primary_metric": "trajectory_iae_pp",
+    "candidate_error_mean_pp": 3.9734505829651314,
+    "comparator_error_mean_pp": 3.8852146643430436,
+    "mean_paired_delta_pp": 0.08823591862208821,
+    "median_paired_delta_pp": -0.002189523007018579,
+    "candidate_better_cell_count": 8,
+    "candidate_worse_cell_count": 7,
+    "candidate_numerical_zero_cell_count": 0,
+    "exact_sign_test_nonzero_cell_count": 15,
+    "exact_sign_test_two_sided_p": 1.0,
+    "exact_mean_sign_flip_nonzero_cell_count": 15,
+    "exact_mean_sign_flip_permutation_count": 32768,
+    "exact_mean_sign_flip_observed_mean_delta_pp": 0.08823591862208821,
+    "exact_mean_sign_flip_extreme_threshold_pp": 0.08823591862208821,
+    "exact_mean_sign_flip_inclusive_comparison_epsilon": 2.220446049250313e-16,
+    "exact_mean_sign_flip_two_sided_p": 0.57501220703125,
+    "nominal_diagnostics_are_confirmatory": false
+  },
+  "leave_one_cell_out": {
+    "scenario_count": 15,
+    "remaining_physical_cell_count_per_scenario": 14,
+    "scenarios_are_highly_overlapping": true,
+    "scenarios_are_independent_replications": false,
+    "minimum_mean_paired_delta_pp": -0.00989658149350595,
+    "maximum_mean_paired_delta_pp": 0.14932352630423606,
+    "candidate_better_direction_count": 2,
+    "candidate_worse_direction_count": 13,
+    "numerical_zero_direction_count": 0,
+    "direction_flip_scenario_count": 2,
+    "maximum_absolute_influence_cell_id": "GEISBAUER_LFP_CELL_043",
+    "maximum_absolute_change_from_full_mean_pp": 0.09813250011559416
+  },
+  "post_hoc_equivalence_margin_sensitivity": {
+    "metric": "trajectory_iae_pp",
+    "unit": "percentage_points",
+    "numerical_zero_tolerance_pp": 1e-12,
+    "margins": [
+      {
+        "equivalence_margin_pp": 0.0,
+        "candidate_better_cell_count": 8,
+        "candidate_worse_cell_count": 7,
+        "equivalent_cell_count": 0
+      },
+      {
+        "equivalence_margin_pp": 0.01,
+        "candidate_better_cell_count": 5,
+        "candidate_worse_cell_count": 7,
+        "equivalent_cell_count": 3
+      },
+      {
+        "equivalence_margin_pp": 0.05,
+        "candidate_better_cell_count": 5,
+        "candidate_worse_cell_count": 4,
+        "equivalent_cell_count": 6
+      },
+      {
+        "equivalence_margin_pp": 0.1,
+        "candidate_better_cell_count": 5,
+        "candidate_worse_cell_count": 4,
+        "equivalent_cell_count": 6
+      }
+    ],
+    "status": "exploratory_post_hoc_sensitivity",
+    "engineering_acceptance_gate": false,
+    "interpretation": "These margins are exploratory descriptive reclassifications, not engineering acceptance thresholds or model gates."
+  },
+  "negative_transfer_diagnosis": {
+    "aggregate_mean_negative_transfer_observed": true,
+    "physical_cells_with_negative_transfer": 7,
+    "soc_strata_mean_delta_pp": {
+      "soc_0.2": -0.2159614279559733,
+      "soc_0.5": -0.13371483266138712,
+      "soc_1.0": 0.6143840164836251
+    },
+    "soc_strata_cell_outcomes": {
+      "soc_0.2": {
+        "mean_paired_delta_pp": -0.2159614279559733,
+        "median_paired_delta_pp": 0.02328895546215648,
+        "candidate_better_cell_count": 2,
+        "candidate_worse_cell_count": 3,
+        "candidate_numerical_zero_cell_count": 0,
+        "exact_sign_test_two_sided_p": 1.0
+      },
+      "soc_0.5": {
+        "mean_paired_delta_pp": -0.13371483266138712,
+        "median_paired_delta_pp": -0.0028988278274013624,
+        "candidate_better_cell_count": 5,
+        "candidate_worse_cell_count": 0,
+        "candidate_numerical_zero_cell_count": 0,
+        "exact_sign_test_two_sided_p": 0.0625
+      },
+      "soc_1.0": {
+        "mean_paired_delta_pp": 0.6143840164836251,
+        "median_paired_delta_pp": 0.22468459510496075,
+        "candidate_better_cell_count": 1,
+        "candidate_worse_cell_count": 4,
+        "candidate_numerical_zero_cell_count": 0,
+        "exact_sign_test_two_sided_p": 0.375
+      }
+    },
+    "day_strata_mean_delta_pp": {
+      "day_84": 0.0673455314899267,
+      "day_120": 0.1091263057542496
+    },
+    "soc_strata_with_candidate_better_mean": [
+      "soc_0.2",
+      "soc_0.5"
+    ],
+    "soc_strata_with_negative_transfer_mean": [
+      "soc_1.0"
+    ],
+    "mean_median_direction_conflict": true,
+    "soc_strata_with_mean_median_direction_conflict": [
+      "soc_0.2"
+    ],
+    "diagnostic_interpretation": "Observed transfer harm belongs to the hierarchical-power fallback route; the activation specialist was never eligible. Mean, median, cell-win counts, SOC strata, and leave-one-cell-out results must be read together because the small cohort is heterogeneous."
+  },
+  "claim_boundary": {
+    "model_validation_status": "not_confirmed",
+    "confirmatory_inference_allowed": false,
+    "independent_long_term_validation_claim_allowed": false,
+    "reason": "This audit was designed after review of the v0.11 outcomes and uses 15 cells stored at 60 C for only 120 days. Exact tests are unadjusted exploratory diagnostics whose cell-exchangeability or paired-difference symmetry assumptions cannot be established from this small designed cohort."
+  },
+  "base_evidence": {
+    "base_experiment_id": "geisbauer_lfp_calendar_external_stress_screen_v1",
+    "base_design_status": "retrospective_protocol_frozen_after_public_outcome_access",
+    "label_free_prediction_sha256": "41032721d9256d4e09fa471b2d9268221d90f33b0f502fd9aca1e4080c979555",
+    "target_outcome_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54"
+  },
+  "prohibited_claims": [
+    "outcome_blind_external_validation",
+    "independent_long_term_validation",
+    "confirmatory_p_value",
+    "activation_mechanism_confirmation",
+    "formal_uncertainty_calibration",
+    "hithium_product_accuracy",
+    "utility_scale_storage_validation",
+    "15_to_25_year_extrapolation"
+  ],
+  "provenance": {
+    "source_path": "data/interim/naumann_calendar_observations.csv",
+    "source_input_file_sha256": "73e7f3c155aed3da7ae637f6b3b91df3eb1fecc5d19f8702af8da810fd62f47c",
+    "source_canonical_outcome_sha256": "17d117b8e6df3a033209971db9b82c5e9ca2d5a7ca89f45e484737196371b7eb",
+    "target_path": "data/external/geisbauer_2022/LFP_Data.csv",
+    "target_input_file_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+    "target_canonical_observations_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54",
+    "target_adapter_audit": {
+      "status": "passed",
+      "dataset_id": "GEISBAUER_LFP_CALENDAR_2022",
+      "observation_count": 75,
+      "physical_cell_count": 15,
+      "condition_count": 3,
+      "checkups_per_cell": [
+        5
+      ],
+      "temperature_levels_c": [
+        60.0
+      ],
+      "storage_soc_levels": [
+        0.2,
+        0.5,
+        1.0
+      ],
+      "elapsed_days": [
+        0,
+        39,
+        59,
+        84,
+        120
+      ],
+      "canonical_output_sha256": "e77981c702faec169ca6b8b0d44f3f5f6072654a4928273c2133eac0a8469e54",
+      "source": {
+        "doi": "10.5281/zenodo.6685365",
+        "url": "https://zenodo.org/records/6685365",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "version": "v3",
+        "archive_name": "Experimental Calendar Ageing Data for Lithium-Ion Battery Chemistries.zip",
+        "archive_size_bytes": 79545,
+        "archive_md5": "2dae24f63fd0abcb08a8809f4156bcad",
+        "archive_sha256": "327ab07a89b3eb68ef422817f4bd75f50ab6fed399d458381c3b9f1d984fe155",
+        "member": "Experimental Calendar Ageing Data for Lithium-Ion Battery Chemistries/CSV Format/LFP_Data.csv",
+        "member_size_bytes": 2752,
+        "member_md5": "b8b7219ba9146da6d76c779f4d8c2e75",
+        "member_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+        "input_kind": "extracted_csv",
+        "provided_path": "data/external/geisbauer_2022/LFP_Data.csv",
+        "provided_size_bytes": 2752,
+        "provided_sha256": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
+        "archive_hash_verified": false,
+        "member_hash_verified": true
+      },
+      "guardrails": {
+        "evidence_role": "accelerated_external_stress_check",
+        "statistical_unit": "individual_physical_cell_trajectory",
+        "long_term_validation_eligible": false,
+        "confirmation_claim_allowed": false,
+        "row_level_split_prohibited": true,
+        "aggregate_cells_before_scoring": false
+      },
+      "warning": "This is a 120-day, 60 C accelerated external stress check with only three SOC conditions. It is never long-term external validation."
+    },
+    "external_protocol_path": "configs/experiments/geisbauer_lfp_calendar_external_stress.json",
+    "external_protocol_file_sha256": "5ba003ad0cf7093acb817b1e93f01f083a97508efe500588bb090a0acde1f03f",
+    "audit_protocol_path": "configs/experiments/geisbauer_lfp_calendar_robustness_audit.json",
+    "audit_protocol_file_sha256": "346fdf3c7833c53da230342e76125297d4780078fd7039bfe50b05a67c4c5c0a",
+    "source_sha256": {
+      "scripts/run_geisbauer_robustness_audit.py": "163070a596fb9c105d1db0faa3894e2a0d7a33298a24141beded29d09e2adf33",
+      "src/lifetwin/data/naumann.py": "3397745fc0b7adee4f12072cebf2a12cf90a272f5db4ae2b073649d24e141aab",
+      "src/lifetwin/data/geisbauer_calendar.py": "d63f935eaa3066ca9743f8c529939c23064c7c18e056f475ad35b8dc2bfebbe0",
+      "src/lifetwin/models/calendar_v2.py": "7120a33a8bb64bb6d2287936a761817d1270e40d3d38f5cfe06992462ff6b97e",
+      "src/lifetwin/models/calendar_v3_activation.py": "2121accfa57799197d6fdcb563efd081a02e013366bc2e396296af9ce1af4e6b",
+      "src/lifetwin/experiments/geisbauer_external_stress.py": "b9fc17ac8559a53e865dadf04769cd3d12743cdda1327a2d2f090812a4cffecf",
+      "src/lifetwin/experiments/geisbauer_robustness_audit.py": "b1c02ad05e5bd9fead3fc3f451a02984fa5e7a7bdf58dc9ec968b163eeb6450a"
+    },
+    "source_tree_sha256": "334387c8d434006a24e802fc966da9c1682bfacac3844c7062362d56bbb7f9c7",
+    "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+    "packages": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "scipy": "1.18.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "artifacts": {
+    "cell_paired_deltas": {
+      "path": "showcase/evidence_v012/geisbauer_robustness/cell_paired_deltas.csv",
+      "row_count": 15,
+      "sha256": "e71864b51bd4bea0a2d3dcb97700e9d6e05a734a56eb397db72294df8627a0a6"
+    },
+    "cell_day_paired_deltas": {
+      "path": "showcase/evidence_v012/geisbauer_robustness/cell_day_paired_deltas.csv",
+      "row_count": 30,
+      "sha256": "8bd4481ff663890d12fc9012a9a6f20bee173659463d605140271fc49f3d45c4"
+    },
+    "stratum_diagnostics": {
+      "path": "showcase/evidence_v012/geisbauer_robustness/stratum_diagnostics.csv",
+      "row_count": 12,
+      "sha256": "b45d3d566c6bc88fc4d38ce64e0c6e4f7d60355ea617235285d496cedbc6c805"
+    },
+    "leave_one_cell_out": {
+      "path": "showcase/evidence_v012/geisbauer_robustness/leave_one_cell_out.csv",
+      "row_count": 15,
+      "sha256": "028a0e4f9f72bb0b58ecd6aec006c53271df10f959858ea6f74e509344ff5308"
+    }
+  }
+}

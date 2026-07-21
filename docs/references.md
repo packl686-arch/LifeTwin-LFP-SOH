@@ -60,6 +60,27 @@
    用途：15 个独立 LFP 电芯在 60 C、三个 SOC 下的 120 天外部应力筛查。
    数据为 CC BY 4.0；由于时间短且工况单一，不作为长期验证。
 
+10. Vachenauer, V. et al. **Shelf life of lithium-ion batteries:
+    Recommissioning LiFePO4/C cells after ten years of uninterrupted calendar
+    aging.** *Journal of Power Sources* 654, 237779 (2025).
+    DOI: <https://doi.org/10.1016/j.jpowsour.2025.237779>
+    用途：100 个商业 26650 LFP/C 电芯在 6 °C、50% SOC 下连续存放十年的
+    端点证据。论文报告 96%-98% 容量保持，但原始数据仅按请求提供，且十年期间
+    没有中间检查点；最多用于端点检查，不能验证动态 landmark。
+
+11. Yagci, M. C. et al. **Degradation modes of large-format stationary-storage
+    LFP-based lithium-ion cells during calendaric and cyclic aging.**
+    *Journal of Energy Storage* (2025).
+    DOI: <https://doi.org/10.1016/j.est.2025.116774>
+    用途：180 Ah 储能 LFP 电芯、约 850 天日历实验，是目前最接近命题产品
+    形态的请求型长期候选；逐电芯数据与复用权利仍需作者书面确认。
+
+12. Aeppli, D. et al. **Aging behavior of LiFePO4-based battery cells at stack
+    level: A Second-Life cycling study.** *Journal of Energy Storage* (2025).
+    DOI: <https://doi.org/10.1016/j.est.2025.117135>
+    用途：9 个入选物理电芯、约 7 年 Second-Life、最高 9600 cycles 的混合老化
+    迁移候选。未知 First-Life 与循环/日历老化不可分离，不能作为长期日历确认。
+
 ## 数据与代码来源
 
 | 资源 | 入口 | 本仓库处理 |
@@ -70,6 +91,7 @@
 | Severson 作者代码 | <https://github.com/rdbraatz/data-driven-prediction-of-battery-cycle-life-before-capacity-degradation> | 用于核对公开实验身份和协议；不在本仓库复制第三方代码 |
 | CellJAR 固定传输快照 | <https://huggingface.co/datasets/mihnathul/celljar> | 本地研究阶段使用固定 revision；GitHub 版不上传仓库副本 |
 | Lam/Joule OSF | <https://osf.io/ju325/> | 许可待澄清；不上传数据样本、作者代码或邮件 |
+| 长期 LFP 候选登记表 | [`configs/validation/long_term_lfp_dataset_registry.json`](../configs/validation/long_term_lfp_dataset_registry.json) | 只发布一手来源元数据、资格判定与许可状态；不复制请求型或许可不明的数据 |
 
 ## 许可边界
 
