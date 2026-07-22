@@ -1,0 +1,36 @@
+{
+  "config_byte_sha256": "503ec964bb2015fe3460433749d1b0d79f89187fc3dcd1c3809f9d4da2ffc319",
+  "config_canonical_sha256": "6ad1e6dc1caa089ce0b9ee2c4e739a56c44f42f65436294649261a7676d4e320",
+  "git_commit": "8244bd412e6dcd890ed182b338356ad6fa3b8f69",
+  "git_status_porcelain": "",
+  "logical_cpu_count": 20,
+  "packages": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.18.0"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "prediction_worker_count": 6,
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+  "source_sha256": {
+    "configs/experiments/synthetic_long_horizon_identifiability_v1.json": "503ec964bb2015fe3460433749d1b0d79f89187fc3dcd1c3809f9d4da2ffc319",
+    "pyproject.toml": "77e0ef7f5ebc3ec68ba6521ecf3caf72aa773a84381a1751ed9d5e8d7ad94075",
+    "requirements/reproduction.txt": "2a87fc909e2c5729b9e19d6e759d4df36a4a1adb24ee99e53c9f2b7ed8a6bb2e",
+    "scripts/run_synthetic_long_horizon_identifiability.py": "5601ce3b92f7377cf7dea9fcc2f7a18bfe7b5c064892d2ecdcab46fb0ae06d98",
+    "src/lifetwin/experiments/calendar_long_horizon_analysis.py": "e264938aa3bb4ac60b07e654432c4afbfe60ac9312e91e059302bf73ac4ae7be",
+    "src/lifetwin/experiments/calendar_long_horizon_synthetic.py": "0f4488ffe8bd07364c6ca7775b13209ba051ccacba17859d60de91eccf7dc090"
+  },
+  "source_tree_sha256": "f46bc5bcc32a23a34941a95c659f2d4f8ece6c27ba474c5affe3aa91c4547e8d",
+  "started_utc": "2026-07-22T02:58:04.785701Z",
+  "thread_environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONUTF8": "1"
+  }
+}

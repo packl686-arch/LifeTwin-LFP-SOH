@@ -22,12 +22,33 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 前缀 CLI 面向源码或 editable checkout；当前版本不把冻结参考数据拆离 Git 仓库包装成
 standalone wheel 推理服务。
 
-深入证据：[V0.13 可操作入口报告](reports/product_entry_v013_2026-07-22.md) ·
+深入证据：[V0.14 预注册长时域压力测试报告](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md) ·
+[V0.14 机器可读证据](showcase/evidence_v014/README.md) ·
+[V0.13 可操作入口报告](reports/product_entry_v013_2026-07-22.md) ·
 [开题报告补充材料](SUBMISSION_SUPPLEMENT.md) ·
 [V0.12 稳健性报告](reports/robustness_and_long_term_protocol_2026-07-21.md) ·
 [独立长期验证预注册](docs/independent_long_term_lfp_preregistration.md) ·
 [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md) ·
 [参考资料](docs/references.md)
+
+## V0.14 预注册长时域压力测试
+
+我们在查看合成长时域真值前冻结代码、种子、三个主终点和失败规则，再对
+2,900 条 25 年轨迹执行一次性测试。运行和四项安全门均完整通过，但预注册的
+方法判定为 **failure**，没有因为结果不理想而改门槛或重写结论。
+
+| 预注册终点 | 实际结果 | 冻结门槛 | 判定 |
+|---|---:|---:|---|
+| 50% 签发率下的灾难性误差风险降低 | 21.65% | 至少 30% | 未通过 |
+| 共享完全相同短期前缀的反例对，两侧同时拒绝 | 27.0% | 至少 80% | 未通过 |
+| 已签发轨迹相对平方根基线的平均 IAE 增量 | +0.0146 pp | 不高于 +0.10 pp | 通过 |
+
+该结果给出两个有用边界：结构分歧具有风险排序信号，但当前最大包络门控被固定的
+晚期 knee 先验宽度主导；而完全相同前缀可以对应明显不同的 25 年结局，单靠前缀
+不可能辨认哪一侧会发生晚期拐点。下一版不能只调阈值，而应把中心预测、可校准风险头
+和部分可识别区间分开，并在新种子、新真值族和可观测工况协变量上重新预注册验证。
+
+![V0.14 preregistered synthetic stress-test summary](docs/assets/v014_synthetic_identifiability.png)
 
 ## 核心方法
 
@@ -187,6 +208,7 @@ LifeTwin-LFP-SOH/
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -c requirements\reproduction.txt -e ".[dev,showcase]"
 .\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts\verify_v014_synthetic_evidence.py
 .\.venv\Scripts\python.exe showcase\analyze_phase8_results.py --output artifacts\quick\phase8_results.png
 .\.venv\Scripts\lifetwin.exe calendar-prefix-predict --request showcase\product_demo\naumann_t40_soc37_5_request.json --output-dir artifacts\prefix-demo
 ```
@@ -197,6 +219,7 @@ Linux/macOS：
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -c requirements/reproduction.txt -e '.[dev,showcase]'
 .venv/bin/python -m pytest -q
+.venv/bin/python scripts/verify_v014_synthetic_evidence.py
 .venv/bin/python showcase/analyze_phase8_results.py --output artifacts/quick/phase8_results.png
 .venv/bin/lifetwin calendar-prefix-predict --request showcase/product_demo/naumann_t40_soc37_5_request.json --output-dir artifacts/prefix-demo
 ```
@@ -267,6 +290,8 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - V4 全部 210 个校准划分与 Geisbauer 逐电芯/LOCO 稳健性审计：完成，未形成确认性结论。
 - 严格请求 Schema、真实前缀推理 API/CLI、域外/异常前缀失败关闭与零安装评审控制台：完成。
 - 长期 LFP 数据集资格登记、数据无关 Schema 与预注册模板：完成；当前合格公开确认集为 0。
+- 合成长时域结构可辨识性 V1：按冻结协议完整运行；安全门通过，但两个主效门槛未达标，
+  预注册结论为 failure，不晋升为长期预测方法。
 - Ubuntu/Windows fresh-clone CI：已配置，状态由仓库徽章和对应提交记录公开显示。
 - 独立长期 LFP 队列验证：待完成。
 - 海辰大容量电芯与真实电站验证：待完成。
@@ -274,4 +299,4 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 提交人：Jincheng Liu
 
-版本：`0.13.0`，2026-07-22
+版本：`0.14.0`，2026-07-22

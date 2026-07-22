@@ -1,0 +1,42 @@
+{
+  "events": [
+    {
+      "created_utc": "2026-07-22T03:18:13.202460Z",
+      "event": "environment_and_code_frozen",
+      "git_commit": "8244bd412e6dcd890ed182b338356ad6fa3b8f69",
+      "sequence": 1,
+      "source_tree_sha256": "f46bc5bcc32a23a34941a95c659f2d4f8ece6c27ba474c5affe3aa91c4547e8d"
+    },
+    {
+      "created_utc": "2026-07-22T03:18:30.516460Z",
+      "event": "sealed_truth_generated_and_committed",
+      "predictor_received_truth_path": false,
+      "sequence": 2,
+      "truth_pack_byte_sha256": "98a5d03596cb09d2de3815e56a755c9756fbf7030502172d0cb733a92eab93b0"
+    },
+    {
+      "created_utc": "2026-07-22T07:28:11.117036Z",
+      "decision_bundle_byte_sha256": "46fb53bb6986a8570e8bc77ded9b54529b7c550e2bbfe28b0e8dd8551fc2397a",
+      "event": "label_free_predictions_and_decisions_committed",
+      "prediction_bundle_byte_sha256": "d31e2bf15d09e86af195b3ae27c40e8bed0fea9a58fde6786c06254a91fcf1a1",
+      "sequence": 3,
+      "truth_pack_opened_before_commitment": false
+    },
+    {
+      "created_utc": "2026-07-22T07:28:11.127647Z",
+      "event": "sealed_truth_released_to_scorer_after_prediction_commitment",
+      "sequence": 4,
+      "truth_pack_opened_before_prediction_commitment": false
+    },
+    {
+      "created_utc": "2026-07-22T07:30:25.204432Z",
+      "event": "strict_scoring_completed",
+      "result_status": "failure",
+      "sequence": 5,
+      "truth_pack_opened_before_prediction_commitment": false
+    }
+  ],
+  "protocol_deviations": [],
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "truth_pack_opened_before_prediction_commitment": false
+}

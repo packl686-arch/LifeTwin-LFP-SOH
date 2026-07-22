@@ -840,7 +840,7 @@ def test_source_checkout_cli_runs_outside_repo_with_default_reference_paths(
     assert summary["status"] == (
         "research_forecast_generated_operationally_abstained"
     )
-    assert decision["lifetwin_version"] == "0.13.0"
+    assert decision["lifetwin_version"] == "0.14.0"
     assert decision["support"]["prefix_supported"] is True
     assert decision["artifacts"]["forecast"]["row_count"] == 25
     assert decision["artifacts"]["forecast"]["sha256"] == hashlib.sha256(

@@ -8,6 +8,9 @@
 [在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/) ·
 [未来标签隔离的前缀预测入口](showcase/product_demo/README.md)
 
+最新证据：[V0.14 预注册长时域压力测试](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md) ·
+[机器可读证据包](showcase/evidence_v014/README.md)
+
 ## 1. 一分钟概览
 
 储能电站设计寿命可达 15-25 年，而公开 LFP 日历老化数据通常只有数年。
@@ -93,6 +96,23 @@ Geisbauer 结果也按 15 个物理电芯复核：在数值零阈值下候选为
 起点/终点，最多做端点检查；Yagci 的 180 Ah 储能队列需向作者申请逐电芯数据。
 因此 v0.12 没有用不合格数据填补“长期验证”空白，也没有晋升新均值模型。
 
+### 4.3 预注册合成长时域结构可辨识性测试
+
+V0.14 在查看真值前冻结实现、随机种子、数据分区、三个主终点和判定门槛，生成
+2,900 条最长 25 年的合成轨迹，并保留一次在预测承诺前被中断的 void 尝试。随后用
+同一代码和种子重跑，前缀、坐标、真值和匹配对逐字节一致。正式运行没有协议偏离，
+预测有限性、审计方向、10,000 次随机排序和 5,000 次 bootstrap 四项安全门全部通过。
+
+预注册主结论仍为 **failure**：50% 签发率下灾难性误差风险降低 21.65%，低于 30%
+门槛；200 组拥有完全相同短期前缀、但长期结局分叉的反例中，仅 54 组两侧都被拒绝，
+即 27%，低于 80% 门槛；已签发轨迹相对平方根基线的 IAE 增量为 +0.0146 pp，满足
++0.10 pp 非劣界。晚期 knee 真值族在测试和审计分区均出现风险排序反转，说明当前
+最大包络分歧被固定先验宽度主导，不能作为已经准备好的长期安全门控。
+
+这项结果不是现实 LFP 25 年精度验证，而是对方法结构的压力测试。它一方面保留了
+“分歧可筛查部分风险”的正向信号，另一方面证明完全相同的前缀无法决定未来是否出现
+晚期拐点。V0.15 将作为新协议处理，不修改 V1 的门槛、种子或结论。
+
 ## 5. 对抗审计与真实修复
 
 为避免“代码能运行”被误当成“证据可靠”，项目增加了七项对抗检查：数据身份、
@@ -125,10 +145,12 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
 
 | 材料 | 链接 | 评审价值 |
 |---|---|---|
-| V0.13 三分钟简报 | [JUDGE_BRIEF.md](JUDGE_BRIEF.md) | 一屏查看问题、入口、四个结果和边界 |
+| V0.14 三分钟简报 | [JUDGE_BRIEF.md](JUDGE_BRIEF.md) | 一屏查看问题、入口、关键结果和边界 |
 | 零安装评审控制台 | [在线打开](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)；[离线单文件](docs/judge-console/index.html) | 交互回放路由、区间和负迁移，不伪装实时推理 |
 | 真实前缀预测入口 | [showcase/product_demo/README.md](showcase/product_demo/README.md) | 提交不含未来容量的 JSON，生成预测和拒绝决定 |
 | V0.13 入口报告 | [reports/product_entry_v013_2026-07-22.md](reports/product_entry_v013_2026-07-22.md) | 解释契约、防火墙、域外拒绝和下一项实验 |
+| V0.14 长时域压力测试报告 | [reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md) | 展示预注册失败判定、完整性审计、反例与后续假设 |
+| V0.14 机器可读证据 | [showcase/evidence_v014/README.md](showcase/evidence_v014/README.md) | 核对冻结承诺、随机排序、bootstrap、分族和匹配前缀结果 |
 | 相关项目经验 | [docs/project_experience.md](docs/project_experience.md) | 展示从数据治理到模型审计的完整积累 |
 | 数据分析样本 | [docs/data_analysis_sample.md](docs/data_analysis_sample.md) | 展示数据、指标、图表和结论链 |
 | 可运行分析脚本 | [showcase/analyze_phase8_results.py](showcase/analyze_phase8_results.py) | 一条命令重建核心图表 |
@@ -169,13 +191,15 @@ regressions**。三处相对退化（`V3 IAE - V2 IAE`）分别为：`p=8, T25_S
    .venv/bin/python scripts/reproduce_public_release.py --mode full --output artifacts/reproduction
    ```
 
-4. 打开 V0.12 总图，先说明原区间依赖校准切分、外部均值依赖少数电芯，再展示
+4. 打开 V0.14 总图和报告，先主动说明两个主效门槛未通过，再解释匹配前缀为何是
+   可识别性边界，而不是通过调参可以消除的普通误差。
+5. 打开 V0.12 总图，先说明原区间依赖校准切分、外部均值依赖少数电芯，再展示
    长期数据资格与预注册规则。
-5. 打开 V0.11 报告，展示 `p=10` 只是回顾性 landmark，以及为何大多数区间
+6. 打开 V0.11 报告，展示 `p=10` 只是回顾性 landmark，以及为何大多数区间
    被拒绝发行。
-6. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
-7. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
-8. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
+7. 展示 Geisbauer 的外部负结果，说明项目没有为赢指标而重调协议。
+8. 打开对抗审计报告和失败条件表，展示未来标签攻击、评分修复和故障回退。
+9. 最后展示证据边界：公开数据证明研究路径可行，但产品承诺必须等待独立长期和内部数据。
 
 GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)，
@@ -191,3 +215,5 @@ GitHub Actions 已配置 Ubuntu/Windows clean checkout；运行记录见
 同一公开数据调参。v0.12 进一步证明当前校准宽度和外部均值对有限条件/电芯敏感，
 所以“主动拒绝”不是附加功能，而是模型落地前不可取消的核心能力。v0.13 已把这条
 边界做成可调用 API/CLI 和零安装控制台；它提高了可操作性，没有提高证据等级。
+v0.14 又用预注册压力测试证明当前分歧门控尚未达到冻结门槛，并把晚期拐点的前缀
+不可辨识性转化为下一版必须正面处理的研究问题，而不是掩盖为一个更漂亮的均值。

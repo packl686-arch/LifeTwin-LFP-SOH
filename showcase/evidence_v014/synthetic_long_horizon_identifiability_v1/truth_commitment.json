@@ -1,0 +1,8 @@
+{
+  "config_sha256": "6ad1e6dc1caa089ce0b9ee2c4e739a56c44f42f65436294649261a7676d4e320",
+  "created_utc": "2026-07-22T03:18:29.799269Z",
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "truth_pack_byte_sha256": "98a5d03596cb09d2de3815e56a755c9756fbf7030502172d0cb733a92eab93b0",
+  "truth_pack_row_count": 23200,
+  "truth_values_withheld_until_prediction_commitment": true
+}

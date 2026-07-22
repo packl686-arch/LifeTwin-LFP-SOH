@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lifetwin-lfp-soh"
-version = "0.13.0"
+version = "0.14.0"
 description = "Evidence-first long-horizon SOH digital twin for LFP energy storage"
 readme = "README.md"
 requires-python = ">=3.11"

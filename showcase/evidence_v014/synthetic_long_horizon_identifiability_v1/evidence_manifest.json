@@ -1,0 +1,180 @@
+{
+  "claim_boundary": "Synthetic mechanism stress test only; no real-LFP, Hithium-product, storage-station, operational-coverage, or 15-25-year accuracy claim.",
+  "execution_git_commit": "8244bd412e6dcd890ed182b338356ad6fa3b8f69",
+  "full_bundle": {
+    "byte_count": 112323415,
+    "canonical_entries_sha256": "14e5ec5fc66b20d50a0c9793c81dbc740f5f9563ef8fba676b5701c62dd74138",
+    "exposure_log_sha256": "19c9ba337507028a335008e3de236ecbb5ab21b32f669ab5e4b161d7c423cb9b",
+    "file_count": 24,
+    "release_asset_byte_count": 14468311,
+    "release_asset_name": "lifetwin-v0.14.0-synthetic-long-horizon-full.zip",
+    "release_asset_sha256": "66efc005c7207f7d2718edb77ad6f1e93029ee377ede6a2cece0ec32087e57bd",
+    "score_report_sha256": "3afc6c6f923f66fa9a4f3b6672584672e0d5d7a804f4668cb9aa4a16ad7dac57"
+  },
+  "omitted_from_git_but_listed_in_full_bundle_manifest": [
+    {
+      "byte_count": 2210946,
+      "path": "forecast_coordinates.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "f66955c40973aaac162b5849915648ba58847508e6908c4642bc783410994765"
+    },
+    {
+      "byte_count": 74895081,
+      "path": "member_fit_diagnostics.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "9c78154a8d62f85a4a553f611cc397d7abfbfe2bafd6ff69e6347996261d5650"
+    },
+    {
+      "byte_count": 3410446,
+      "path": "model_metrics.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "f0ae98ba57152633fd868c06ab4e15dc650975c917483f267d09390d61c06743"
+    },
+    {
+      "byte_count": 13222511,
+      "path": "point_scores.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "5a04c9cf71819824028143e6f63594d1d595f7bbf85917c91cfe0823058a4c19"
+    },
+    {
+      "byte_count": 6324989,
+      "path": "prediction_bundle.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "d31e2bf15d09e86af195b3ae27c40e8bed0fea9a58fde6786c06254a91fcf1a1"
+    },
+    {
+      "byte_count": 3798604,
+      "path": "prefix_pack.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "33287c30a34cb9186fe1f4b30e942d7484aa1bc2c7f19d9d0ece4b7e9c31e3bd"
+    },
+    {
+      "byte_count": 6380308,
+      "path": "truth_pack.csv",
+      "reason": "kept_in_the_full_release_asset_to_avoid_repository_bloat",
+      "sha256": "98a5d03596cb09d2de3815e56a755c9756fbf7030502172d0cb733a92eab93b0"
+    }
+  ],
+  "preoutcome_void_attempt": {
+    "files": [
+      {
+        "byte_count": 1774,
+        "path": "preoutcome_void_attempt/environment.json",
+        "sha256": "84814a2d236114b74f41f5d5efbc978c971d4842a0714488280438f7437d763a"
+      },
+      {
+        "byte_count": 1293,
+        "path": "preoutcome_void_attempt/exposure_log.json",
+        "sha256": "19f2b1d167bd24fcebde27087a2e4c9e13723c9d827c6c586f060759430ead2d"
+      },
+      {
+        "byte_count": 390,
+        "path": "preoutcome_void_attempt/truth_commitment.json",
+        "sha256": "1c502377a4bcea8ed7b1b8e95d74184d6231beebe9d32b4c71e65de31adcfa9c"
+      }
+    ],
+    "included_in_evidence": false,
+    "prediction_commitment_created": false,
+    "reason": "foreground_control_channel_interrupted_the_prediction_process",
+    "same_execution_git_commit": true,
+    "status": "void_before_prediction_commitment",
+    "successful_exact_rerun_generated_bundle_byte_matches": {
+      "forecast_coordinates.csv": true,
+      "matched_prefix_pairs.csv": true,
+      "prefix_pack.csv": true,
+      "truth_pack.csv": true
+    },
+    "successful_exact_rerun_truth_commitment_match": true,
+    "truth_opened_before_void": false
+  },
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "result_status": "failure",
+  "schema_version": "1.0.0",
+  "tracked_original_artifacts": [
+    {
+      "byte_count": 367151,
+      "path": "bootstrap.csv",
+      "sha256": "a12a1c97b8d34d5ff34b9bd6cab88572c6d891e524334b5212a24e9a68dcf6cb"
+    },
+    {
+      "byte_count": 693906,
+      "path": "decision_bundle.csv",
+      "sha256": "46fb53bb6986a8570e8bc77ded9b54529b7c550e2bbfe28b0e8dd8551fc2397a"
+    },
+    {
+      "byte_count": 1774,
+      "path": "environment.json",
+      "sha256": "c79a3c264780faea3492502036005918a1928f3fb8b11e91bf255a44cfce366b"
+    },
+    {
+      "byte_count": 1613,
+      "path": "exposure_log.json",
+      "sha256": "19c9ba337507028a335008e3de236ecbb5ab21b32f669ab5e4b161d7c423cb9b"
+    },
+    {
+      "byte_count": 1677,
+      "path": "family_metrics.csv",
+      "sha256": "63d95790f6eab1f815179f875570dd1fcf27358d32c7a17f7d0cbfeded60a334"
+    },
+    {
+      "byte_count": 29485,
+      "path": "forecast_day_metrics.csv",
+      "sha256": "ddb3bc0c79cd186a7b72f90e7c7255f8ea786a2f70de66c7ae147e87f3c841e1"
+    },
+    {
+      "byte_count": 17928,
+      "path": "matched_pair_scores.csv",
+      "sha256": "3e7c83429b568a811bc151ee7e8ed7150eb0563740224f1a388869d16a1f3508"
+    },
+    {
+      "byte_count": 42561,
+      "path": "matched_prefix_pairs.csv",
+      "sha256": "d55daa32b67c60ecea722393888f275fd56e7bb848fee84253f4a544ee78bcf8"
+    },
+    {
+      "byte_count": 7225,
+      "path": "member_fit_metrics.csv",
+      "sha256": "0975cbee668512b60ab514e95800494954b342f4bae679bf6a965ee69b488851"
+    },
+    {
+      "byte_count": 1377,
+      "path": "noise_sensitivity_metrics.csv",
+      "sha256": "a8c2b6a275177bb327bd2a9c2035e3e1dbb852ac3b9afff7500acc4bf3fd72e4"
+    },
+    {
+      "byte_count": 945,
+      "path": "prediction_commitment.json",
+      "sha256": "819a5869def70462a64adab543164d0cd418971dc108af017b70e929a29ee431"
+    },
+    {
+      "byte_count": 396270,
+      "path": "random_rejection.csv",
+      "sha256": "4a2e52a8d0e66f11484be9cf8e4df95e4f320175625a7589b8038297ac53c3c9"
+    },
+    {
+      "byte_count": 854,
+      "path": "rejection_policy_metrics.csv",
+      "sha256": "7bbf6512a4fd30117c13f9905fdde693dc3515de9570bfa15c6ac38dd8e6d0ef"
+    },
+    {
+      "byte_count": 80796,
+      "path": "risk_coverage.csv",
+      "sha256": "6283b735f8eb83dec159425861f261307bb0b2fd49484103e8e7f465a7d99361"
+    },
+    {
+      "byte_count": 45517,
+      "path": "score_report.json",
+      "sha256": "3afc6c6f923f66fa9a4f3b6672584672e0d5d7a804f4668cb9aa4a16ad7dac57"
+    },
+    {
+      "byte_count": 391061,
+      "path": "trajectory_scores.csv",
+      "sha256": "8fc9cd7ec9f7c3b19a5b22c70fbd809a6d528cdd38e0fcba7c7c10274e4a4144"
+    },
+    {
+      "byte_count": 390,
+      "path": "truth_commitment.json",
+      "sha256": "8de28bcb4e437c4bea83e3a0abe72847610b2e111e2f7e95a85fa306f98430ae"
+    }
+  ]
+}

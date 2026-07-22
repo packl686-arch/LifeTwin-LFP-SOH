@@ -1,0 +1,18 @@
+{
+  "config_sha256": "6ad1e6dc1caa089ce0b9ee2c4e739a56c44f42f65436294649261a7676d4e320",
+  "created_utc": "2026-07-22T07:28:10.250243Z",
+  "decision_bundle_byte_sha256": "46fb53bb6986a8570e8bc77ded9b54529b7c550e2bbfe28b0e8dd8551fc2397a",
+  "forecast_coordinates_byte_sha256": "f66955c40973aaac162b5849915648ba58847508e6908c4642bc783410994765",
+  "member_fit_diagnostics_byte_sha256": "9c78154a8d62f85a4a553f611cc397d7abfbfe2bafd6ff69e6347996261d5650",
+  "prediction_bundle_byte_sha256": "d31e2bf15d09e86af195b3ae27c40e8bed0fea9a58fde6786c06254a91fcf1a1",
+  "prefix_pack_byte_sha256": "33287c30a34cb9186fe1f4b30e942d7484aa1bc2c7f19d9d0ece4b7e9c31e3bd",
+  "protocol_id": "synthetic_long_horizon_identifiability_v1",
+  "row_counts": {
+    "decision_bundle": 2900,
+    "forecast_coordinates": 23200,
+    "member_fit_diagnostics": 246500,
+    "prediction_bundle": 23200,
+    "prefix_pack": 34800
+  },
+  "truth_pack_opened_before_commitment": false
+}
