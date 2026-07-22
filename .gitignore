@@ -15,6 +15,7 @@ tmp/
 .tmp/
 .pytest-tmp-*/
 .pytest_tmp_*/
+.pytest-v014-*/
 pytest-cache-files-*/
 
 # Raw or large datasets are never committed. The allowlisted interim table is a
