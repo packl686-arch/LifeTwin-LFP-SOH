@@ -1,0 +1,1182 @@
+{
+  "schema_version": "2.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2",
+  "status": "frozen_before_v2_implementation_or_simulation_execution",
+  "freeze": {
+    "freeze_date": "2026-07-23",
+    "freeze_witnesses": [
+      "Jincheng Liu"
+    ],
+    "predecessor_result_status": "v1_failure_fully_exposed_before_v2_design",
+    "outcome_exposure_at_freeze": "All V1 outcomes and the exploratory V1 post-hoc risk-head analysis were exposed. No V2 cluster, truth value, fitted state, prediction, score, or pilot simulation had been generated.",
+    "amendment_policy": "This file becomes immutable at its first git commit. A correction, feature change, threshold change, seed change, or distribution change requires a new protocol_id and a public deviation record; it may not replace V2.",
+    "rerun_policy": "Exact-seed reruns are reproducibility checks only. New seeds or resampled clusters require a separately frozen protocol.",
+    "implementation_freeze_policy": "Source code and the reproduction environment must be committed and hashed before the first V2 generation run. Implementation debugging may use hand-written unit fixtures only and may not execute any V2 truth generator or inspect any V2 outcome."
+  },
+  "motivation": {
+    "v1_falsified_claim": "A single global structure-envelope width did not achieve the preregistered risk-reduction or matched-prefix rejection thresholds and reversed direction for late-knee truth.",
+    "v1_identifiability_result": "Exactly identical visible prefixes necessarily produced identical deterministic predictions and decisions despite materially different futures.",
+    "v2_hypothesis": "Separate a stable center forecast from a learned transparent risk head, test the incremental value of prediction-time-visible operating-plan information, and represent intrinsically indistinguishable futures with a width-constrained simultaneous prediction set rather than false branch classification.",
+    "v1_data_role": "hypothesis_generation_only"
+  },
+  "scientific_questions": [
+    "On new seeds and a test pool containing two mechanisms absent from every training and calibration partition, can a frozen visible-stress risk head reduce 25-year catastrophic center-forecast risk at fixed 50 percent issuance relative to random issuance?",
+    "At the same center forecast, hard-eligibility pool, and issuance count, does prediction-time-visible operating information add selective value beyond prefix-only features?",
+    "For futures with exactly the same visible prefix and operating information, can one frozen simultaneous prediction set cover both future branches while remaining materially narrower than the universal admissible truth range?"
+  ],
+  "evidence_role": "synthetic_mechanism_risk_selection_and_partial_identification_stress_test_only",
+  "exposed_predecessor_data_policy": {
+    "forbidden_inputs": [
+      "every V1 development cluster",
+      "every V1 calibration cluster",
+      "every V1 test cluster",
+      "every V1 audit cluster",
+      "every V1 matched-prefix pair",
+      "every V1 fitted coefficient, calibrated state, issuance threshold, or outcome-derived table"
+    ],
+    "allowed_use": "Narrative motivation, fixed feature-family hypothesis generation, and import of the outcome-independent preregistered V1 candidate formulas and optimizer hyperparameters under their frozen double hash only.",
+    "enforcement": "No V1 evidence-artifact path, row hash, cluster ID, fitted state, coefficient, scaler, calibration knot, or issuance threshold may occur in a V2 training or calibration manifest. The sole allowed V1 path is the immutable protocol JSON referenced under candidate_center, used only for outcome-independent member definitions and verified by both frozen hashes."
+  },
+  "time_grid": {
+    "time_unit": "day",
+    "days_per_year_for_labels": 365.25,
+    "prefix_days": [
+      0.0,
+      7.0,
+      14.0,
+      30.0,
+      60.0,
+      90.0,
+      120.0,
+      180.0,
+      270.0,
+      365.0,
+      540.0,
+      730.0
+    ],
+    "forecast_days": [
+      1095.75,
+      1461.0,
+      1826.25,
+      2556.75,
+      3652.5,
+      5478.75,
+      7305.0,
+      9131.25
+    ],
+    "primary_prefix_end_day": 730.0,
+    "primary_endpoint_day": 9131.25,
+    "future_soh_visible_to_any_predictor": false
+  },
+  "design_partitions": {
+    "independent_unit": "one latent trajectory with one operating record, one truth stream, and one measurement stream; a matched pair is one paired statistical unit",
+    "partition_overlap_allowed": false,
+    "center_development": {
+      "families": {
+        "single_power": 100,
+        "dual_power": 100,
+        "saturating_plus_slow": 100,
+        "early_activation_plus_power": 100,
+        "late_knee": 100,
+        "linear_drift_plus_power": 100
+      },
+      "total_clusters": 600,
+      "allowed_outcome_use": "fit the single frozen center-blend coefficient only"
+    },
+    "risk_development": {
+      "families": {
+        "single_power": 100,
+        "dual_power": 100,
+        "saturating_plus_slow": 100,
+        "early_activation_plus_power": 100,
+        "late_knee": 100,
+        "linear_drift_plus_power": 100
+      },
+      "total_clusters": 600,
+      "allowed_outcome_use": "after center state is frozen, fit the two primary logistic heads, the dimension-matched placebo head, the Arm-A-plus-S_plan comparator, and select the strongest single Arm-A feature"
+    },
+    "calibration": {
+      "families": {
+        "single_power": 150,
+        "dual_power": 150,
+        "saturating_plus_slow": 150,
+        "early_activation_plus_power": 150,
+        "late_knee": 150,
+        "linear_drift_plus_power": 150
+      },
+      "total_clusters": 900,
+      "allowed_outcome_use": "fit isotonic probability maps, select the strongest mean baseline, and compute one split-conformal expansion; never refit center or logistic coefficients"
+    },
+    "test": {
+      "families": {
+        "single_power": 250,
+        "dual_power": 250,
+        "saturating_plus_slow": 250,
+        "early_activation_plus_power": 250,
+        "late_knee": 250,
+        "linear_drift_plus_power": 250,
+        "smooth_broken_power": 200,
+        "saturating_logistic_knee": 200
+      },
+      "total_clusters": 1900,
+      "novel_mechanism_clusters": 400,
+      "allowed_outcome_use": "one-shot primary scoring only"
+    },
+    "audit": {
+      "families": {
+        "single_power": 75,
+        "dual_power": 100,
+        "saturating_plus_slow": 125,
+        "early_activation_plus_power": 150,
+        "late_knee": 200,
+        "linear_drift_plus_power": 100,
+        "smooth_broken_power": 100,
+        "saturating_logistic_knee": 100
+      },
+      "total_clusters": 950,
+      "novel_mechanism_clusters": 200,
+      "shift_role": "unequal family mixture, edge-weighted parameter draws, U-shaped stress support, and higher measurement noise",
+      "allowed_outcome_use": "untuned directional replication only"
+    },
+    "intrinsic_matched_pairs": {
+      "pair_count": 250,
+      "member_count": 500,
+      "allowed_outcome_use": "partial-identification and exact-invariance audit only"
+    },
+    "stress_plan_matched_pairs": {
+      "pair_count": 250,
+      "member_count": 500,
+      "allowed_outcome_use": "paired incremental-information audit only"
+    },
+    "total_ordinary_clusters": 4950,
+    "total_matched_members": 1000,
+    "total_generated_members": 5950,
+    "seed_roots": {
+      "center_development": 202607230101,
+      "risk_development": 202607230102,
+      "calibration": 202607230103,
+      "test": 202607230104,
+      "audit": 202607230105,
+      "novel_mechanism_test": 202607230106,
+      "novel_mechanism_audit": 202607230107,
+      "intrinsic_matched_pairs": 202607230108,
+      "stress_plan_matched_pairs": 202607230109,
+      "random_rankings": 202607230110,
+      "bootstrap": 202607230111,
+      "stress_permutations": 202607230112,
+      "placebo_covariate": 202607230113
+    },
+    "seed_derivation": "For every named stream, take the first 16 hexadecimal digits of SHA256(protocol_id|seed_root|partition|family_id|zero_based_index|stream_name), interpret as an unsigned integer, and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) under the frozen environment.",
+    "seed_root_assignment": "Core ordinary families use the root named by their output partition. smooth_broken_power and saturating_logistic_knee use novel_mechanism_test or novel_mechanism_audit while retaining output partition test or audit. Intrinsic and stress-plan members use their corresponding pair root. The placebo root is used only for eight sequential placebo draws keyed by output partition, family, and index. Random, bootstrap, and permutation roots are used only for their named analyses.",
+    "ordinary_stream_order": "For each cluster derive independent named streams opaque_id, operating_covariates, truth_parameters, measurement_noise, and placebo_covariates. Operating stream draw order is the four past fields followed by the four planned fields. Placebo stream draws placebo_control_1 through placebo_control_8 in numeric order. Truth stream draws JSON-ordered family parameters followed by gamma and may continue only for declared parameter rejection. Measurement stream draws sigma, rho, then twenty innovations and is never consumed by rejection or fitting.",
+    "seed_collision_policy": "Any collision among all derived V2 stream seeds, opaque IDs, or predictor-content hashes where the underlying content differs is a protocol void. No unverifiable cross-version seed-ledger claim is made.",
+    "test_truth_access": "Test, audit, and both matched-audit truth files remain inaccessible to training and prediction processes until model_state.json, prediction_bundle.csv, risk_bundle.csv, decision_bundle.csv, and prediction_commitment.json are written and hashed."
+  },
+  "visible_information": {
+    "arms": {
+      "prefix_only": {
+        "allowed_raw_inputs": [
+          "the twelve observed SOH prefix values from day 0 through day 730",
+          "the declared forecast coordinates"
+        ],
+        "allowed_derived_inputs": "the fourteen deterministic prefix-and-structure features declared under risk_heads",
+        "forbidden_inputs": "every operating field, truth family, truth parameter, future SOH, random seed, cluster ID content, row order, rejection-attempt count, and matched-pair side"
+      },
+      "visible_stress": {
+        "allowed_raw_inputs": [
+          "all prefix_only inputs",
+          "past_mean_temperature_c",
+          "past_mean_soc_fraction",
+          "past_mean_dod_fraction",
+          "past_efc_per_year",
+          "planned_mean_temperature_c",
+          "planned_mean_soc_fraction",
+          "planned_mean_dod_fraction",
+          "planned_efc_per_year"
+        ],
+        "time_semantics": "Past fields summarize only days 0 through 730. Planned fields are a declared contractual operating scenario known at prediction time for days after 730, not realized future measurements. V2 tests conditional scenario awareness, not clairvoyance or plan adherence.",
+        "forbidden_inputs": "truth family, truth parameter, future realized operating data, future SOH, random seed, cluster ID content, row order, rejection-attempt count, every placebo_control field, and matched-pair side"
+      }
+    },
+    "shared_center_rule": "Both arms use byte-identical prefix-only center forecasts. Only the risk head differs.",
+    "common_hard_eligibility_pool": "This is the single authoritative eligibility definition used by both primary arms, placebo, every comparator, training feature rows, test, and audit: exactly twelve finite prefix observations, exactly eight forecast coordinates, all eight real and eight placebo operating fields finite, at least two successful credible structure families, all eight frozen-center forecasts finite, and all fourteen prefix plus eight real-stress plus eight placebo features finite. No other credibility, outcome, family, or arm-specific filter is permitted. No arm or comparator may enlarge, shrink, or refill this pool."
+  },
+  "operating_covariate_generation": {
+    "generation_order": "Draw and freeze all covariates first, including the placebo field. Then sample truth parameters conditional on the frozen covariates. Rejected truth draws may redraw truth parameters only and may never redraw covariates.",
+    "ordinary_support": {
+      "past_mean_temperature_c": [
+        15.0,
+        40.0
+      ],
+      "past_mean_soc_fraction": [
+        0.2,
+        0.9
+      ],
+      "past_mean_dod_fraction": [
+        0.2,
+        0.9
+      ],
+      "past_efc_per_year": [
+        100.0,
+        450.0
+      ],
+      "planned_mean_temperature_c": [
+        15.0,
+        40.0
+      ],
+      "planned_mean_soc_fraction": [
+        0.2,
+        0.9
+      ],
+      "planned_mean_dod_fraction": [
+        0.2,
+        0.9
+      ],
+      "planned_efc_per_year": [
+        100.0,
+        450.0
+      ],
+      "placebo_control_1_through_8": "eight mutually independent Uniform(-1,1) fields"
+    },
+    "center_risk_calibration_test_sampling": "Draw every field independently from a continuous uniform distribution on its declared support.",
+    "audit_sampling": "For every non-placebo field draw u~Beta(0.7,0.7) and map it affinely to the same declared support; draw the placebo independently uniform. The causal stress equation remains unchanged.",
+    "stress_index": "For past or planned fields define z_T=(temperature_c-27.5)/12.5, z_SOC=(soc_fraction-0.55)/0.35, z_DOD=(dod_fraction-0.55)/0.35, and z_EFC=(efc_per_year-275)/175. The stress index is 0.35*z_T+0.25*z_SOC+0.15*z_DOD+0.25*z_EFC and lies in [-1,1].",
+    "truth_causal_use": "Let L_base(t) be the sampled family loss. For t<=730, L(t)=exp(0.20*S_past)*L_base(t). For t>730, L(t)=exp(0.20*S_past)*L_base(730)+exp(0.25*S_plan)*(L_base(t)-L_base(730))+gamma*max(S_plan,0)*((t-730)/365.25)^1.05, where gamma~Uniform(0.05,0.25) is a hidden truth parameter drawn independently after covariates. Retention is 100-L(t).",
+    "placebo_rule": "The eight placebo_control fields are mutually independent and independent of all other streams, have no truth effect, are forbidden to both primary heads, and are used only in the dimension-matched negative-control comparator."
+  },
+  "truth_generation": {
+    "retention_unit": "percentage point with day zero normalized exactly to 100",
+    "truth_support_pct": [
+      50.0,
+      105.0
+    ],
+    "core_families": [
+      "single_power",
+      "dual_power",
+      "saturating_plus_slow",
+      "early_activation_plus_power",
+      "late_knee",
+      "linear_drift_plus_power"
+    ],
+    "novel_families_absent_from_center_risk_and_calibration": [
+      "smooth_broken_power",
+      "saturating_logistic_knee"
+    ],
+    "base_family_specs": [
+      {
+        "family_id": "single_power",
+        "loss_formula": "a*(t/365.25)^b",
+        "parameters": {
+          "a": [
+            0.2,
+            1.2
+          ],
+          "b": [
+            0.35,
+            0.8
+          ]
+        }
+      },
+      {
+        "family_id": "dual_power",
+        "loss_formula": "a1*(t/365.25)^b1+a2*(t/365.25)^b2",
+        "parameters": {
+          "a1": [
+            0.1,
+            0.8
+          ],
+          "b1": [
+            0.25,
+            0.65
+          ],
+          "a2": [
+            0.02,
+            0.25
+          ],
+          "b2": [
+            0.9,
+            1.4
+          ]
+        }
+      },
+      {
+        "family_id": "saturating_plus_slow",
+        "loss_formula": "a_sat*(1-exp(-(t/tau_sat_days)^b_sat))+a_slow*(t/365.25)^b_slow",
+        "parameters": {
+          "a_sat": [
+            0.5,
+            4.0
+          ],
+          "tau_sat_days_log_uniform": [
+            60.0,
+            730.0
+          ],
+          "b_sat": [
+            0.5,
+            1.5
+          ],
+          "a_slow": [
+            0.05,
+            0.5
+          ],
+          "b_slow": [
+            0.3,
+            0.8
+          ]
+        }
+      },
+      {
+        "family_id": "early_activation_plus_power",
+        "loss_formula": "a*(t/365.25)^b-activation_amplitude_pp*(1-exp(-t/tau_rise_days))*exp(-t/tau_decay_days)",
+        "parameters": {
+          "a": [
+            0.2,
+            1.2
+          ],
+          "b": [
+            0.35,
+            0.8
+          ],
+          "activation_amplitude_pp": [
+            0.1,
+            1.5
+          ],
+          "tau_rise_days_log_uniform": [
+            3.0,
+            30.0
+          ],
+          "tau_decay_days_log_uniform": [
+            60.0,
+            365.0
+          ]
+        }
+      },
+      {
+        "family_id": "late_knee",
+        "loss_formula": "a*(t/365.25)^b+k*w*(softplus((t-t_knee_days)/w)-softplus(-t_knee_days/w))",
+        "parameters": {
+          "a": [
+            0.15,
+            0.9
+          ],
+          "b": [
+            0.3,
+            0.75
+          ],
+          "k_pp_per_day_log_uniform": [
+            0.0005,
+            0.004
+          ],
+          "t_knee_days": [
+            1095.75,
+            5478.75
+          ],
+          "w_days_log_uniform": [
+            30.0,
+            365.0
+          ]
+        }
+      },
+      {
+        "family_id": "linear_drift_plus_power",
+        "loss_formula": "a*(t/365.25)^b+c*(t/365.25)",
+        "parameters": {
+          "a": [
+            0.1,
+            0.8
+          ],
+          "b": [
+            0.3,
+            0.7
+          ],
+          "c": [
+            0.02,
+            0.25
+          ]
+        }
+      },
+      {
+        "family_id": "smooth_broken_power",
+        "loss_formula": "a*(t/365.25)^b_early*(1+(t/transition_tau_days)^sharpness)^((b_late-b_early)/sharpness)",
+        "parameters": {
+          "a": [
+            0.1,
+            0.8
+          ],
+          "b_early": [
+            0.25,
+            0.65
+          ],
+          "b_late": [
+            0.9,
+            1.6
+          ],
+          "transition_tau_days_log_uniform": [
+            1000.0,
+            4000.0
+          ],
+          "sharpness": [
+            2.0,
+            8.0
+          ]
+        }
+      },
+      {
+        "family_id": "saturating_logistic_knee",
+        "loss_formula": "a*(t/365.25)^b+knee_amplitude_pp*(sigmoid((t-t_knee_days)/w_days)-sigmoid(-t_knee_days/w_days))",
+        "parameters": {
+          "a": [
+            0.1,
+            0.8
+          ],
+          "b": [
+            0.3,
+            0.7
+          ],
+          "knee_amplitude_pp": [
+            5.0,
+            20.0
+          ],
+          "t_knee_days": [
+            1500.0,
+            5000.0
+          ],
+          "w_days_log_uniform": [
+            60.0,
+            400.0
+          ]
+        }
+      }
+    ],
+    "ordinary_parameter_sampling": "Every unmarked bound is continuous uniform; keys ending log_uniform are log-uniform. Draw parameters in JSON insertion order, then gamma. Development, risk, calibration, and test use the full declared range.",
+    "audit_parameter_sampling": "For each parameter independently draw one Bernoulli(0.5) selecting the lower or upper quartile of that parameter's declared CDF, then draw Uniform(0,0.25) or Uniform(0.75,1) and apply the inverse declared CDF. Thus log-uniform quartiles are divided in log-CDF space, not raw-value space. Draw gamma by the same raw-uniform CDF edge-mixture rule on [0.05,0.25].",
+    "admissibility": {
+      "finite_on_combined_grid": true,
+      "truth_retention_minimum_pct": 50.0,
+      "truth_retention_maximum_pct": 105.0,
+      "maximum_single_grid_interval_change_pp": 12.0,
+      "nonincreasing_except_early_activation": true,
+      "maximum_parameter_attempts_with_frozen_covariates": 10000,
+      "attempt_limit_result": "protocol_execution_failure",
+      "undeclared_cluster_exclusion_allowed": false
+    }
+  },
+  "observation_model": {
+    "primary_target": "latent noise-free truth",
+    "secondary_target": "noisy future observation",
+    "day_zero_observation_exact": 100.0,
+    "process": "Stationary Gaussian AR(1) across ascending combined prefix-then-forecast grid index. Independently draw sigma and rho from continuous Uniform on the partition-specific bounds, then draw twenty independent standard-normal innovations. Set e0=sigma*z0 and e_i=rho*e_(i-1)+sigma*sqrt(1-rho^2)*z_i in grid order. Subtract e0 from every latent-plus-error observation and reset day zero exactly to 100.",
+    "standard_sigma_pp": [
+      0.05,
+      0.25
+    ],
+    "standard_rho": [
+      0.0,
+      0.8
+    ],
+    "audit_sigma_pp": [
+      0.1,
+      0.35
+    ],
+    "audit_rho": [
+      0.2,
+      0.9
+    ],
+    "partition_mapping": "center_development, risk_development, calibration, test, intrinsic_matched_pairs, and stress_plan_matched_pairs use standard_sigma_pp and standard_rho. Only the ordinary audit partition uses audit_sigma_pp and audit_rho.",
+    "missingness": false,
+    "rounding_before_fit": false
+  },
+  "candidate_center": {
+    "model_id": "lifetwin_shape_deduplicated_center_v2",
+    "legacy_member_spec_reference": {
+      "path": "configs/experiments/synthetic_long_horizon_identifiability_v1.json",
+      "byte_sha256": "503ec964bb2015fe3460433749d1b0d79f89187fc3dcd1c3809f9d4da2ffc319",
+      "canonical_sha256": "6ad1e6dc1caa089ce0b9ee2c4e739a56c44f42f65436294649261a7676d4e320",
+      "imported_member_ids": [
+        "target_prefix_persistence",
+        "target_prefix_sqrt_time",
+        "target_prefix_bounded_power_law",
+        "target_prefix_saturating_plus_slow",
+        "target_prefix_dual_power",
+        "target_prefix_late_knee_prior_grid"
+      ],
+      "import_semantics": "Use the exact formulas, parameter bounds, deterministic Sobol starts, optimizer tolerances, grid, tie rules, and raw forecast bounds declared in the referenced immutable V1 file. A regression test must reproduce all shared-member outputs before V2 generation."
+    },
+    "added_member": {
+      "model_id": "target_prefix_early_activation_plus_power",
+      "formula": "q(t)=100-a*(t/365.25)^b+activation_amplitude_pp*(1-exp(-t/tau_rise_days))*exp(-t/tau_decay_days)",
+      "parameter_bounds": {
+        "a": [
+          0.0,
+          5.0
+        ],
+        "b": [
+          0.05,
+          1.5
+        ],
+        "activation_amplitude_pp": [
+          0.0,
+          3.0
+        ],
+        "tau_rise_days": [
+          3.0,
+          60.0
+        ],
+        "tau_decay_days": [
+          30.0,
+          730.0
+        ]
+      },
+      "optimizer": "the exact V1 deterministic sixteen-start bounded least-squares rule"
+    },
+    "uniform_variant_credibility": "A variant is credible only when fitting succeeds, prefix RMSE is <=1.0 pp, prefix maximum absolute residual is <=1.5 pp, and every raw forecast is finite and lies in [40,105]. Apply this identical rule to every grid and non-grid structure. A structure family succeeds when it has at least one credible variant.",
+    "family_representative": "Within one successful family, remove exact duplicate raw float64 forecast vectors, group the remaining vectors by the frozen quantized signature, represent each signature by the coordinatewise median of its unique raw vectors, give every signature equal weight within that family, and take the coordinatewise inverted-CDF weighted median. A failed family contributes no structural support and is never disguised as a sqrt-time family.",
+    "support_shape_pool": "Use a two-level family-balanced empirical measure. Every successful structure family receives total weight 1/S, where S is the successful-family count, and divides that weight equally over its unique signature representatives. Thus a grid family never gains total weight by having more variants. Exact duplicated variant rows have zero effect.",
+    "shape_deduplication": {
+      "exact_duplicate_rule": "First deduplicate raw vectors by their canonical big-endian float64 bytes within each family. Variant ID and model name are not part of the equality key.",
+      "signature": "For each raw coordinate compute numpy.rint(value/0.25), cast to signed int64, and concatenate the eight integers. numpy.rint supplies round-half-even.",
+      "group_representative": "coordinatewise numpy.quantile(values,0.5,method=linear) over exact-unique raw vectors sharing one signature",
+      "library_forecast": "Take the seven-or-fewer family representatives, exact-deduplicate raw vectors, group the remaining vectors by quantized signature, represent each signature by coordinatewise numpy.quantile(values,0.5,method=linear), then compute coordinatewise numpy.quantile(signature_representatives,0.5,method=linear). A family that failed credibility is absent. If fewer than two families succeed, use sqrt-time only as the center fallback and mark the cluster hard-ineligible; the fallback is not structural support.",
+      "invariances": "Duplicating an exact variant row, renaming a member, or reordering members must not change any shape aggregation. Counts and boundary features are separately defined at family level and therefore also ignore exact duplicate rows."
+    },
+    "center_training": {
+      "formula": "center_h=sqrt_h+beta*(library_h-sqrt_h)",
+      "beta_bounds": [
+        0.0,
+        1.0
+      ],
+      "objective": "mean squared latent error across all center_development clusters and eight horizons plus 0.01*beta^2",
+      "closed_form_rule": "Let x be library minus sqrt and y be latent truth minus sqrt over the N=600*8=4800 center-development coordinates. Set beta=clip(sum(x*y)/(sum(x*x)+0.01*N),0,1), which exactly minimizes mean((y-beta*x)^2)+0.01*beta^2. If any input is nonfinite, fitting is inconclusive; if every x is exactly zero, set beta=0.",
+      "state_freeze": "Write and hash beta and all center-development input byte hashes before generating risk-development labels.",
+      "failure_fallback": "Use sqrt-time only to keep an auditable finite output, record the reason, and mark the cluster hard-ineligible. A fallback never enters the common issuance pool or structural support."
+    }
+  },
+  "risk_heads": {
+    "label": "one when absolute frozen-center error at day 9131.25 is >=5.0 pp, otherwise zero",
+    "fit_partition": "risk_development only",
+    "estimator": {
+      "class": "sklearn.linear_model.LogisticRegression",
+      "solver": "lbfgs",
+      "penalty": "l2",
+      "C": 1.0,
+      "class_weight": null,
+      "max_iter": 10000,
+      "tol": 1e-10,
+      "random_state": null,
+      "standardization": "Population mean and population standard deviation are computed separately for each head on risk_development only. A finite zero-variance feature is transformed to exactly zero for every row and its fitted coefficient is required to be zero within 1e-12; a nonfinite value is protocol failure.",
+      "convergence_failure": "inconclusive_not_success"
+    },
+    "prefix_features_in_order": [
+      "successful_structure_family_count",
+      "fit_failure_count",
+      "best_prefix_rmse_pp",
+      "unique_shape_25y_q90_minus_q10_pp",
+      "mean_over_horizons_unique_shape_iqr_pp",
+      "effective_unique_shape_count",
+      "parameter_boundary_hit_fraction",
+      "leave_day730_out_absolute_prediction_error_pp",
+      "center_25y_retention_pct",
+      "center_minus_sqrt_25y_pp",
+      "observed_q365_minus_q730_pp",
+      "observed_q0_minus_q90_pp",
+      "slope_180_365_minus_slope_365_730_pp_per_year",
+      "nonnegative_25y_minus_10y_unique_shape_q90_q10_growth_pp"
+    ],
+    "feature_definitions": {
+      "successful_structure_family_count": "number of the seven declared structure families containing at least one credible variant after exact duplicate removal",
+      "fit_failure_count": "seven minus successful_structure_family_count; this is a family count, never a solver-start or grid-variant count",
+      "best_prefix_rmse": "minimum prefix RMSE across all credible exact-unique variants; unavailable when no family succeeds",
+      "quantiles": "Use the two-level family-balanced support measure. Sort coordinate values ascending with canonical vector bytes as tie break and define the weighted p-quantile as the first value whose cumulative normalized weight is >=p (inverted empirical CDF).",
+      "effective_unique_shape_count": "integer count of distinct quantized signatures among successful family representative vectors after exact raw-vector deduplication across families",
+      "parameter_boundary_hit": "For each exact-unique credible variant, a fitted scalar is a hit when its distance to either finite fitted bound is <=1e-6*max(1,upper-lower); fixed late-knee grid coordinates are excluded. Compute hits/scalars per variant, average variants within family with equal signature weights, then average successful families equally. A credible zero-parameter family contributes 0. Exact duplicated rows never change the result.",
+      "leave_day730_out": "Fit the one-parameter sqrt-time baseline to prefix days 0 through 540 and take its absolute error against the observed day-730 value; do not refit the structure library.",
+      "slopes": "Endpoint difference divided by elapsed days then multiplied by 365.25; the feature is slope(180,365)-slope(365,730) using retention, not loss.",
+      "tail_growth": "max(0, (q90-q10 at 25 years)-(q90-q10 at 10 years))."
+    },
+    "visible_stress_features_appended_in_order": [
+      "past_mean_temperature_c",
+      "past_mean_soc_fraction",
+      "past_mean_dod_fraction",
+      "past_efc_per_year",
+      "planned_mean_temperature_c",
+      "planned_mean_soc_fraction",
+      "planned_mean_dod_fraction",
+      "planned_efc_per_year"
+    ],
+    "no_feature_selection": true,
+    "no_interactions": true,
+    "probability_calibration": "Require all 900 calibration rows and at least 60 positive and 60 negative labels. Fit one sklearn isotonic regression map per head with out_of_bounds=clip. Preserve raw logistic linear score for every primary ranking and paired endpoint; calibrated probability is reported but cannot change ranking.",
+    "risk_ranking": "A larger raw logistic linear score means greater predicted danger. Issue the exact required count having the lowest raw scores; ties are ordered by ascending SHA256(protocol_id|arm|canonical_predictor_content_sha256). Duplicate predictor content is forbidden in ordinary test and audit pools; a distinct-content SHA collision is protocol failure."
+  },
+  "partial_identification": {
+    "base_band": "At each forecast day take the 0.05 and 0.95 inverted-CDF weighted quantiles under the exact two-level family-balanced support measure declared by candidate_center. Do not clip the resulting interval.",
+    "calibration_score": "For each calibration cluster take max over all eight horizons of max(base_lower_h-truth_h, truth_h-base_upper_h, 0).",
+    "nominal_simultaneous_coverage": 0.9,
+    "finite_sample_quantile": "All n=900 calibration scores are required finite. Sort them ascending and use the one-indexed k=ceil((n+1)*0.90)=811 order statistic without interpolation. For every horizon set calibrated_lower=base_lower-q and calibrated_upper=base_upper+q.",
+    "calibration_scope": "One pooled expansion over the six core calibration families. Do not recalibrate by arm, test family, matched-pair type, or novel family.",
+    "required_evaluation_availability": "All 1500 core-test clusters and all 250 intrinsic pairs remain in their fixed endpoint denominators. If any member lacks a finite ordered base or calibrated interval at any of eight horizons, the corresponding primary coverage and width endpoint is inconclusive_not_success; no row or pair may be removed or counted only in another denominator.",
+    "raw_scoring": "Score unclipped lower and upper values. Clipping to the truth support or plotting range is forbidden before scoring.",
+    "universal_support_comparator": "[50,105] at every horizon, width 55 pp",
+    "claim_limit": "This is a split-conformal simultaneous prediction set over the frozen core-mixture calibration distribution, not a physical identification region and not a guarantee for novel mechanisms or real cells."
+  },
+  "comparators": {
+    "mean_forecast_baselines": [
+      "target_prefix_persistence",
+      "target_prefix_sqrt_time",
+      "target_prefix_bounded_power_law"
+    ],
+    "strongest_mean_baseline_selection": "Lowest calibration mean trajectory IAE with lexicographic model-id tie break; freeze before test truth is opened.",
+    "rejection_rankings": [
+      "10000 deterministic random rankings on the common pool",
+      "issue the smallest best_prefix_rmse_pp values",
+      "issue the smallest V1-style maximum raw structure-envelope widths",
+      "issue the smallest absolute center-minus-sqrt 25-year differences",
+      "issue the lowest prefix_only logistic raw scores",
+      "issue the safest end of the single strongest Arm-A feature selected on risk_development only",
+      "issue the smallest frozen planned stress-index values",
+      "issue the lowest scores from an Arm-A-plus-planned-stress-index logistic comparator"
+    ],
+    "single_feature_selection": "On risk_development compute empirical AUROC for each of the fourteen Arm-A features in both orientations. Select the largest max(AUROC,1-AUROC); exact ties use feature-list order. Freeze the selected feature and danger orientation before calibration or test access.",
+    "known_stress_comparators": "The planned stress-index-only comparator uses the exact frozen S_plan formula from operating_covariate_generation. The Arm-A-plus-S_plan comparator uses the same standardization and logistic settings as the primary heads with fifteen ordered features and is fit only on risk_development. These comparators test whether the eight-field head adds value beyond the planted scalar equation; they are mandatory descriptive comparators, not success gates.",
+    "random_ranking_definition": "Define random_policy_content_sha256 once from the same ID-free prefix-plus-forecast canonical bytes used by Arm A. For ranking index 0..9999 order common-pool clusters by SHA256(202607230110|ranking_index|random_policy_content_sha256) and issue exactly the frozen partition count. Arm A, Arm B, placebo, and every comparator share these exact 10000 rankings; no arm-specific content hash may alter the random baseline.",
+    "stress_permutation_negative_control": "For each permutation index 0..9999 and truth family, sort recipient test clusters by random_policy_content_sha256 and independently sort donor eight-field operating rows by SHA256(202607230112|permutation_index|truth_family|random_policy_content_sha256); assign the kth donor row jointly as one eight-dimensional block to the kth recipient. Keep prefix features, center, outcomes, and scaler fixed; apply frozen visible-stress coefficients without refitting, rerank, and issue 950. The gate passes exactly when count(permuted_B_minus_A_increment < observed_B_minus_A_increment)>=9900; ties do not count as exceeded. This is an auxiliary validation gate, not a p-value.",
+    "placebo_negative_control": "Fit on risk_development a dimension-matched comparator consisting of the fourteen Arm-A features plus eight independent placebo_control fields, using the same estimator and feature order. Reuse the exact same 5000 eight-family paired bootstrap draw indices declared under endpoints.bootstrap; within every draw independently rerank placebo and Arm A and issue 950. The point gate is abs(placebo_minus_A_increment)<0.05 and the central interval [numpy.quantile(replicates,0.025,method=linear),numpy.quantile(replicates,0.975,method=linear)] must contain 0 inclusively. Failure is a safety-gate failure, not permission to delete the comparator.",
+    "policy_comparability": "Every ranking uses the byte-identical frozen center, common hard-eligibility pool, and exact issuance count. Ineligible clusters are abstained under every policy and never replaced selectively."
+  },
+  "matched_audits": {
+    "intrinsic_matched_pairs": {
+      "construction": "For every pair draw one shared single-power a in [0.2,0.8], b in [0.35,0.70], gamma, all eight real operating fields, all eight placebo fields, and one measurement-noise realization. The left base loss is a*(t/365.25)^b. Pairs 0..124 add to the right k*max(t-t_knee,0), with t_knee uniform [1461,2922] and k uniform [0.0015,0.0025]. Pairs 125..249 instead add A*smoothstep((t-t_start)/duration), where smoothstep(u)=0 for u<=0, 3u^2-2u^3 for 0<u<1, and 1 for u>=1; draw A uniform [6.5,7.0], t_start uniform [1095.75,3652.5], and duration log-uniform [365.25,1826.25]. The compact bounded-step mechanism is absent from the candidate library and the linear-knee support extends between frozen grid locations. Draw once in the declared order without optimizing or selecting by model output. Both members use the same operating equation and receive the same noise.",
+      "visible_equality": "Both members have bitwise-identical prefix observations and full sixteen-field operating rows, including all placebo fields. After opaque-ID normalization require A_left=A_right for Arm-A content hash, raw risk, and decision, and separately B_left=B_right for Arm-B content hash, raw risk, and decision. The shared center and interval must also match left/right. Arm A and Arm B are different heads and are not required to equal each other in risk, hash, or decision.",
+      "minimum_latent_25y_separation_pp": 5.0,
+      "pair_specific_admissibility": "Both curves must be finite, exactly 100 at day zero, remain in [50,105] on the combined grid, have exactly equal latent prefixes through day 730, and separate by at least 5 pp at 25 years. The ordinary 12 pp adjacent-grid rule is not applied to this deliberately abrupt ambiguity stress test; its maximum adjacent-grid change is reported. Any failed condition is protocol execution failure, never resampling or exclusion.",
+      "primary_estimand": "fraction of 250 pairs for which the one shared calibrated interval contains both latent future trajectories at all eight forecast horizons"
+    },
+    "stress_plan_matched_pairs": {
+      "construction": "Assign core family by zero_based_pair_index modulo 6 in the declared core-family order, yielding counts 42,42,42,42,41,41. For each pair draw one shared base truth under that family, shared gamma, shared past operating fields, shared exact prefix, and shared measurement noise. Independently draw the low-plan member's four planned fields from the lower half of each support and the high-plan member's corresponding fields from the upper half. If either member violates ordinary truth admissibility, keep all covariates fixed and redraw only the shared base parameters up to the ordinary attempt limit. Do not search, rank, reject, or select pairs by future error or prediction.",
+      "arm_a_invariance": "Arm A predictor content and every deterministic Arm A output must be bitwise identical within all 250 pairs after opaque-ID normalization.",
+      "arm_b_pairwise_estimand": "Auxiliary mechanism sanity check only, not a primary endpoint: at 25 years identify the member with larger absolute frozen-center error after truth is opened. A strict Arm-B raw-score ordering in the same direction is correct; equal errors or equal scores count incorrect. No pair is excluded.",
+      "truth_side_not_visible_before_scoring": true
+    },
+    "matched_stream_order": "For each pair derive independent shared_truth, shared_operating, shared_measurement, placebo, opaque_ids, and opaque_swap streams from the pair root. M0 shared_truth draws a,b,gamma then k,t_knee for indices 0..124 or amplitude,t_start,duration for indices 125..249; shared_operating draws the eight real fields in declared pack order; placebo draws fields 1..8; measurement draws sigma,rho,z0..z19. M1 shared_truth draws JSON-ordered family parameters then gamma with declared admissibility retries; shared_operating draws four past fields, four low-plan fields, then four high-plan fields; placebo draws one shared fields-1..8 vector; measurement draws sigma,rho,z0..z19. Rejection consumes only further shared_truth draws.",
+    "opaque_identity": "For pair index i derive pool IDs c_+first32hex(SHA256(protocol_id|pair_root|i|opaque_pool|0)) and the analogous |1 value. Derive swap_digest=SHA256(protocol_id|pair_root|i|opaque_swap); assign the first pool ID to the latent left side exactly when the least significant bit of the final digest byte is 0, otherwise swap. Pair ID, family, side, low/high plan label, and truth mapping are sealed until prediction commitment. Opaque IDs are never model inputs."
+  },
+  "endpoints": {
+    "catastrophic_error": "absolute frozen-center 25-year latent-truth error >=5.0 pp; a nonfinite attempted issuance is catastrophic",
+    "trajectory_iae": "trapezoidal absolute latent-truth error over the eight forecast days divided by 9131.25-1095.75",
+    "test_issuance": {
+      "source_cohort_total": 1900,
+      "exact_issued_per_arm": 950,
+      "target_fraction_of_source_cohort": 0.5,
+      "eligible_pool_note": "The common eligible pool may contain 1805 through 1900 members, but every arm still issues exactly 950. Coverage is reported against both the source cohort and the eligible pool."
+    },
+    "primary": [
+      {
+        "endpoint_id": "visible_stress_catastrophic_risk_reduction",
+        "estimand": "1-visible_stress issued catastrophic rate divided by the mean same-count random-ranking issued catastrophic rate",
+        "threshold": 0.3,
+        "comparison": "greater_than_or_equal",
+        "additional_gate": "5000-replicate eight-family-stratified cluster bootstrap one-sided 95 percent lower bound greater than 0"
+      },
+      {
+        "endpoint_id": "visible_stress_increment_over_prefix_only",
+        "estimand": "visible_stress relative risk reduction minus prefix_only relative risk reduction at the same pool and issuance count",
+        "threshold": 0.1,
+        "comparison": "greater_than_or_equal",
+        "additional_gate": "paired 5000-replicate eight-family-stratified cluster bootstrap one-sided 95 percent lower bound greater than 0"
+      },
+      {
+        "endpoint_id": "core_test_simultaneous_trajectory_coverage",
+        "estimand": "fraction of the 1500 six-core-family test clusters whose calibrated interval covers latent truth at all eight forecast horizons",
+        "threshold": 0.85,
+        "comparison": "greater_than_or_equal",
+        "additional_gates": [
+          "exact one-sided 95 percent Clopper-Pearson lower bound greater than 0.83",
+          "median across clusters of the maximum eight-horizon interval width <=40.0 pp",
+          "95th percentile with numpy method=linear of the maximum eight-horizon interval width <=50.0 pp"
+        ]
+      },
+      {
+        "endpoint_id": "intrinsic_pair_simultaneous_both_future_coverage",
+        "estimand": "fraction of 250 intrinsic pairs for which the identical calibrated interval covers both latent trajectories at every one of eight forecast horizons",
+        "threshold": 0.8,
+        "comparison": "greater_than_or_equal",
+        "additional_gates": [
+          "exact one-sided 95 percent Clopper-Pearson lower bound greater than 0.75",
+          "median across pairs of the maximum eight-horizon calibrated interval width <=40.0 pp",
+          "95th percentile with numpy method=linear of the maximum eight-horizon interval width <=50.0 pp",
+          "all identical-input deterministic outputs are byte-identical after opaque-ID normalization"
+        ]
+      },
+      {
+        "endpoint_id": "issued_center_trajectory_iae_noninferiority",
+        "estimand": "frozen center minus calibration-selected strongest mean baseline mean trajectory IAE on the 950 Arm-B-issued test clusters",
+        "threshold_pp": 0.1,
+        "comparison": "less_than_or_equal"
+      }
+    ],
+    "family_and_novel_mechanism_safety_gates": [
+      "For each test family with at least 30 common-pool catastrophic clusters, independently rank its eligible members, issue floor(n_eligible_family/2) lowest Arm-B scores, and require 1-issued_catastrophic_rate/family_prepolicy_catastrophic_rate >=0. Zero issued count, nonfinite rate, or fewer than 90 percent eligible family members is inconclusive.",
+      "For the combined two-family novel-mechanism test subset, independently rank the combined eligible pool, issue floor(n_eligible_novel/2), require Arm-B risk reduction >0, and require Arm-B minus Arm-A risk-reduction increment >=0.",
+      "The late_knee test family must satisfy the same nonnegative independently ranked within-family gate."
+    ],
+    "auxiliary_paired_checks": [
+      "Arm A raw risk scores must tie exactly within all 250 stress-plan pairs; any mismatch is an information-firewall failure.",
+      "Report the Arm-B fraction that strictly orders the member with larger 25-year absolute center error above the other member, with ties counted incorrect and an exact two-sided 95 percent Clopper-Pearson interval. This is a mechanism sanity check and is not part of V2 success."
+    ],
+    "audit_directional_gates": {
+      "exact_issued_per_arm": 475,
+      "visible_stress_risk_reduction": "greater_than_0",
+      "visible_stress_increment_over_prefix_only": "greater_than_0",
+      "novel_mechanism_visible_stress_risk_reduction": "greater_than_or_equal_to_0",
+      "late_knee_independent_within_family_risk_reduction": "greater_than_or_equal_to_0_using_floor(n_eligible_family/2)_issuance",
+      "issued_center_iae_noninferiority_pp": "less_than_or_equal_to_0.1"
+    },
+    "subset_gate_availability": "A test family gate requires at least ceil(0.90*n_family) eligible members and 30 pre-policy catastrophes. The 400-member novel test gate requires at least 360 eligible and 30 catastrophes. Overall audit requires at least 903 eligible and 30 catastrophes; its 200-member novel subset requires at least 180 eligible and 20 catastrophes; its 200-member late_knee subset requires at least 180 eligible and 20 catastrophes. Each subset issues floor(n_eligible/2) lowest scores. A zero pre-policy catastrophe rate, zero issued count, nonfinite metric, or missed minimum is inconclusive_not_success, never skipped or passed.",
+    "bootstrap": {
+      "resamples": 5000,
+      "unit": "independent cluster with Arm A and Arm B kept paired",
+      "strata": "the eight declared test truth families",
+      "seed_root": 202607230111,
+      "resample_algorithm": "For replicate_index 0..4999 and each family in frozen test-family insertion order, derive seed from first16hex(SHA256(protocol_id|202607230111|bootstrap|replicate_index|family_id)) modulo 2^63-1. Sort source family rows by random_policy_content_sha256, initialize PCG64DXSM, and make exactly one rng.integers(0,n_family,size=n_family,endpoint=false,dtype=int64) call. Concatenate families in frozen order. Preserve repeated draws as separate occurrences with occurrence_ordinal equal to their zero-based position within the family draw vector.",
+      "recompute": "Within each replicate rerank Arm A, Arm B, and the dimension-matched placebo head and issue exactly 950 for each. Ranking keys are raw danger score ascending, the frozen arm tie hash ascending, then family insertion index and occurrence_ordinal ascending; thus repeated rows remain distinct. Recompute B risk reduction, A risk reduction, B-minus-A, and placebo-minus-A.",
+      "random_expectation": "the common-pool pre-policy catastrophic prevalence within the bootstrap replicate",
+      "lower_bound": "numpy quantile at probability 0.05 with method=linear over all 5000 replicates",
+      "undefined_replicate": "Any replicate with fewer than 950 eligible occurrences or zero random-expected risk makes the entire corresponding gate inconclusive; never drop a replicate."
+    },
+    "confidence_interval_rules": {
+      "one_sided_clopper_pearson_lower": "For s successes among n fixed trials, use 0 when s=0 and otherwise scipy.stats.beta.ppf(0.05,s,n-s+1). Comparisons use the unrounded value.",
+      "two_sided_clopper_pearson": "Use lower=0 when s=0 else beta.ppf(0.025,s,n-s+1), and upper=1 when s=n else beta.ppf(0.975,s+1,n-s).",
+      "display_rounding": "Round only rendered tables; gates always use full-precision recomputed values."
+    }
+  },
+  "decision_rules": {
+    "all_primary_endpoints_required": true,
+    "all_safety_and_audit_gates_required": true,
+    "minimum_common_pool_test_clusters": 1805,
+    "minimum_common_pool_audit_clusters": 903,
+    "required_complete_calibration_clusters": 900,
+    "minimum_finite_center_fraction": 0.98,
+    "minimum_risk_development_positive_labels": 60,
+    "minimum_risk_development_negative_labels": 60,
+    "minimum_calibration_positive_labels": 60,
+    "minimum_calibration_negative_labels": 60,
+    "minimum_test_catastrophic_clusters": 60,
+    "minimum_novel_test_catastrophic_clusters": 30,
+    "minimum_late_knee_test_catastrophic_clusters_for_family_gate": 30,
+    "minimum_audit_catastrophic_clusters": 30,
+    "minimum_novel_audit_catastrophic_clusters": 20,
+    "minimum_late_knee_audit_catastrophic_clusters_for_family_gate": 20,
+    "required_intrinsic_pairs": 250,
+    "required_stress_plan_pairs": 250,
+    "success": "All five primary endpoints, family and novel-mechanism safety gates, negative-control gates, information-firewall integrity gates, and ordinary audit directional gates pass without retuning. The stress-plan error-ordering sanity metric is reported but is not a success gate.",
+    "failure": "Any primary endpoint, required safety gate, negative-control gate, or audit directional gate misses its frozen requirement.",
+    "inconclusive_not_success": "Any minimum count or finite fraction is missed; center fitting, logistic fitting, isotonic fitting, or conformal calibration fails; any required confidence bound or bootstrap replicate is undefined; or a required paired audit is incomplete.",
+    "void": "Any forbidden V1 reuse, prediction-time truth access, partition or seed collision, config/source/environment/artifact hash mismatch, undeclared exclusion, arm information leak, post-result seed/feature/threshold change, or missing commitment artifact.",
+    "negative_result_policy": "Publish failure or inconclusive results with the same overall, family, novel-mechanism, paired-audit, width, coverage, negative-control, and failure tables. Do not tune V2 on test, audit, or matched truth."
+  },
+  "firewall_and_artifacts": {
+    "formal_attempt_ledger": "Maintain append-only exposure_log.jsonl from before generation. Every event row contains attempt_id, UTC timestamp, git commit, dirty flag, config byte hash, phase, truth-commitments hash if available, prediction-commitment hash if available, exact opened-truth-file list, exit status, and message. No formal attempt or interruption may be omitted from publication.",
+    "interruption_policy": "Before prediction commitment and before any test/audit/matched truth is opened, an interrupted attempt may resume or restart only from the same committed code, config, seeds, and already committed truth bytes, with both events logged. After prediction commitment but before truth opening, only scoring of the exact committed prediction bytes may resume; regeneration is forbidden. After any test/audit/matched truth is opened, only deterministic recovery from the same committed artifacts is allowed; an unrecoverable interruption is inconclusive_not_success and a changed-code, changed-seed, or regenerated attempt is void.",
+    "execution_order": [
+      "generate covariates and physically separate truth files in an isolated generation process and publish only their commitments",
+      "open center_development_truth.csv only; fit and freeze center state using center_development",
+      "open risk_development_truth.csv only after center hash; generate frozen center labels and fit both primary heads, the dimension-matched placebo head, the Arm-A-plus-S_plan comparator, and the single-feature comparator",
+      "open calibration_truth.csv only after coefficient hash; fit isotonic maps, select mean baseline, and fit conformal expansion",
+      "write and hash model_state.json",
+      "predict every sealed partition from label-free files in a process that cannot open truth paths",
+      "write and hash prediction_commitment.json",
+      "open sealed truth and score exactly once"
+    ],
+    "required_label_free_artifacts": [
+      "prefix_pack.csv",
+      "forecast_coordinates.csv",
+      "operating_pack.csv",
+      "truth_commitments.json"
+    ],
+    "required_frozen_state_artifacts": [
+      "model_state.json",
+      "training_manifest.json",
+      "calibration_manifest.json"
+    ],
+    "required_prediction_artifacts": [
+      "prediction_bundle.csv",
+      "risk_bundle.csv",
+      "decision_bundle.csv",
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv",
+      "prediction_commitment.json"
+    ],
+    "required_sealed_artifacts": [
+      "center_development_truth.csv",
+      "risk_development_truth.csv",
+      "calibration_truth.csv",
+      "test_truth.csv",
+      "audit_truth.csv",
+      "intrinsic_matched_truth.csv",
+      "stress_plan_matched_truth.csv",
+      "intrinsic_matched_pairs.csv",
+      "stress_plan_matched_pairs.csv"
+    ],
+    "required_score_artifacts": [
+      "point_scores.csv",
+      "trajectory_scores.csv",
+      "family_metrics.csv",
+      "matched_pair_scores.csv",
+      "bootstrap_replicates.csv",
+      "random_ranking_metrics.csv",
+      "stress_permutation_metrics.csv",
+      "negative_control_metrics.json",
+      "score_report.json",
+      "run_manifest.json"
+    ],
+    "required_attempt_artifacts": [
+      "exposure_log.jsonl"
+    ],
+    "artifact_schemas": {
+      "global_csv_rule": "UTF-8, LF, one header, canonical decimal serialization, no index, exact column order, no unknown columns, and unique declared key. Every protocol_id must equal the frozen ID; every partition and row count must match the design. Canonical hashing uses the exact V1 canonical_csv_bytes algorithm imported under the V1 double hash.",
+      "prefix_pack.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "prefix_day",
+          "observed_retention_pct"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "prefix_day"
+        ],
+        "required_rows": 71400
+      },
+      "forecast_coordinates.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "forecast_day"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "forecast_day"
+        ],
+        "required_rows": 47600
+      },
+      "operating_pack.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "past_mean_temperature_c",
+          "past_mean_soc_fraction",
+          "past_mean_dod_fraction",
+          "past_efc_per_year",
+          "planned_mean_temperature_c",
+          "planned_mean_soc_fraction",
+          "planned_mean_dod_fraction",
+          "planned_efc_per_year",
+          "placebo_control_1",
+          "placebo_control_2",
+          "placebo_control_3",
+          "placebo_control_4",
+          "placebo_control_5",
+          "placebo_control_6",
+          "placebo_control_7",
+          "placebo_control_8"
+        ],
+        "key": [
+          "partition",
+          "cluster_id"
+        ],
+        "required_rows": 5950
+      },
+      "truth_csv_family": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "truth_family",
+          "truth_parameters_json",
+          "gamma",
+          "forecast_day",
+          "latent_retention_pct",
+          "noisy_retention_pct"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "forecast_day"
+        ],
+        "exact_file_rows": {
+          "center_development_truth.csv": 4800,
+          "risk_development_truth.csv": 4800,
+          "calibration_truth.csv": 7200,
+          "test_truth.csv": 15200,
+          "audit_truth.csv": 7600,
+          "intrinsic_matched_truth.csv": 4000,
+          "stress_plan_matched_truth.csv": 4000
+        }
+      },
+      "member_fit_diagnostics.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "model_id",
+          "variant_id",
+          "parameters_json",
+          "fit_status",
+          "credible_variant",
+          "prefix_rmse_pp",
+          "prefix_max_abs_residual_pp",
+          "parameter_boundary_hit_fraction",
+          "canonical_prefix_content_sha256"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "model_id",
+          "variant_id"
+        ],
+        "cardinality": "Every cluster has exactly the frozen declared variant ID set, including failed variants; no row may be dropped."
+      },
+      "member_forecast_bundle.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "model_id",
+          "variant_id",
+          "forecast_day",
+          "raw_forecast_retention_pct",
+          "canonical_prefix_content_sha256"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "model_id",
+          "variant_id",
+          "forecast_day"
+        ],
+        "cardinality": "Exactly eight rows for every diagnostic variant, including blank raw values for failed variants. The scorer reconstructs all family representatives, signatures, support weights, risk features, and intervals from this committed bundle without rerunning optimization."
+      },
+      "prediction_bundle.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "forecast_day",
+          "center_forecast_pct",
+          "sqrt_time_forecast_pct",
+          "bounded_power_forecast_pct",
+          "base_interval_lower_pct",
+          "base_interval_upper_pct",
+          "calibrated_interval_lower_pct",
+          "calibrated_interval_upper_pct",
+          "canonical_prefix_content_sha256"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "forecast_day"
+        ],
+        "required_rows": 47600
+      },
+      "risk_bundle.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "score_id",
+          "raw_risk_score",
+          "calibrated_catastrophic_probability",
+          "all_features_finite",
+          "successful_structure_family_count",
+          "fit_failure_count",
+          "effective_unique_shape_count",
+          "canonical_predictor_content_sha256"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "score_id"
+        ],
+        "required_score_ids": [
+          "prefix_only",
+          "visible_stress",
+          "placebo_8",
+          "arm_a_plus_s_plan",
+          "strongest_single_feature",
+          "planned_stress_only",
+          "prefix_rmse_only",
+          "v1_max_envelope_only",
+          "center_sqrt_abs_difference_only"
+        ],
+        "cardinality": "Exactly nine rows per generated member. Every raw score is oriented so larger means more dangerous and the policy issues the smallest values. Calibrated probability is populated only for the two primary heads and blank for all comparator heads. Every mandatory comparator score is committed before truth opens."
+      },
+      "decision_bundle.csv": {
+        "columns": [
+          "protocol_id",
+          "partition",
+          "cluster_id",
+          "arm",
+          "raw_risk_score",
+          "hard_eligible",
+          "issuance_rank",
+          "issued",
+          "abstention_reasons",
+          "canonical_predictor_content_sha256"
+        ],
+        "key": [
+          "partition",
+          "cluster_id",
+          "arm"
+        ],
+        "required_arms": [
+          "prefix_only",
+          "visible_stress"
+        ],
+        "cardinality": "Exactly two rows per member. Only ordinary test and audit rows receive issuance ranks; development, calibration, and paired partitions have blank rank and issued=false."
+      },
+      "matched_pair_csvs": {
+        "columns": [
+          "protocol_id",
+          "pair_partition",
+          "pair_id",
+          "left_cluster_id",
+          "right_cluster_id",
+          "construction_family",
+          "left_side_code",
+          "right_side_code",
+          "latent_prefix_rmse_pp",
+          "latent_prefix_max_abs_difference_pp",
+          "truth_separation_25y_pp"
+        ],
+        "key": [
+          "pair_partition",
+          "pair_id"
+        ],
+        "required_rows_each": 250
+      },
+      "json_exact_key_allowlists": {
+        "truth_commitments.json": [
+          "protocol_id",
+          "config_sha256",
+          "files",
+          "created_utc",
+          "truth_values_withheld_by_physical_path"
+        ],
+        "model_state.json": [
+          "protocol_id",
+          "config_sha256",
+          "center_state",
+          "risk_states",
+          "calibration_state",
+          "comparator_states",
+          "feature_orders",
+          "input_byte_hashes",
+          "software_versions",
+          "created_utc"
+        ],
+        "training_manifest.json": [
+          "protocol_id",
+          "config_sha256",
+          "center_development_input_hashes",
+          "risk_development_input_hashes",
+          "opened_truth_files",
+          "forbidden_v1_evidence_matches",
+          "center_state_sha256",
+          "risk_state_sha256",
+          "created_utc"
+        ],
+        "calibration_manifest.json": [
+          "protocol_id",
+          "config_sha256",
+          "calibration_input_hashes",
+          "opened_truth_files",
+          "isotonic_state_sha256",
+          "conformal_state_sha256",
+          "selected_mean_baseline",
+          "created_utc"
+        ],
+        "prediction_commitment.json": [
+          "protocol_id",
+          "config_sha256",
+          "model_state_byte_sha256",
+          "prefix_pack_byte_sha256",
+          "forecast_coordinates_byte_sha256",
+          "operating_pack_byte_sha256",
+          "member_fit_diagnostics_byte_sha256",
+          "member_forecast_bundle_byte_sha256",
+          "prediction_bundle_byte_sha256",
+          "risk_bundle_byte_sha256",
+          "decision_bundle_byte_sha256",
+          "row_counts",
+          "created_utc",
+          "sealed_truth_opened_before_commitment"
+        ]
+      },
+      "exposure_log.jsonl": {
+        "keys_per_line": [
+          "attempt_id",
+          "created_utc",
+          "git_commit",
+          "git_dirty",
+          "config_byte_sha256",
+          "phase",
+          "truth_commitments_byte_sha256",
+          "prediction_commitment_byte_sha256",
+          "opened_truth_files",
+          "exit_status",
+          "message"
+        ],
+        "append_only": true
+      }
+    },
+    "predictor_content_hashes": "random_policy_content_sha256 and Arm-A content are SHA256 of the canonical serialization of the twelve ordered prefix rows and eight forecast coordinates with protocol, partition, and cluster ID excluded. Arm-B content appends the eight ordered non-placebo operating values. Placebo-comparator content appends the eight ordered placebo values to Arm-A content. Each risk row uses the least-information hash sufficient for that score: Arm A for prefix-only comparators, Arm B for visible-stress/S_plan scores, and placebo content for placebo_8. Identical content must have identical hashes; ordinary test and audit content must be unique. Placebo fields never enter either primary hash.",
+    "predictor_api_rule": "No prediction or model-state function accepts a truth frame, truth path, family label, truth parameter, future SOH, pair side, or score object.",
+    "identity_invariance": "Opaque ID relabeling and row reordering with predictor content fixed must preserve normalized model state, predictions, risks, decisions, and intervals byte for byte.",
+    "worker_invariance": "Before implementation freeze, one-worker and six-worker outputs must be canonical-byte identical on the frozen hand-written fixture set. The formal 5950-member run executes prediction once with six workers; neither the scorer nor a one-worker check reruns structure optimization on formal data.",
+    "tamper_policy": "The scorer recomputes canonical hashes, features, risk scores, ranks, intervals, and endpoints; a mismatch stops before truth scoring and voids the run."
+  },
+  "reporting": {
+    "mandatory": [
+      "all five primary estimates and gates",
+      "Arm A, Arm B, and every comparator on the identical pool and coverage",
+      "all eight truth families and novel-family aggregate",
+      "risk-coverage curves at 25, 50, and 75 percent issuance marked secondary",
+      "center IAE and 25-year error by family",
+      "structural-band and calibrated-set simultaneous coverage and widths",
+      "intrinsic and stress-plan pair-level results",
+      "isotonic calibration diagnostics",
+      "shape count, effective rank, failures, and boundary hits",
+      "stress permutation and placebo negative controls",
+      "test versus audit distribution shift summaries",
+      "all protocol deviations, including an explicit empty list"
+    ],
+    "exact_provenance": "Report git commit, dirty flag, config byte and canonical SHA256, source hashes, environment lock hashes, every artifact byte count and SHA256, seeds, worker count, wall time, and CPU/platform metadata."
+  },
+  "claim_boundaries": {
+    "allowed_only_if_successful": [
+      "In the frozen synthetic mechanisms, a transparent risk head using declared prediction-time operating information improved catastrophic-error selection over a prefix-only head at fixed coverage.",
+      "For exactly indistinguishable synthetic prefixes, the method represented ambiguity with a finite width-constrained simultaneous prediction set rather than claiming branch identification.",
+      "The software recovered information deliberately embedded in the synthetic operating-to-degradation equation and generalized directionally to the two declared unseen synthetic mechanisms."
+    ],
+    "prohibited_regardless_of_result": [
+      "real LFP 25-year accuracy",
+      "real operating covariate causality",
+      "Hithium product or station validation",
+      "individual physical-cell guarantee",
+      "external public-dataset confirmation",
+      "formal deployment coverage",
+      "future operating-plan adherence",
+      "the synthetic families are complete battery physics",
+      "50 percent batch issuance is a deployable single-cell threshold",
+      "V2 raises the current LifeTwin real-data evidence grade"
+    ],
+    "failure_interpretation": "Failure falsifies readiness of the frozen V2 architecture under the declared synthetic hazards; it may not be hidden by a post-hoc threshold, feature, seed, family-mixture, or interval-width change.",
+    "forty_pp_width_note": "The 40 pp width ceiling is a frozen falsifiable efficiency hypothesis motivated partly by exposed V1 behavior, not an independently established physical tolerance.",
+    "synthetic_covariate_note": "Any Arm-B success means the pipeline recovered a deliberately planted and prediction-time-declared synthetic signal. It does not discover or estimate a real battery stress law."
+  }
+}
