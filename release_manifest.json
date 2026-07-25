@@ -8,9 +8,11 @@
   "require_all_tracked_files_frozen": true,
   "unfrozen_tracked_allowlist": [
     "configs/experiments/synthetic_long_horizon_identifiability_v2.json",
+    "configs/experiments/synthetic_long_horizon_identifiability_v2_1_amendment.json",
     "reports/synthetic_long_horizon_identifiability_freeze_record_v2.json",
     "reports/synthetic_long_horizon_identifiability_implementation_audit_v2.md",
     "reports/synthetic_long_horizon_identifiability_prereg_v2.md",
+    "reports/synthetic_long_horizon_identifiability_prereg_v2_1.md",
     "reports/synthetic_long_horizon_identifiability_v2_termination_2026-07-25.md",
     "requirements/v015-formal.txt",
     "scripts/run_calendar_long_horizon_v015.py",
@@ -29,6 +31,7 @@
     "src/lifetwin/experiments/calendar_long_horizon_v015_runner.py",
     "src/lifetwin/experiments/calendar_long_horizon_v015_scoring.py",
     "src/lifetwin/experiments/calendar_long_horizon_v015_training.py",
+    "src/lifetwin/experiments/calendar_long_horizon_v016_protocol.py",
     "showcase/evidence_v015/README.md",
     "showcase/evidence_v015/synthetic_long_horizon_identifiability_v2/center_state_checkpoint.json",
     "showcase/evidence_v015/synthetic_long_horizon_identifiability_v2/exposure_log.jsonl",
@@ -53,7 +56,8 @@
     "tests/test_v015_runner.py",
     "tests/test_v015_scoring.py",
     "tests/test_v015_terminal_evidence.py",
-    "tests/test_v015_training.py"
+    "tests/test_v015_training.py",
+    "tests/test_v016_protocol.py"
   ],
   "frozen_files_sha256": {
     ".gitattributes": "16e2294e00fd82f446fbc77fa05f54a04026254a6ed0ecc42e3bb4ad545cd18e",

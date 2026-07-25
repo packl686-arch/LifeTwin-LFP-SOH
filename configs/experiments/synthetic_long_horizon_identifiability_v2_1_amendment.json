@@ -1,0 +1,279 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2_1",
+  "status": "design_candidate_preimplementation",
+  "title": "V2.1 calibration-population amendment for synthetic long-horizon identifiability",
+  "design_date": "2026-07-26",
+  "design_witnesses": [
+    "Jincheng Liu"
+  ],
+  "base_protocol": {
+    "protocol_id": "synthetic_long_horizon_identifiability_v2",
+    "config_byte_sha256": "27dc7f89178f73779a52068c1878df26c9686faa7433686e60ba6496b6705796",
+    "preregistration_byte_sha256": "c1dee9f9b4ef134b1a52e9a51300c591e790c10a0e97b3fe6c15eb441b2c09f0",
+    "terminated_attempt_manifest_sha256": "5b2b2d300653d070ed107b67a1a11b4edc10a0d33b2bad491ef1be784e0f4b09",
+    "terminated_attempt_status": "inconclusive_not_success",
+    "inheritance_rule": "Except for the protocol identity, fresh data-generation roots, calibration-population split, pre-prediction terminal-record rules, and exposure/reuse rules stated in this amendment, every V2 scientific question, generator distribution, model formula, feature, optimizer, endpoint, comparator, denominator, confidence procedure, threshold, gate, and reporting obligation is inherited without change from the byte-committed V2 config and preregistration above.",
+    "ambiguity_rule": "An omitted V2 rule remains binding. This amendment cannot be interpreted to relax a V2 endpoint, success threshold, information firewall, fit-credibility threshold, common-pool rule, matched-pair requirement, or negative-control gate."
+  },
+  "exposure_disclosure": {
+    "v2_attempt_trigger": "The V0.15/V2 formal attempt terminated during calibration before model_state.json and before any prediction commitment. Exactly 899 of 900 calibration clusters had at least two successful credible structure families; exactly one calibration cluster had one successful credible structure family.",
+    "opened_development_truth": [
+      "center_development_truth.csv",
+      "risk_development_truth.csv",
+      "calibration_truth.csv"
+    ],
+    "unopened_heldout_truth": [
+      "test_truth.csv",
+      "audit_truth.csv",
+      "intrinsic_matched_truth.csv",
+      "stress_plan_matched_truth.csv",
+      "intrinsic_matched_pairs.csv",
+      "stress_plan_matched_pairs.csv"
+    ],
+    "prediction_commitment_existed": false,
+    "score_package_existed": false,
+    "claim": "The terminated V2 attempt remains inconclusive_not_success. V2.1 is a disclosed post-termination design amendment and cannot relabel, resume, replace, or rescue V2.",
+    "heldout_noninspection_assertion": "No V2 test, audit, or matched truth was opened for this amendment. Their continued noninspection does not authorize reuse: V2.1 requires fresh generated rows under fresh roots."
+  },
+  "evidence_reuse_policy": {
+    "allowed_predecessor_information": [
+      "the aggregate 899-of-900 versus one-of-900 calibration structure-support trigger",
+      "the V2 protocol and preregistration hashes",
+      "the terminated-attempt manifest hash, phase, status, and opened-versus-unopened file inventory",
+      "outcome-independent formulas, thresholds, schemas, and scientific rationale already frozen in V2"
+    ],
+    "forbidden_v2_reuse": [
+      "every V2 generated prefix, operating, forecast-coordinate, truth, mapping, fit-diagnostic, and member-forecast row",
+      "every V2 opaque cluster or pair ID",
+      "every V2 row hash, predictor-content hash, seed-derived stream value, and measurement-noise realization",
+      "every V2 fitted center, risk, comparator, isotonic, conformal, or baseline-selection state",
+      "every V2 outcome value, label, prediction, decision, score, metric, ranking, or bootstrap/permutation result",
+      "all unopened V2 heldout rows despite their noninspection"
+    ],
+    "enforcement": "A V2.1 manifest containing a V2 data-row hash, opaque ID, fitted-state hash, or artifact path as a model input is void. Aggregate trigger and provenance fields must be explicitly typed and cannot enter model fitting, calibration, prediction, ranking, or scoring."
+  },
+  "fresh_generation": {
+    "generation_has_started": false,
+    "implementation_exists": false,
+    "implementation_freeze_required_before_generation": true,
+    "seed_roots": {
+      "center_development": 202607260201,
+      "risk_development": 202607260202,
+      "calibration": 202607260203,
+      "test": 202607260204,
+      "audit": 202607260205,
+      "novel_mechanism_test": 202607260206,
+      "novel_mechanism_audit": 202607260207,
+      "intrinsic_matched_pairs": 202607260208,
+      "stress_plan_matched_pairs": 202607260209,
+      "random_rankings": 202607260210,
+      "bootstrap": 202607260211,
+      "stress_permutations": 202607260212,
+      "placebo_covariate": 202607260213
+    },
+    "root_collision_statement": "All thirteen V2.1 roots are mutually distinct and distinct from every V2 root 202607230101 through 202607230113.",
+    "seed_derivation": "For every named stream, take the first 16 hexadecimal digits of SHA256(synthetic_long_horizon_identifiability_v2_1|seed_root|partition|family_id|zero_based_index|stream_name), interpret as an unsigned integer, and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) only under the later frozen V2.1 environment.",
+    "pre_generation_collision_audit": "Before the first V2.1 generator call, the committed implementation must enumerate every declared derived stream seed, opaque ID, and content-hash coordinate and fail closed on any duplicate or on any equality to the published V2 seed/ID/hash ledgers where those ledgers exist. Passing this audit is not evidence that generation has occurred.",
+    "generation_policy": "No generator, seed stream, optimizer on generated rows, or outcome scorer may run while status is design_candidate_preimplementation. Implementation and environment hashes require a later immutable freeze record."
+  },
+  "calibration_population_split": {
+    "scientific_rationale": "Risk/isotonic calibration estimates danger only on the population eligible for operational ranking and issuance. Split-conformal calibration supports the fixed all-cluster core-mixture coverage endpoint. These are different estimands and therefore use explicitly different, outcome-independent denominators.",
+    "source_calibration_count": 900,
+    "mask_commitment_order": "Compute and byte-commit the risk_isotonic_eligible mask from label-free artifacts before calibration truth is opened. The mask may not depend on a catastrophic label, future SOH, family truth, calibrated probability, or any outcome.",
+    "risk_isotonic": {
+      "mask_id": "risk_isotonic_eligible_v2_1",
+      "exact_mask": [
+        "exactly twelve finite ordered prefix observations at the frozen prefix days",
+        "exactly eight finite ordered forecast coordinates",
+        "all eight real operating fields and all eight placebo fields finite",
+        "at least two of the seven declared structure families each contain at least one variant passing the unchanged V2 credibility rule",
+        "all eight frozen-center forecasts finite",
+        "all fourteen Arm-A prefix/structure features finite",
+        "all eight real-stress and all eight placebo features finite",
+        "both frozen primary raw logistic scores finite"
+      ],
+      "same_mask_for_both_primary_heads": true,
+      "arm_specific_exclusion_or_refill_forbidden": true,
+      "minimum_eligible_count": 855,
+      "minimum_rule": "ceil(0.95*900)=855; this is a design-level 95 percent availability rule, not a cutoff selected at the exposed V2 count of 899.",
+      "minimum_positive_labels": 60,
+      "minimum_negative_labels": 60,
+      "class_counts_are_within_mask": true,
+      "fit_rule": "Fit the unchanged sklearn isotonic map separately for the two primary heads using only rows for which the exact common mask is true. Raw logistic score remains the ranking score; isotonic probability remains descriptive and cannot change ordering.",
+      "ineligible_output_rule": "An ineligible member is never ranked or issued. Any raw score retained for deterministic auditing is outside the calibrated operational population and must not be reported as an actionable calibrated probability.",
+      "failure_rule": "A source count other than 900, fewer than 855 mask-true rows, fewer than 60 positive or 60 negative labels within the mask, a nonfinite selected score, or an undefined isotonic fit terminates pre-prediction as inconclusive_not_success."
+    },
+    "mean_baseline": {
+      "denominator": 900,
+      "rule": "Select the strongest of the same three frozen mean baselines by lowest mean trajectory IAE over all 900 calibration clusters with the unchanged lexicographic tie break.",
+      "row_exclusion_forbidden": true,
+      "failure_rule": "Any missing or nonfinite required baseline trajectory or a source count other than 900 terminates pre-prediction as inconclusive_not_success."
+    },
+    "conformal": {
+      "denominator": 900,
+      "coverage": 0.9,
+      "required_finite_scores": 900,
+      "order_statistic_index_one_based": 811,
+      "order_statistic_rule": "ceil((900+1)*0.90)=811 after sorting all 900 simultaneous nonconformity scores ascending; no interpolation.",
+      "two_or_more_family_rule": "Use the unchanged V2 family-balanced structural band.",
+      "one_family_rule": "Keep sqrt-time as the center fallback and keep the member hard-ineligible for risk. For conformal only, use the genuine finite structural support produced by the sole successful family, with the unchanged within-family exact deduplication, signature grouping, weighting, and 0.05/0.95 coordinatewise quantiles. Sqrt-time is not inserted as structural support.",
+      "zero_family_rule": "No structural band exists. Do not synthesize a sqrt band, universal band, clipped band, or imputed score. Any zero-family calibration cluster terminates pre-prediction as inconclusive_not_success.",
+      "finite_rule": "Every one of the 900 base bands must be finite and ordered at all eight horizons and every resulting simultaneous nonconformity score must be finite. No row may be deleted, replaced, winsorized, or assigned to another denominator.",
+      "claim_limit": "The resulting set retains the V2 claim limit: marginal simultaneous split-conformal coverage over the frozen six-core-family mixture, not conditional coverage by family or support count and not a physical identification region."
+    },
+    "family_count_edge_cases": {
+      "zero": {
+        "center": "finite sqrt-time fallback",
+        "risk_isotonic_eligible": false,
+        "structural_band": "unavailable",
+        "conformal_effect": "terminal inconclusive_not_success"
+      },
+      "one": {
+        "center": "finite sqrt-time fallback",
+        "risk_isotonic_eligible": false,
+        "structural_band": "genuine sole-family support if finite and ordered",
+        "conformal_effect": "included in the fixed 900 denominator"
+      },
+      "two_through_seven": {
+        "center": "unchanged V2 blended center",
+        "risk_isotonic_eligible": "true only when every other exact mask condition holds",
+        "structural_band": "unchanged V2 family-balanced support",
+        "conformal_effect": "included in the fixed 900 denominator"
+      }
+    },
+    "required_manifest_counts": [
+      "source_calibration_count",
+      "risk_isotonic_eligible_count",
+      "risk_isotonic_ineligible_zero_family_count",
+      "risk_isotonic_ineligible_one_family_count",
+      "risk_isotonic_ineligible_other_count",
+      "risk_isotonic_positive_label_count",
+      "risk_isotonic_negative_label_count",
+      "mean_baseline_count",
+      "conformal_calibration_count",
+      "conformal_order_statistic_index"
+    ]
+  },
+  "artifact_registries": {
+    "mutual_exclusivity": "Exactly one registry may be emitted for one attempt. The two filename sets are disjoint. A pre-prediction terminal attempt must not emit an empty, placeholder, or fabricated scored artifact.",
+    "scored": {
+      "eligibility": "A valid prediction commitment exists, the heldout scoring capability was opened only after that commitment, and deterministic scoring completed.",
+      "filenames": [
+        "point_scores.csv",
+        "trajectory_scores.csv",
+        "family_metrics.csv",
+        "matched_pair_scores.csv",
+        "bootstrap_replicates.csv",
+        "random_ranking_metrics.csv",
+        "stress_permutation_metrics.csv",
+        "negative_control_metrics.json",
+        "score_report.json",
+        "run_manifest.json"
+      ]
+    },
+    "terminal_pre_prediction": {
+      "eligibility": "The attempt terminates before prediction_commitment.json exists.",
+      "filenames": [
+        "terminal_attempt_record.json",
+        "terminal_artifact_manifest.json",
+        "terminal_exposure_log_snapshot.jsonl"
+      ],
+      "forbidden_content": [
+        "heldout truth",
+        "point or trajectory scores",
+        "endpoint estimates",
+        "gate results",
+        "placeholder score tables",
+        "claims of failure, success, or model readiness based on unscored endpoints"
+      ],
+      "terminal_attempt_record_required_fields": [
+        "protocol_id",
+        "attempt_id",
+        "created_utc",
+        "git_commit",
+        "git_dirty",
+        "config_byte_sha256",
+        "phase",
+        "reason_code",
+        "scientific_status",
+        "truth_commitments_byte_sha256",
+        "prediction_commitment_byte_sha256",
+        "opened_truth_files",
+        "message"
+      ],
+      "terminal_artifact_manifest_rule": "Hash every artifact that existed before termination, the exact terminal_attempt_record.json bytes, and the exact terminal_exposure_log_snapshot.jsonl bytes. It must not claim that an absent calibration, model, prediction, or score artifact exists.",
+      "snapshot_rule": "terminal_exposure_log_snapshot.jsonl is an immutable byte snapshot of the append-only attempt ledger at terminalization; it is not a rewritten or filtered log."
+    }
+  },
+  "terminal_reason_codes": {
+    "declared_inconclusive": [
+      "CENTER_FIT_UNDEFINED",
+      "RISK_FIT_UNDEFINED",
+      "CALIBRATION_SOURCE_COUNT_NOT_900",
+      "CALIBRATION_RISK_ELIGIBLE_BELOW_855",
+      "CALIBRATION_RISK_POSITIVE_BELOW_60",
+      "CALIBRATION_RISK_NEGATIVE_BELOW_60",
+      "CALIBRATION_RISK_SCORE_NONFINITE",
+      "CALIBRATION_ISOTONIC_FIT_UNDEFINED",
+      "CALIBRATION_BASELINE_INCOMPLETE",
+      "CALIBRATION_ZERO_FAMILY_NO_BAND",
+      "CALIBRATION_BAND_NONFINITE_OR_UNORDERED",
+      "CALIBRATION_CONFORMAL_COUNT_NOT_900",
+      "CALIBRATION_CONFORMAL_SCORE_NONFINITE",
+      "CALIBRATION_CONFORMAL_FIT_UNDEFINED"
+    ],
+    "integrity_void": [
+      "INTEGRITY_CONFIG_OR_SOURCE_HASH_MISMATCH",
+      "INTEGRITY_ENVIRONMENT_MISMATCH",
+      "INTEGRITY_ARTIFACT_HASH_MISMATCH",
+      "INTEGRITY_PARTITION_SEED_ID_OR_CONTENT_COLLISION",
+      "INTEGRITY_FORBIDDEN_PREDECESSOR_REUSE",
+      "INTEGRITY_FORBIDDEN_TRUTH_ACCESS",
+      "INTEGRITY_INFORMATION_LEAK",
+      "INTEGRITY_MISSING_COMMITMENT"
+    ],
+    "interruption": [
+      "INTERRUPTED_BY_OPERATOR",
+      "INTERRUPTED_BY_PLATFORM"
+    ],
+    "unknown": [
+      "UNKNOWN_PRE_PREDICTION_EXCEPTION"
+    ],
+    "classification_precedence": "A proven integrity code is void. A declared scientific availability or fitting code is inconclusive_not_success. An interruption remains interrupted and may resume only under the exact frozen recovery rule. An unknown exception is unclassified_terminal_not_success, forbids prediction and score artifacts, and cannot be converted to success; if integrity cannot be ruled out from immutable evidence it is conservatively published as void.",
+    "free_text_is_not_a_reason_code": true
+  },
+  "unchanged_v2_decision_rules": {
+    "test_common_pool_minimum": 1805,
+    "audit_common_pool_minimum": 903,
+    "test_issue_count_per_arm": 950,
+    "audit_issue_count_per_arm": 475,
+    "intrinsic_pair_denominator": 250,
+    "stress_plan_pair_denominator": 250,
+    "all_five_primary_endpoints_unchanged": true,
+    "all_family_novel_negative_control_invariance_and_audit_gates_unchanged": true,
+    "success_rule": "No V2.1 success claim exists at design_candidate_preimplementation. In a future scored attempt, success requires every unchanged V2 primary endpoint and required safety, negative-control, information-firewall, and audit gate to pass.",
+    "negative_result_policy": "A future valid scored failure or inconclusive result must be published. A terminal_pre_prediction record is not a scored negative result and must not fabricate score tables."
+  },
+  "implementation_and_freeze_requirements": {
+    "allowed_before_implementation_freeze": [
+      "design review",
+      "static schema review",
+      "hand-authored unit fixtures",
+      "tests that cannot call a V2.1 generator or inspect an outcome"
+    ],
+    "forbidden_before_implementation_freeze": [
+      "any V2.1 generator call",
+      "any V2.1 seed consumption",
+      "any generated-data model fit",
+      "any pilot outcome analysis",
+      "any heldout truth access"
+    ],
+    "next_status_requires": "A later committed implementation, exact environment lock, source-byte manifest, adversarial edge-case tests, collision audit, and a new immutable implementation freeze record.",
+    "claims_at_current_status": [
+      "V2.1 is a design candidate only.",
+      "No V2.1 data, fitted model, prediction, score, or result exists.",
+      "The amendment has not demonstrated feasibility, improvement, validity, failure, or success."
+    ]
+  }
+}
