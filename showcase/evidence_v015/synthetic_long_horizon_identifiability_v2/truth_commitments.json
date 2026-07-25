@@ -1,0 +1,62 @@
+{
+  "config_sha256": "27dc7f89178f73779a52068c1878df26c9686faa7433686e60ba6496b6705796",
+  "created_utc": "2026-07-25T15:50:03Z",
+  "files": [
+    {
+      "byte_count": 1444443,
+      "byte_sha256": "f5fb7fb87903b1a3795d1094e2b0160638fffa151089cba7160bb4437ac223e7",
+      "path": "center_development_truth.csv",
+      "row_count": 4800
+    },
+    {
+      "byte_count": 1435254,
+      "byte_sha256": "c0c60f351b34d78989c501df77372e1947985ab842af78dc33383a3e7ef9e96f",
+      "path": "risk_development_truth.csv",
+      "row_count": 4800
+    },
+    {
+      "byte_count": 2115836,
+      "byte_sha256": "ea08b8d857721440cfb27f1a7f5b567fb7b417155bf7c178259120eb68901aa0",
+      "path": "calibration_truth.csv",
+      "row_count": 7200
+    },
+    {
+      "byte_count": 4504234,
+      "byte_sha256": "b04c1729c326a8be4404d0732fe6920fc684aefa6ff0f99ae4dab0d62dfbfea5",
+      "path": "test_truth.csv",
+      "row_count": 15200
+    },
+    {
+      "byte_count": 2330315,
+      "byte_sha256": "3bf310b2641e0fd0fc61f024210c9f5fdf4b00b4c7e9cf5a9936c50f5b8d73da",
+      "path": "audit_truth.csv",
+      "row_count": 7600
+    },
+    {
+      "byte_count": 1168314,
+      "byte_sha256": "d27d696dff77aff2e9ebc347cc95106b76adfc8bc999fd460afdc4650923da45",
+      "path": "intrinsic_matched_truth.csv",
+      "row_count": 4000
+    },
+    {
+      "byte_count": 1231284,
+      "byte_sha256": "93110c3a1564f4fe5730320c73f2698d4763059a13cb95bbc7a43111b07a2584",
+      "path": "stress_plan_matched_truth.csv",
+      "row_count": 4000
+    },
+    {
+      "byte_count": 63172,
+      "byte_sha256": "2b13753cce4e7fde6c1f06cff2f8d58e94e8d66453f8fbd4efbabbbc2757f94d",
+      "path": "intrinsic_matched_pairs.csv",
+      "row_count": 250
+    },
+    {
+      "byte_count": 58394,
+      "byte_sha256": "797e9a3efbbaf0346aba191afbadeeff0c550cf114d6e8a0b28869b941b92983",
+      "path": "stress_plan_matched_pairs.csv",
+      "row_count": 250
+    }
+  ],
+  "protocol_id": "synthetic_long_horizon_identifiability_v2",
+  "truth_values_withheld_by_physical_path": true
+}

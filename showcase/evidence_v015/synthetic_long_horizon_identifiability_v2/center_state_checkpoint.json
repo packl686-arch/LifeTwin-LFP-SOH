@@ -1,0 +1,21 @@
+{
+  "center_beta": 0.3452770143822142,
+  "center_state_sha256": "77387ba73304041bac6d358aae9bfd70d58d8ca85eab1ef7f4340b5606d33d1b",
+  "completeness_rule": "exactly_600_complete_rows_all_8_horizons_finite",
+  "config_sha256": "27dc7f89178f73779a52068c1878df26c9686faa7433686e60ba6496b6705796",
+  "created_utc": "2026-07-25T17:32:46Z",
+  "development_cluster_count": 600,
+  "forecast_horizon_count": 8,
+  "input_byte_hashes": {
+    "center_development_truth.csv": "f5fb7fb87903b1a3795d1094e2b0160638fffa151089cba7160bb4437ac223e7",
+    "fit_commitment.json": "19b06c1a2742058062e1557063b09080ca2c02bf0e0a27f06c88be495c868019",
+    "forecast_coordinates.csv": "21d56f204469f6e016c0ee04299fe23ee66a3797e053b7a3d3e2d0df86338367",
+    "member_fit_diagnostics.csv": "2bc370a87e1e246dbf9d2dfab7d500e3860f65f6a285632437ca4130405fb356",
+    "member_forecast_bundle.csv": "7a84f7e993f1d827c67637b842a48d4c72def28eab6c44f8d3e1d90b8ed0ad14",
+    "operating_pack.csv": "ff7e6c5b56e43bb8b81db89f845b40f26829c7073e7db88a81fe754738703f35",
+    "prefix_pack.csv": "86c0e08e4d7b4befe03a306d65b80cdbdfb9db848f2b363ceee20b2969be6222"
+  },
+  "protocol_id": "synthetic_long_horizon_identifiability_v2",
+  "ridge_penalty": 0.01,
+  "state_kind": "center_development"
+}

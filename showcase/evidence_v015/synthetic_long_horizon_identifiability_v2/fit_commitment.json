@@ -1,0 +1,45 @@
+{
+  "config_sha256": "27dc7f89178f73779a52068c1878df26c9686faa7433686e60ba6496b6705796",
+  "created_utc": "2026-07-25T17:30:45Z",
+  "files": [
+    {
+      "byte_count": 7867202,
+      "byte_sha256": "86c0e08e4d7b4befe03a306d65b80cdbdfb9db848f2b363ceee20b2969be6222",
+      "path": "prefix_pack.csv",
+      "row_count": 71400
+    },
+    {
+      "byte_count": 4585196,
+      "byte_sha256": "21d56f204469f6e016c0ee04299fe23ee66a3797e053b7a3d3e2d0df86338367",
+      "path": "forecast_coordinates.csv",
+      "row_count": 47600
+    },
+    {
+      "byte_count": 2429758,
+      "byte_sha256": "ff7e6c5b56e43bb8b81db89f845b40f26829c7073e7db88a81fe754738703f35",
+      "path": "operating_pack.csv",
+      "row_count": 5950
+    },
+    {
+      "byte_count": 2028,
+      "byte_sha256": "70e097c619b3478a041a781d9cbd4a9ddc2adcba058e8ede586534bf9bb926ab",
+      "path": "truth_commitments.json",
+      "row_count": 1
+    },
+    {
+      "byte_count": 197571353,
+      "byte_sha256": "2bc370a87e1e246dbf9d2dfab7d500e3860f65f6a285632437ca4130405fb356",
+      "path": "member_fit_diagnostics.csv",
+      "row_count": 511700
+    },
+    {
+      "byte_count": 974369598,
+      "byte_sha256": "7a84f7e993f1d827c67637b842a48d4c72def28eab6c44f8d3e1d90b8ed0ad14",
+      "path": "member_forecast_bundle.csv",
+      "row_count": 4093600
+    }
+  ],
+  "git_commit": "3631ee7bf86ebd8890b226551bca259390444ad3",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2",
+  "worker_count": 6
+}

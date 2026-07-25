@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2",
+  "attempt_id": "v015-20260725T234818-cst",
+  "git_commit": "3631ee7bf86ebd8890b226551bca259390444ad3",
+  "config_byte_sha256": "27dc7f89178f73779a52068c1878df26c9686faa7433686e60ba6496b6705796",
+  "config_canonical_sha256": "704fe432c385b7e8223156f12a432afc264b695c45ced019bef55f529e694909",
+  "preregistration_byte_sha256": "c1dee9f9b4ef134b1a52e9a51300c591e790c10a0e97b3fe6c15eb441b2c09f0",
+  "implementation_source_tree_sha256": "e5c8f9538dff703deb86629a569c76692b07ad309c488b66aa52da794bac3dc7",
+  "manifest_created_utc": "2026-07-25T17:46:23Z",
+  "attempt_started_utc": "2026-07-25T15:49:07Z",
+  "attempt_terminated_utc": "2026-07-25T17:37:48Z",
+  "ledger_elapsed_seconds": 6521,
+  "attempt_disposition": "terminated_pre_prediction",
+  "protocol_scientific_status": "inconclusive_not_success",
+  "endpoint_evaluation_status": "not_computed",
+  "complete_conforming_score_package": false,
+  "last_completed_phase": "calibration_truth_opened",
+  "attempted_phase": "model_state_committed",
+  "terminal_exit_status": "failed",
+  "reason_code": "CALIBRATION_HARD_ELIGIBILITY_COUNT_899_OF_900",
+  "failure_evidence": {
+    "exception_class": "V015TrainingError",
+    "sanitized_message": "calibration contains an invalid successful/failure family count",
+    "evidence_source": "contemporaneous_console_observation_and_posthoc_label_free_reproduction",
+    "exception_bytes_committed_during_run": false,
+    "posthoc_root_cause_confidence": "high",
+    "posthoc_root_cause": "One calibration cluster had one credible structure family, while the frozen calibration validator required every one of 900 rows to have two through seven credible families."
+  },
+  "calibration_diagnostic": {
+    "calibration_cluster_count": 900,
+    "hard_eligible_cluster_count": 899,
+    "hard_ineligible_cluster_count": 1,
+    "violating_cluster_id": "c_12275fb066dc74166b6382de519e626d",
+    "successful_structure_family_count_distribution": {
+      "1": 1,
+      "2": 2,
+      "3": 8,
+      "4": 0,
+      "5": 1,
+      "6": 293,
+      "7": 595
+    },
+    "violating_cluster_succeeded_variant_count": 86,
+    "violating_cluster_failed_variant_count": 0,
+    "violating_cluster_credible_variant_count": 1,
+    "violating_cluster_credible_family": "target_prefix_early_activation_plus_power",
+    "credible_family_prefix_rmse_pp": 0.077797260838841725,
+    "credible_family_prefix_max_abs_residual_pp": 0.15662972921313667,
+    "near_boundary_noncredible_family_minimum_max_abs_residual_pp": 1.5103858997695312,
+    "frozen_max_abs_residual_limit_pp": 1.5,
+    "all_14_prefix_features_finite": true,
+    "diagnostic_inputs": [
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv",
+      "prefix_pack.csv",
+      "operating_pack.csv"
+    ],
+    "held_out_truth_used_for_diagnosis": false
+  },
+  "truth_exposure": {
+    "prediction_commitment_present": false,
+    "evaluation_truth_opened": false,
+    "opened_truth_files": [
+      "center_development_truth.csv",
+      "risk_development_truth.csv",
+      "calibration_truth.csv"
+    ],
+    "unopened_truth_files": [
+      "test_truth.csv",
+      "audit_truth.csv",
+      "intrinsic_matched_truth.csv",
+      "stress_plan_matched_truth.csv",
+      "intrinsic_matched_pairs.csv",
+      "stress_plan_matched_pairs.csv"
+    ]
+  },
+  "artifact_roots": {
+    "label_free": "artifacts/formal_v015_20260725T234818_label_free",
+    "sealed_truth": "artifacts/formal_v015_20260725T234818_sealed_truth",
+    "score": null
+  },
+  "commitment_chain": [
+    {
+      "artifact": "truth_commitments.json",
+      "byte_count": 2028,
+      "byte_sha256": "70e097c619b3478a041a781d9cbd4a9ddc2adcba058e8ede586534bf9bb926ab",
+      "verified": true
+    },
+    {
+      "artifact": "fit_commitment.json",
+      "byte_count": 1465,
+      "byte_sha256": "19b06c1a2742058062e1557063b09080ca2c02bf0e0a27f06c88be495c868019",
+      "verified": true
+    },
+    {
+      "artifact": "center_state_checkpoint.json",
+      "byte_count": 1244,
+      "byte_sha256": "bf1dad62ff85269f4c9681b53a8857a158786d2da6b2ecd1af9f906fe5731689",
+      "verified": true
+    },
+    {
+      "artifact": "training_manifest.json",
+      "byte_count": 2078,
+      "byte_sha256": "5aae37fa257c72d87e55f9852b3afd47760e08ecfad894944f1be4d44868975b",
+      "verified": true
+    },
+    {
+      "artifact": "risk_state_checkpoint.json",
+      "byte_count": 1476,
+      "byte_sha256": "3f8b3be2727bacc9cba7fac01b308b9a18e54290c21b9e60ab06c49effcd757a",
+      "verified": true
+    }
+  ],
+  "ledger": {
+    "artifact": "exposure_log.jsonl",
+    "row_count": 13,
+    "byte_count": 7505,
+    "byte_sha256": "fa0af893453de5a27d92b47bbfd5e67a339c212af8a4ce273998e6de449693cf",
+    "schema_valid": true,
+    "newline_terminated": true,
+    "terminal_failed": true,
+    "terminal_message": "Formal model_state_committed stage failed."
+  },
+  "expected_absent_artifacts": [
+    "calibration_manifest.json",
+    "model_state.json",
+    "prediction_bundle.csv",
+    "risk_bundle.csv",
+    "decision_bundle.csv",
+    "content_hashes.csv",
+    "prediction_commitment.json",
+    "score_report.json",
+    "run_manifest.json"
+  ],
+  "recovery_constraints": {
+    "preserve_original_attempt_roots": true,
+    "in_place_changed_code_resume_allowed": false,
+    "v2_regeneration_allowed": false,
+    "v2_seed_change_allowed": false,
+    "held_out_truth_must_remain_closed": true,
+    "future_experiment_requires_new_protocol_id_and_new_preregistration": true
+  },
+  "claim_boundary": "This record documents a pre-prediction protocol termination. It contains no held-out endpoint estimate and is neither evidence of model success nor evidence of endpoint failure."
+}
