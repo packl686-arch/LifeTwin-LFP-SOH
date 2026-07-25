@@ -37,6 +37,10 @@ cluster 中有 899 个具备至少两个可信结构族，另 1 个只有一个�
 从第一条日志到终止日志共 6,521 秒。暴露日志的 13 行、末尾换行和字节哈希均
 已验证；完整承诺链见
 [`formal_attempt_termination_manifest.json`](../showcase/evidence_v015/synthetic_long_horizon_identifiability_v2/formal_attempt_termination_manifest.json)。
+仓库内的
+[`verify_v015_terminal_evidence.py`](../scripts/verify_v015_terminal_evidence.py)
+会重新计算公开副本哈希、回放 13 行状态机，并拒绝伪造的评分状态、真值暴露
+边界或承诺交叉引用。
 
 ## 根因
 

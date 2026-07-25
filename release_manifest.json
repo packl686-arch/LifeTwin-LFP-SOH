@@ -14,6 +14,7 @@
     "reports/synthetic_long_horizon_identifiability_v2_termination_2026-07-25.md",
     "requirements/v015-formal.txt",
     "scripts/run_calendar_long_horizon_v015.py",
+    "scripts/verify_v015_terminal_evidence.py",
     "src/lifetwin/experiments/calendar_long_horizon_v015_analysis.py",
     "src/lifetwin/experiments/calendar_long_horizon_v015_collision.py",
     "src/lifetwin/experiments/calendar_long_horizon_v015_environment.py",
@@ -51,6 +52,7 @@
     "tests/test_v015_protocol.py",
     "tests/test_v015_runner.py",
     "tests/test_v015_scoring.py",
+    "tests/test_v015_terminal_evidence.py",
     "tests/test_v015_training.py"
   ],
   "frozen_files_sha256": {

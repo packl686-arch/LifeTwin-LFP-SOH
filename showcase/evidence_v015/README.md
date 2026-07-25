@@ -27,3 +27,10 @@
 [`reports/synthetic_long_horizon_identifiability_v2_termination_2026-07-25.md`](../../reports/synthetic_long_horizon_identifiability_v2_termination_2026-07-25.md)。
 冻结配置、代码、种子和原始尝试目录均保留不变；不会通过改阈值、换 seed 或
 删除 calibration 行把这次尝试包装成成功。
+
+公开副本可独立复核：
+
+```powershell
+$env:PYTHONPATH = "src"
+python scripts/verify_v015_terminal_evidence.py
+```
