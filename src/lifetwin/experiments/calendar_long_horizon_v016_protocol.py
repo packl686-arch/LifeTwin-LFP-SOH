@@ -19,6 +19,7 @@ V021_PROTOCOL_ID = "synthetic_long_horizon_identifiability_v2_1"
 V021_ALLOWED_DESIGN_STATUSES = (
     "design_candidate_preimplementation",
     "implementation_candidate_unfrozen",
+    "implementation_frozen",
 )
 V021_SOURCE_CALIBRATION_COUNT = 900
 V021_MINIMUM_RISK_ISOTONIC_ELIGIBLE_COUNT = 855
@@ -51,6 +52,9 @@ BASE_PREREGISTRATION_BYTE_SHA256 = (
 )
 TERMINATED_ATTEMPT_MANIFEST_SHA256 = (
     "5b2b2d300653d070ed107b67a1a11b4edc10a0d33b2bad491ef1be784e0f4b09"
+)
+V021_AMENDMENT_SEMANTIC_SHA256 = (
+    "2dd77ef9f9393cc982fb370f3ed8e5f7d1753a0f7f311d5b2cc24d01e2acbbde"
 )
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -174,6 +178,16 @@ def _string_set(value: object, *, context: str) -> frozenset[str]:
     if len(value) != len(set(value)):
         raise V021ProtocolError(f"{context} contains duplicates")
     return frozenset(value)
+
+
+def _deep_freeze_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType(
+            {str(key): _deep_freeze_json(item) for key, item in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_deep_freeze_json(item) for item in value)
+    return value
 
 
 def _validate_predecessor_hashes(base: Mapping[str, Any]) -> None:
@@ -318,6 +332,30 @@ def _validate_reason_registries(value: object) -> None:
         raise V021ProtocolError("Free-text reason codes were enabled")
 
 
+def _amendment_semantic_sha256(payload: Mapping[str, Any]) -> str:
+    """Hash every design field except the paired implementation-status switch."""
+
+    normalized = json.loads(
+        json.dumps(
+            payload,
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    normalized["status"] = "<IMPLEMENTATION_STATUS>"
+    normalized["fresh_generation"]["implementation_exists"] = "<IMPLEMENTATION_EXISTS>"
+    canonical = json.dumps(
+        normalized,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def _validate_v021_payload(
     decoded: object,
     *,
@@ -333,7 +371,7 @@ def _validate_v021_payload(
         raise V021ProtocolError("V2.1 protocol ID changed")
     status = top.get("status")
     if status not in V021_ALLOWED_DESIGN_STATUSES:
-        raise V021ProtocolError("V2.1 status is not a non-executable design status")
+        raise V021ProtocolError("V2.1 implementation status is not recognized")
     witnesses = top.get("design_witnesses")
     if witnesses != ["Jincheng Liu"]:
         raise V021ProtocolError("V2.1 design witness changed")
@@ -364,6 +402,11 @@ def _validate_v021_payload(
     _validate_calibration_policy(top.get("calibration_population_split"))
     _validate_artifact_registries(top.get("artifact_registries"))
     _validate_reason_registries(top.get("terminal_reason_codes"))
+    if _amendment_semantic_sha256(top) != V021_AMENDMENT_SEMANTIC_SHA256:
+        raise V021ProtocolError(
+            "V2.1 amendment semantic content changed outside the paired "
+            "implementation-status switch"
+        )
 
     return ValidatedV021Design(
         protocol_id=V021_PROTOCOL_ID,
@@ -371,7 +414,7 @@ def _validate_v021_payload(
         config_path=config_path,
         config_byte_sha256=hashlib.sha256(raw_bytes).hexdigest(),
         seed_roots=roots,
-        raw=MappingProxyType(dict(top)),
+        raw=_deep_freeze_json(top),
     )
 
 

@@ -32,7 +32,9 @@ def _mutated_design(
 def test_v021_design_loads_without_executing_generation() -> None:
     design = load_v021_design()
     assert design.protocol_id == V021_PROTOCOL_ID
-    assert design.status == "design_candidate_preimplementation"
+    assert design.status == "implementation_frozen"
+    assert design.raw["fresh_generation"]["implementation_exists"] is True
+    assert design.raw["fresh_generation"]["generation_has_started"] is False
     assert design.seed_roots == V021_EXPECTED_SEED_ROOTS
     assert len(set(design.seed_roots.values())) == 13
     assert design.config_byte_sha256
@@ -44,6 +46,12 @@ def test_v021_binds_the_published_termination_manifest() -> None:
     assert base["terminated_attempt_manifest_sha256"] == (
         TERMINATED_ATTEMPT_MANIFEST_SHA256
     )
+    with pytest.raises(TypeError):
+        base["terminated_attempt_manifest_sha256"] = "0" * 64
+    opened = design.raw["exposure_disclosure"]["opened_development_truth"]
+    assert isinstance(opened, tuple)
+    with pytest.raises(TypeError):
+        opened[0] = "changed"
 
 
 def test_v021_rejects_eligibility_threshold_drift() -> None:
@@ -86,3 +94,40 @@ def test_v021_rejects_predecessor_hash_drift() -> None:
                 {"terminated_attempt_manifest_sha256": "0" * 64}
             )
         )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload["calibration_population_split"]["risk_isotonic"][
+            "exact_mask"
+        ].__setitem__(0, "twelve observations, perhaps"),
+        lambda payload: payload["terminal_reason_codes"].update(
+            {"classification_precedence": "free choice"}
+        ),
+        lambda payload: payload["evidence_reuse_policy"]["forbidden_v2_reuse"].pop(),
+    ],
+)
+def test_v021_rejects_unvalidated_semantic_text_drift(mutate: object) -> None:
+    with pytest.raises(V021ProtocolError, match="semantic content changed"):
+        _mutated_design(mutate)
+
+
+def test_v021_allows_only_the_paired_implementation_status_switch() -> None:
+    def mark_implementation_present(payload: dict[str, object]) -> None:
+        payload["status"] = "implementation_candidate_unfrozen"
+        generation = payload["fresh_generation"]
+        assert isinstance(generation, dict)
+        generation["implementation_exists"] = True
+
+    design = _mutated_design(mark_implementation_present)
+    assert design.status == "implementation_candidate_unfrozen"
+
+    def mark_implementation_frozen(payload: dict[str, object]) -> None:
+        payload["status"] = "implementation_frozen"
+        generation = payload["fresh_generation"]
+        assert isinstance(generation, dict)
+        generation["implementation_exists"] = True
+
+    frozen = _mutated_design(mark_implementation_frozen)
+    assert frozen.status == "implementation_frozen"

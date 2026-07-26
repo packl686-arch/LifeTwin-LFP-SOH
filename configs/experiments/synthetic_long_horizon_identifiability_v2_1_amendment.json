@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "protocol_id": "synthetic_long_horizon_identifiability_v2_1",
-  "status": "design_candidate_preimplementation",
+  "status": "implementation_frozen",
   "title": "V2.1 calibration-population amendment for synthetic long-horizon identifiability",
   "design_date": "2026-07-26",
   "design_witnesses": [
@@ -55,7 +55,7 @@
   },
   "fresh_generation": {
     "generation_has_started": false,
-    "implementation_exists": false,
+    "implementation_exists": true,
     "implementation_freeze_required_before_generation": true,
     "seed_roots": {
       "center_development": 202607260201,
