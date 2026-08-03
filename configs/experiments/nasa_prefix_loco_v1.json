@@ -1,0 +1,84 @@
+{
+  "schema_version": "lifetwin.nasa_prefix_loco.config.v1",
+  "experiment_id": "nasa_pcoe_prefix_loco_accelerated_cycling_stress_v1",
+  "status": "descriptive_stress_test_frozen",
+  "dataset": {
+    "dataset_id": "NASA_PCOE_LI_ION_AGING_DERIVED_CSV_V1",
+    "title": "NASA PCoE Li-ion battery aging derived CSV quartet",
+    "chemistry": "unspecified_li_ion_not_lfp_evidence",
+    "aging_mode": "accelerated_cycle_aging",
+    "evidence_role": "cross_chemistry_accelerated_cycling_stress_only",
+    "conversion_provenance_status": "unverified_third_party_csv",
+    "source_files_sha256": {
+      "B0005.csv": "d74b6352fde77fcb55543df48180914ca92d56d36320d70e0ebfcd57696b6105",
+      "B0006.csv": "d544bdcfdf053861cc96736dd25b91a7de99fa91d1a6877aba3e05bb6a5d97c9",
+      "B0007.csv": "251b6a074702fc07991db86c1760db843db967d6648f01f4270337d94461fd80",
+      "B0018.csv": "9ce1516d47b3cb2a4a03d9a6c671fdbc6e703468795cbe5ee772605989ac011f"
+    },
+    "cell_discharge_cutoff_voltage_v": {
+      "B0005": 2.7,
+      "B0006": 2.5,
+      "B0007": 2.2,
+      "B0018": 2.5
+    }
+  },
+  "design": {
+    "split": "leave_one_physical_cell_out_four_folds",
+    "cell_ids": [
+      "B0005",
+      "B0006",
+      "B0007",
+      "B0018"
+    ],
+    "prefix_cycles": [
+      20,
+      40,
+      60,
+      100
+    ],
+    "primary_prefix_cycle": 40,
+    "score_end_cycle": 132,
+    "normalization": "median_discharge_capacity_cycles_1_to_5",
+    "target_future_outcomes_available_to_prediction": false,
+    "training_cell_histories_used_by_models": false,
+    "cell_weighting": "equal_weight_per_held_out_cell"
+  },
+  "models": {
+    "model_ids": [
+      "target_prefix_persistence",
+      "target_prefix_linear",
+      "target_prefix_sqrt_loss"
+    ],
+    "prediction_clip_pct": [
+      0.0,
+      110.0
+    ],
+    "linear_slope_constraint": "non_positive"
+  },
+  "metrics": {
+    "primary": "trajectory_iae_pp_normalized_by_cycle_horizon",
+    "secondary": [
+      "trajectory_mae_pp",
+      "trajectory_rmse_pp",
+      "endpoint_absolute_error_pp"
+    ],
+    "statistical_unit": "physical_cell_trajectory",
+    "aggregation": "equal_weight_across_four_held_out_cells",
+    "inference": "descriptive_only_no_significance_test"
+  },
+  "claim_boundaries": {
+    "allowed_claims": [
+      "chronological_prefix_prediction_software_validation",
+      "descriptive_leave_one_cell_out_accelerated_cycling_stress_test"
+    ],
+    "prohibited_claims": [
+      "lfp_chemistry_validation",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "hithium_product_accuracy",
+      "stationary_storage_field_validation",
+      "inferential_significance_from_four_cells",
+      "formal_uncertainty_coverage"
+    ]
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "schema_version": "lifetwin.fastcharge_lfp_trajectory_portability.config.v1",
+  "experiment_id": "fastcharge_lfp_trajectory_portability_v1",
+  "status": "implementation_protocol_frozen_after_identity_and_support_audit_before_target_suffix_scoring",
+  "evidence_role": "outcome_exposed_cohort_held_out_trajectory_portability_stress",
+  "freeze_date": "2026-08-03",
+  "outcome_exposure_registry": [
+    {
+      "dataset_id": "ATTIA_2020_VALIDATION45",
+      "exposure": "earlier_cycle_life_external_validation_scores_inspected",
+      "artifact_sha256": "b3d0286aa7765fcffa113f6ecacb39844c117bae9dbc82d0329483e175f88258"
+    },
+    {
+      "dataset_id": "MATR_SEVERSON_2019_TABLE9",
+      "exposure": "published_and_local_cycle_life_outcomes_previously_inspected",
+      "trajectory_suffix_scoring_before_this_freeze": false
+    },
+    {
+      "dataset_id": "NASA_PCOE_LI_ION_AGING_DERIVED_CSV_V1",
+      "exposure": "v1_v2_and_v3_trajectory_scores_inspected",
+      "v3_prediction_sha256": "5bd96924e239b774f3e1f7ee3b985a5880b74cca2422b192353be12055703cce",
+      "v3_score_sha256": "f98d7924740a1d7d39dd4f6a43cf5a8bf5c1231898ee1dcedbeb3eaf6cbd061d"
+    }
+  ],
+  "dataset": {
+    "dataset_id": "MATR_FASTCHARGE_TABLE9_TRAJECTORY_V1",
+    "title": "Severson et al. MATR fast-charge LFP trajectory portability cohort",
+    "chemistry": "commercial_LFP_graphite_1p1Ah",
+    "aging_mode": "accelerated_cycle_aging_under_fast_charge",
+    "stationary_storage_field_data": false,
+    "hithium_data": false,
+    "source_file_count": 140,
+    "source_total_bytes": 27946112408,
+    "source_hashes_complete": false,
+    "source_manifest_sha256_without_content_hashes": "9e60778b79b25e1a7aace1468278afa8f239e4f6f3533c50a6c01d1539d033ed",
+    "canonical_cycle_parquet_sha256": "ada946adb880f25def9b1717351f53f35215c851d4f34405413cbcaa51f900fa",
+    "source_inventory_sha256": "a8520aef4511e8123484fd21233db45cee25db1bb4a5c0f0555ddea0b49c7a62",
+    "authoritative_crosswalk_sha256": "d7f4f8f956a50007dddd0d0338e698c3718d8233e3c7518099eedde35783c2c0",
+    "authoritative_crosswalk_basis": "Supplementary_Table_9_row_order_joined_to_official_author_pickle_key_order_after_declared_exclusions",
+    "direct_author_assertion_of_crosswalk": false,
+    "raw_unique_barcode_count": 135,
+    "official_crosswalk_cell_count": 124,
+    "available_official_cell_count": 123,
+    "fixed_horizon_included_cell_count": 122,
+    "excluded_cells": [
+      {
+        "cell_id": "MATR_B1C18",
+        "paper_split": "primary_test",
+        "reason": "authoritative_barcode_missing_from_local_raw_transport"
+      },
+      {
+        "cell_id": "MATR_B2C1",
+        "paper_split": "primary_test",
+        "reason": "raw_summary_lacks_contiguous_support_through_fixed_cycle_200"
+      }
+    ],
+    "model_input_columns": [
+      "dataset_id",
+      "cell_id",
+      "paper_split",
+      "cycle_index",
+      "discharge_capacity_ah",
+      "internal_resistance_ohm",
+      "temperature_max_c",
+      "charge_time_s",
+      "energy_efficiency"
+    ],
+    "forbidden_model_input_columns": [
+      "cycle_life",
+      "source_num_cycles",
+      "continuation_added_cycles",
+      "paper_index",
+      "forecast_suffix_capacity"
+    ]
+  },
+  "split_and_firewall": {
+    "training_split": "train",
+    "expected_training_cells": 41,
+    "evaluation_splits": [
+      "primary_test",
+      "secondary_test"
+    ],
+    "expected_evaluation_cells_by_split": {
+      "primary_test": 41,
+      "secondary_test": 40
+    },
+    "expected_total_evaluation_cells": 81,
+    "prefix_cycles": [
+      20,
+      40,
+      60,
+      100
+    ],
+    "score_end_cycle": 200,
+    "normalization": "median_discharge_capacity_cycles_1_to_5",
+    "prediction_input": "complete_training_histories_plus_evaluation_target_prefix_only",
+    "evaluation_target_suffix_available_to_prediction": false,
+    "training_histories_available_for_risk_learning": true,
+    "training_interval_calibration": "strict_leave_one_training_cell_out",
+    "equal_weighting_unit": "physical_cell_within_prefix_then_prefix_within_split"
+  },
+  "base_experts": {
+    "model_ids": [
+      "target_prefix_persistence",
+      "target_prefix_full_linear",
+      "target_prefix_robust_recent_linear",
+      "target_prefix_constrained_sqrt_linear",
+      "nearest_neighbor_delta_transfer"
+    ],
+    "robust_recent_window_cycles": 20,
+    "huber_iterations": 8,
+    "huber_delta_mad": 1.5,
+    "prediction_clip_pct": [
+      0.0,
+      110.0
+    ],
+    "nearest_neighbor_delta_transfer": {
+      "neighbor_count": 8,
+      "distance_epsilon": 0.001,
+      "alignment": "add_inverse_distance_weighted_reference_retention_change_to_target_last_retention"
+    }
+  },
+  "similarity": {
+    "feature_ids": [
+      "capacity_full_slope_pp_per_cycle",
+      "capacity_recent_slope_pp_per_cycle",
+      "capacity_slope_disagreement_pp_per_cycle",
+      "capacity_residual_std_pp",
+      "capacity_recovery_fraction",
+      "log_internal_resistance_slope_per_cycle",
+      "temperature_max_slope_c_per_cycle",
+      "log_charge_duration_slope_per_cycle",
+      "energy_efficiency_slope_per_cycle"
+    ],
+    "feature_scale": "training_pool_median_absolute_deviation_times_1p4826_with_floor",
+    "feature_scale_floors": {
+      "capacity_full_slope_pp_per_cycle": 0.005,
+      "capacity_recent_slope_pp_per_cycle": 0.005,
+      "capacity_slope_disagreement_pp_per_cycle": 0.005,
+      "capacity_residual_std_pp": 0.01,
+      "capacity_recovery_fraction": 0.01,
+      "log_internal_resistance_slope_per_cycle": 0.0001,
+      "temperature_max_slope_c_per_cycle": 0.001,
+      "log_charge_duration_slope_per_cycle": 0.0001,
+      "energy_efficiency_slope_per_cycle": 0.00001
+    },
+    "positive_log_floors": {
+      "internal_resistance_ohm": 0.0001,
+      "charge_time_s": 1.0
+    },
+    "distance": "root_mean_square_robust_standardized_feature_difference",
+    "tie_break": "stable_lexicographic_cell_id"
+  },
+  "mixture": {
+    "model_id": "stability_shrunk_evidence_weighted_mixture",
+    "risk_reference_neighbor_count": 8,
+    "risk_neighbor_weighting": "inverse_similarity_distance",
+    "risk_dispersion_penalty": 0.5,
+    "risk_epsilon_pp": 0.1,
+    "risk_inverse_power": 2.0,
+    "relative_margin_full_uniform_below": 0.1,
+    "relative_margin_full_evidence_above": 0.3,
+    "distance_support_thresholds": {
+      "full_evidence_training_loo_quantile": 0.75,
+      "full_uniform_training_loo_quantile": 0.95,
+      "refusal_training_loo_quantile": 0.99,
+      "refusal_multiplier": 1.5
+    },
+    "feature_jackknife_stability": {
+      "variants": "full_feature_set_plus_each_single_feature_dropped",
+      "risk_aggregation": "mean_risk_across_variants",
+      "instability_metric": "mean_L1_distance_of_variant_risk_weights_from_variant_mean",
+      "full_stability_below": 0.1,
+      "zero_stability_above": 0.35
+    },
+    "selection_strength": "margin_support_times_distance_support_times_stability_support",
+    "final_weight_formula": "uniform_plus_selection_strength_times_inverse_risk_weight_delta"
+  },
+  "uncertainty": {
+    "method": "training_split_strict_LOO_absolute_residual_quantile_by_model_prefix_and_forecast_cycle",
+    "nominal_pointwise_coverage": 0.9,
+    "quantile_rule": "ceil((n_calibration+1)*coverage)/n_calibration_with_higher_method",
+    "target_evaluation_suffix_used_for_calibration": false,
+    "formal_exchangeable_coverage_claim": false,
+    "reason": "paper_test_splits_and_fast_charge_protocols_are_not_assumed_exchangeable_with_training_cells"
+  },
+  "evaluation": {
+    "primary_metric": "trajectory_mae_pp",
+    "secondary_metrics": [
+      "trajectory_rmse_pp",
+      "endpoint_absolute_error_pp",
+      "empirical_interval_coverage_fraction",
+      "mean_interval_width_pp"
+    ],
+    "comparators": [
+      "each_fixed_base_expert",
+      "equal_weight_base_mixture",
+      "hard_lowest_predicted_risk_expert"
+    ],
+    "frozen_portability_gate": {
+      "maximum_overall_mae_degradation_vs_equal_weight_pp": 0.0,
+      "maximum_each_split_mae_degradation_vs_equal_weight_pp": 0.25,
+      "minimum_relative_mae_improvement_vs_persistence": 0.1,
+      "minimum_empirical_interval_coverage_fraction": 0.8,
+      "maximum_mean_interval_width_pp": 20.0,
+      "interpretation": "held_out_portability_stress_gate_not_independent_confirmation"
+    }
+  },
+  "claim_boundaries": {
+    "allowed_claims": [
+      "protocol_frozen_held_out_trajectory_portability_stress_on_an_outcome_exposed_cohort",
+      "evaluation_target_future_label_firewall_software_validation",
+      "descriptive_LFP_fast_charge_scale_and_robustness_evidence",
+      "descriptive_training_calibrated_interval_coverage"
+    ],
+    "prohibited_claims": [
+      "independent_outcome_blind_external_confirmation",
+      "calendar_aging_validation",
+      "stationary_storage_field_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_exchangeable_interval_coverage",
+      "causal_fast_charge_policy_effect",
+      "all_public_MATR_cells_were_available_locally"
+    ]
+  }
+}

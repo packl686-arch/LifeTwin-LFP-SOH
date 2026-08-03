@@ -1,0 +1,102 @@
+{
+  "schema_version": "lifetwin.nasa_evidence_weighted_moe.config.v3",
+  "experiment_id": "nasa_pcoe_evidence_weighted_moe_v3",
+  "status": "post_outcome_development_frozen_before_any_new_external_dataset",
+  "evidence_role": "retrospective_method_development_only",
+  "outcome_exposure_registry": [
+    {
+      "dataset_id": "NASA_PCOE_LI_ION_AGING_DERIVED_CSV_V1",
+      "exposure": "v1_and_v2_suffix_scores_inspected",
+      "v2_prediction_sha256": "805c7c61c0bec3658f67240ea0da62e4b089b5d99141ae7917c8f24d8df2fa86",
+      "v2_score_sha256": "bd701ccbbad6612eafe97a27299d271a401ac3da8c76d6f06de336c9ab851ee3"
+    },
+    {
+      "dataset_id": "ATTIA_2020_VALIDATION45",
+      "exposure": "earlier_cycle_life_external_validation_scores_inspected",
+      "artifact_sha256": "b3d0286aa7765fcffa113f6ecacb39844c117bae9dbc82d0329483e175f88258"
+    }
+  ],
+  "base_protocol": {
+    "experiment_id": "nasa_pcoe_dynamic_gate_accelerated_cycling_stress_v2",
+    "config_semantic_sha256": "3a227b2e3fa6302f563d88b54cfb0442045643014ddb9d4d5be4ae0679a7f504",
+    "base_model_ids": [
+      "target_prefix_persistence",
+      "target_prefix_full_linear",
+      "target_prefix_robust_recent_linear",
+      "target_prefix_constrained_sqrt_linear"
+    ],
+    "comparison_gate_model_id": "nested_loco_curve_aware_mean_gate",
+    "target_future_outcomes_available_to_prediction": false,
+    "outer_fold_training_histories_available": true
+  },
+  "mixture": {
+    "model_id": "evidence_weighted_mixture_v3",
+    "risk_source": "curve_nearest_two_outer_training_cell_suffix_mae",
+    "neighbor_risk_weighting": "inverse_similarity_distance",
+    "neighbor_distance_epsilon": 0.001,
+    "risk_dispersion_penalty": 0.5,
+    "risk_epsilon_pp": 0.1,
+    "risk_inverse_power": 2.0,
+    "relative_margin_full_uniform_below": 0.1,
+    "relative_margin_full_evidence_above": 0.3,
+    "distance_full_evidence_below": 2.0,
+    "distance_full_uniform_above": 4.0,
+    "final_weight_formula": "uniform_plus_selection_strength_times_risk_weight_delta",
+    "selection_strength_formula": "relative_margin_support_times_similarity_distance_support",
+    "tie_break_order": [
+      "target_prefix_persistence",
+      "target_prefix_full_linear",
+      "target_prefix_robust_recent_linear",
+      "target_prefix_constrained_sqrt_linear"
+    ],
+    "prediction_clip_pct": [
+      0.0,
+      110.0
+    ]
+  },
+  "evidence_band": {
+    "base_interval_combination": "mixture_weighted_v2_bounds",
+    "model_disagreement_standard_deviation_multiplier": 0.75,
+    "low_evidence_half_width_multiplier": 0.5,
+    "refusal_mean_neighbor_distance": 6.0,
+    "formal_coverage_claim": false
+  },
+  "evaluation": {
+    "prefix_cycles": [
+      20,
+      40,
+      60,
+      100
+    ],
+    "score_end_cycle": 132,
+    "primary_metric": "trajectory_mae_pp",
+    "aggregation": "equal_weight_per_physical_cell_then_equal_weight_per_prefix",
+    "nasa_development_promotion_gate": {
+      "maximum_overall_mean_trajectory_mae_pp": 4.220444,
+      "maximum_prefix_mae_degradation_vs_v2_curve_gate_pp": 0.5,
+      "interpretation": "development_gate_only_not_external_confirmation"
+    },
+    "new_external_dataset_gate": {
+      "minimum_physical_cells": 30,
+      "protocol_must_be_frozen_before_outcome_scoring": true,
+      "no_reuse_of_nasa_or_attia_as_independent_evidence": true
+    }
+  },
+  "claim_boundaries": {
+    "allowed_claims": [
+      "retrospective_evidence_weighted_mixture_development",
+      "future_label_firewall_software_validation",
+      "descriptive_model_weight_and_refusal_analysis"
+    ],
+    "prohibited_claims": [
+      "nasa_v3_is_preregistered_outcome_blind_confirmation",
+      "attia_2020_is_still_an_unseen_external_test",
+      "lfp_calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "hithium_product_accuracy",
+      "stationary_storage_field_validation",
+      "formal_uncertainty_coverage",
+      "inferential_significance_from_four_nasa_cells"
+    ]
+  }
+}
