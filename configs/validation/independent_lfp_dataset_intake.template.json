@@ -1,0 +1,83 @@
+{
+  "schema_version": "lifetwin.independent_lfp_dataset_intake.v1",
+  "intake_id": "REPLACE_BEFORE_USE",
+  "created_at_utc": "REPLACE_BEFORE_USE",
+  "prepared_by": "Jincheng Liu",
+  "candidate_id": "lifetwin_safe_hard_transfer_candidate_v1",
+  "dataset": {
+    "dataset_id": "REPLACE_BEFORE_USE",
+    "title": "REPLACE_BEFORE_USE",
+    "doi_or_persistent_url": "https://example.invalid/replace-before-use",
+    "repository_url": "https://example.invalid/replace-before-use",
+    "repository_version": "REPLACE_BEFORE_USE",
+    "access_mode": "not_acquired",
+    "paper_license": {
+      "status": "unclear",
+      "identifier": null,
+      "url": null,
+      "scope_note": "Article rights are tracked separately from data rights."
+    },
+    "data_license": {
+      "status": "unclear",
+      "identifier": null,
+      "url": null,
+      "scope_note": "Do not acquire or model data until the permitted scope is recorded."
+    },
+    "artifacts": [],
+    "cathode_chemistry": "REPLACE_BEFORE_USE",
+    "anode_chemistry": "REPLACE_BEFORE_USE",
+    "aging_mode": "controlled_calendar",
+    "time_unit": "day",
+    "physical_cell_id_field": "REPLACE_BEFORE_USE",
+    "condition_id_fields": [
+      "temperature_c",
+      "storage_soc_pct"
+    ],
+    "outcome_fields": [
+      "capacity_retention_pct"
+    ]
+  },
+  "structure_audit": {
+    "metadata_only_audit": true,
+    "outcome_values_inspected": false,
+    "machine_readable_observations_verified": false,
+    "physical_cell_ids_verified": false,
+    "calendar_aging_separable_verified": false,
+    "maximum_observed_duration_days": null,
+    "observed_physical_cell_count": null,
+    "observed_independent_scoring_cluster_count": null,
+    "minimum_observed_positive_prefix_observations": null,
+    "minimum_observed_future_observations": null,
+    "minimum_observed_future_to_landmark_time_ratio": null,
+    "partition_identifiers_available": false,
+    "candidate_landmarks_derived_without_outcome_values": false
+  },
+  "outcome_exposure": {
+    "classification": "unclassifiable",
+    "classification_reason": "REPLACE_AFTER_RECORDING_ALL_PROJECT_EXPOSURES",
+    "target_outcome_exposure_log": []
+  },
+  "data_rights_confirmation": {
+    "basis": "none",
+    "permission_record_sha256": null,
+    "permission_record_publicly_redistributable": false,
+    "noncommercial_research_confirmed": false,
+    "competition_evaluation_confirmed": false,
+    "local_feature_extraction_confirmed": false,
+    "model_training_and_evaluation_confirmed": false,
+    "aggregate_metrics_and_figures_confirmed": false,
+    "derived_tables_without_raw_measurements_confirmed": false,
+    "raw_data_redistribution_confirmed": false,
+    "commercial_model_development_confirmed": false
+  },
+  "requested_use": {
+    "noncommercial_research": true,
+    "competition_evaluation": true,
+    "local_feature_extraction": true,
+    "model_training_and_evaluation": true,
+    "aggregate_metrics_and_figures": true,
+    "derived_tables_without_raw_measurements": true,
+    "raw_data_redistribution": false,
+    "commercial_model_development": false
+  }
+}

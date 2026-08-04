@@ -1,0 +1,123 @@
+{
+  "schema_version": "lifetwin.independent_safe_hard_candidate.v1",
+  "candidate_id": "lifetwin_safe_hard_transfer_candidate_v1",
+  "status": "nominated_before_next_independent_dataset",
+  "nomination_date": "2026-08-04",
+  "author": "Jincheng Liu",
+  "selection_provenance": {
+    "selected_after_development_outcomes_were_exposed": true,
+    "independent_confirmation_claim": false,
+    "fastcharge_v1_score_sha256": "61421e5b864336831320914675c5d12887ab6c74830c47b6dddc702fe56a6aec",
+    "fastcharge_v2_prediction_sha256": "21257adc281205a998184328f7836fc7a87b07323eaea7f093c580b2ea9a5da9",
+    "fastcharge_v2_score_sha256": "a0b1a33fe02eb513267944d4acfc29cd2ec7816ae77adad3f9dc8a0d405e4711",
+    "nasa_v3_score_sha256": "f98d7924740a1d7d39dd4f6a43cf5a8bf5c1231898ee1dcedbeb3eaf6cbd061d",
+    "interpretation": "method nomination for a future untouched dataset, not a new result on exposed cohorts"
+  },
+  "intended_domain": {
+    "cathode": "LFP",
+    "anode": "graphite",
+    "aging_mode": "separable_calendar_aging",
+    "minimum_observed_duration_days": 730,
+    "statistical_unit": "physical_cell_trajectory",
+    "target_outcome": "capacity_retention_pct"
+  },
+  "fixed_structure": {
+    "primary_model_id": "safe_hard_local_risk_selector",
+    "target_input_rule": "landmark_prefix_only",
+    "complete_reference_histories_rule": "training_partition_only",
+    "partition_rule": "training_calibration_test_audit_physical_cell_ids_pairwise_disjoint",
+    "base_expert_ids": [
+      "target_prefix_persistence",
+      "target_prefix_sqrt_time",
+      "target_prefix_bounded_power_law",
+      "nearest_neighbor_delta_transfer"
+    ],
+    "safe_pool": {
+      "qualification_source": "training_partition_nested_leave_one_cluster_out",
+      "persistence_anchor_always_included": true,
+      "maximum_relative_iae_vs_persistence": 1.25,
+      "maximum_absolute_iae_above_persistence_pp": 0.1,
+      "ineligible_expert_weight": 0.0
+    },
+    "local_risk": {
+      "risk_source": "training_partition_nested_leave_one_cluster_out_errors",
+      "neighbor_count_grid": [
+        3,
+        5,
+        8
+      ],
+      "neighbor_weighting": "inverse_prefix_signature_distance",
+      "dispersion_penalty": 0.5,
+      "risk_margin_grid": [
+        0.0,
+        0.1,
+        0.2,
+        0.3,
+        0.5
+      ],
+      "nested_selection_objective": "minimum_cluster_equal_iae_then_minimum_worst_cluster_regression_then_larger_margin_then_smaller_neighbor_count"
+    },
+    "decision_rule": {
+      "supported_case": "choose_lowest_local_risk_expert_within_safe_pool",
+      "ambiguous_case": "use_lowest_global_training_loo_risk_expert_within_safe_pool",
+      "out_of_domain_case": "refuse_numeric_confirmation_output",
+      "continuous_mixture_is_primary": false
+    },
+    "prefix_signature": {
+      "required_features": [
+        "capacity_full_slope_pp_per_day",
+        "capacity_recent_slope_pp_per_day",
+        "capacity_slope_disagreement_pp_per_day",
+        "capacity_residual_std_pp",
+        "capacity_recovery_fraction",
+        "log_observation_density_per_day"
+      ],
+      "condition_features": [
+        "temperature_c",
+        "storage_soc_pct"
+      ],
+      "optional_features_must_be_frozen_before_target_outcomes": [
+        "internal_resistance_change_fraction",
+        "coulombic_efficiency_change",
+        "energy_efficiency_change"
+      ]
+    },
+    "uncertainty_rule": {
+      "point_model_and_interval_issuance_separated": true,
+      "operational_interval_requires_independent_route_calibration": true,
+      "minimum_calibration_clusters_per_route": 20,
+      "minimum_audit_clusters_per_route": 20,
+      "otherwise": "diagnostic_interval_or_abstention_only"
+    }
+  },
+  "dataset_specific_freeze_required": [
+    "exact_artifact_hashes_and_license_scope",
+    "outcome_exposure_classification",
+    "physical_cell_and_cluster_partitions",
+    "available_covariate_registry",
+    "primary_landmark_and_common_future_window",
+    "training_selected_neighbor_count_and_risk_margin",
+    "adapter_scorer_environment_and_model_bundle_hashes"
+  ],
+  "forbidden_adaptation": [
+    "using_test_or_audit_suffix_outcomes_for_expert_qualification",
+    "using_test_or_audit_suffix_outcomes_for_neighbor_or_margin_selection",
+    "changing_safe_pool_thresholds_after_test_or_audit_outcomes",
+    "adding_optional_features_after_test_or_audit_outcomes",
+    "replacing_the_primary_model_after_test_or_audit_scoring",
+    "reporting_only_the_better_of_test_and_audit"
+  ],
+  "claim_boundaries": {
+    "allowed_before_independent_execution": [
+      "future_independent_validation_candidate_nominated",
+      "software_firewall_and_protocol_readiness"
+    ],
+    "prohibited_before_independent_execution": [
+      "independent_long_term_lfp_confirmation",
+      "hithium_product_accuracy",
+      "station_level_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_interval_coverage"
+    ]
+  }
+}

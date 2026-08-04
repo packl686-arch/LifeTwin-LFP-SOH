@@ -46,3 +46,15 @@
 已经验证的是：软件层面的未来标签隔离、公开循环老化数据上的轨迹迁移可行性、安全专家筛选机制，以及失败时的可追溯回退。
 
 尚未验证的是：长期日历老化、储能电站真实工况、跨厂商和跨规格迁移、海辰内部产品表现，以及 15-25 年预测精度。下一阶段不应继续在已经看过结果的数据上调参，而应冻结安全硬门控方案，在新的长期 LFP 队列或海辰内部数据上做真正的独立验证。
+
+## 独立验证候选已冻结（2026-08-04）
+
+项目已把 FastCharge V2 中表现最稳健的安全硬门控结构提名为下一份未接触长期 LFP 数据的主候选，并固定安全池门槛、局部风险算法、邻居数/风险余量训练网格、回退规则和区间发行门槛。候选语义 SHA-256 为 `596108e19ca0a8c7fb712bf82ca5be93817524f5f0c912f3b71b180a0fcba3af`。这是开发结果之后的候选提名，不是独立确认。
+
+同时新增 metadata-only 数据 intake 编译器：它在读取目标容量值前检查数据许可、原始文件版本与哈希、物理电芯 ID、日历老化可分离性、时长、cluster 数、前后缀支持和项目结局接触史。通过 intake 也只会进入第二人复核，不会自动冻结或提高证据等级；失败草案自动降为 `unclassifiable + D0`。
+
+- [独立验证执行手册](docs/independent_validation_execution_2026_08_cn.md)
+- [冻结候选配置](configs/validation/independent_safe_hard_candidate_v1.json)
+- [数据 intake 模板](configs/validation/independent_lfp_dataset_intake.template.json)
+- [intake 编译器](scripts/compile_independent_lfp_intake.py)
+- [对抗测试](tests/test_independent_lfp_intake.py)

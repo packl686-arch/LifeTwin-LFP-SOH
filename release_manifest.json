@@ -15,6 +15,8 @@
     "configs/experiments/nasa_prefix_loco_v1.json",
     "configs/experiments/synthetic_long_horizon_identifiability_v2.json",
     "configs/experiments/synthetic_long_horizon_identifiability_v2_1_amendment.json",
+    "configs/validation/independent_lfp_dataset_intake.template.json",
+    "docs/independent_validation_execution_2026_08_cn.md",
     "docs/nasa_pcoe_battery_data_provenance.md",
     "reports/synthetic_long_horizon_identifiability_freeze_record_v2.json",
     "reports/synthetic_long_horizon_identifiability_freeze_record_v2_1.json",
@@ -29,6 +31,7 @@
     "reports/fastcharge_lfp_trajectory_portability_v1_2026-08-04.md",
     "requirements/v015-formal.txt",
     "requirements/v021-formal.txt",
+    "scripts/compile_independent_lfp_intake.py",
     "scripts/run_calendar_long_horizon_v015.py",
     "scripts/run_calendar_long_horizon_v016.py",
     "scripts/run_fastcharge_safe_prior_v2.py",
@@ -82,6 +85,7 @@
     "src/lifetwin/experiments/calendar_long_horizon_v016_state.py",
     "src/lifetwin/experiments/calendar_long_horizon_v016_terminal.py",
     "src/lifetwin/experiments/calendar_long_horizon_v016_training.py",
+    "src/lifetwin/validation/independent_intake.py",
     "showcase/evidence_v015/README.md",
     "showcase/evidence_v015/synthetic_long_horizon_identifiability_v2/center_state_checkpoint.json",
     "showcase/evidence_v015/synthetic_long_horizon_identifiability_v2/exposure_log.jsonl",
@@ -136,7 +140,8 @@
     "tests/test_nasa_prefix_loco.py",
     "tests/test_nasa_v3_post_outcome_audit.py",
     "tests/test_fastcharge_safe_prior_v2.py",
-    "tests/test_fastcharge_trajectory_portability.py"
+    "tests/test_fastcharge_trajectory_portability.py",
+    "tests/test_independent_lfp_intake.py"
   ],
   "frozen_files_sha256": {
     ".gitattributes": "16e2294e00fd82f446fbc77fa05f54a04026254a6ed0ecc42e3bb4ad545cd18e",
@@ -161,6 +166,7 @@
     "configs/inference/calendar_prefix_request.schema.json": "d78530f506adf2cc40dfbf90dffa994590a049c82e2545274e1d1f7650a84aed",
     "configs/validation/independent_long_term_lfp_protocol.schema.json": "0dc0b9f1592545070d9526263b06ad481c59cd154eba461601f4141cc4afe1ce",
     "configs/validation/independent_long_term_lfp_protocol.template.json": "8dfc91db85d5a06ecf4a004e4211dd241d2eb0b3004ae8bcb5befe413d2d36a8",
+    "configs/validation/independent_safe_hard_candidate_v1.json": "59b07e6efd29e2afa8655e036cb7b13c83c887dbe7ffeb5f7adfadaf7e2f894a",
     "configs/validation/long_term_lfp_dataset_registry.json": "62e1d26989fa99f7f47218ea77daff6f29d497fe0decd2652dba4b2e2506b308",
     "data/external/geisbauer_2022/LFP_Data.csv": "4b42216bc87bbb3cfeab18a307da1149b6ca4583898cc359e32c81d219bb03cb",
     "data/external/geisbauer_2022/README.md": "822804ff3118c3655ba077fd706e4c17ca2c2aee1e1f5c00b1e65491687ee15f",
@@ -328,7 +334,7 @@
     "src/lifetwin/models/calendar_v4_hybrid.py": "6176ba88667e4d1ead17a7c1dff389267e960c86fb408fedf5106e1319783b71",
     "src/lifetwin/models/probabilistic.py": "afa4c79d3d10710b51e1bc591a1f2aa30dbc86ca8d7271ffe776c78c947d4d00",
     "src/lifetwin/models/reference.py": "b791cf9f53abacd2b3d38509ed9eabbb650dc598b5375ccbb72a4cc30f895aef",
-    "src/lifetwin/validation/__init__.py": "559e2af7b6dd6a0325d17751a2ce3e041e39f39d0d1f731d4c8a7c814dc425e7",
+    "src/lifetwin/validation/__init__.py": "7f3aee536af152d6b8b445b6cfda1397c36cb89dda53a5e9e135a6baf4228813",
     "src/lifetwin/validation/long_term_protocol.py": "69d97bc9c9a4a436189528cb87978d2e03f5c7d91bad964307fcaa6d9b70ced3",
     "tests/conftest.py": "cd0846474e65884d8cce46e3415f30f837ab1944a58b217814e77a6e112d8501",
     "tests/test_calendar_landmark_readiness.py": "c2075e8a1317276ad85e88601a1e8240178ea8696735dd3b775d796ba59e086b",
@@ -420,6 +426,9 @@
     "FastCharge trajectory V1 failed its primary MoE development gate; the failure remains part of the public record",
     "FastCharge safe-prior V2 froze cycle-300 predictions before scoring cycles 201-300 but remains post-V1 development on an outcome-exposed public cohort",
     "The FastCharge V2 safe hard selector is a promising retrospective candidate, not an independently confirmed production model",
-    "FastCharge source content hashes are incomplete and the Table 9 identity crosswalk is source-derived rather than a direct author assertion"
+    "FastCharge source content hashes are incomplete and the Table 9 identity crosswalk is source-derived rather than a direct author assertion",
+    "The safe hard transfer candidate was nominated after development outcomes were exposed and is not an independent confirmation",
+    "A ready metadata intake is only permission to begin manual dataset-specific freeze review, not a frozen protocol or validation result",
+    "The independent intake compiler accepts no measurement-value fields and never freezes a protocol automatically"
   ]
 }
