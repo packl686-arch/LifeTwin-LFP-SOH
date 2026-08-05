@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
           cache: pip
       - name: Install
         run: >-
@@ -35,17 +35,50 @@ jobs:
           # V0.14 verifies source blobs at the frozen execution commit.
           fetch-depth: 0
       - uses: actions/setup-python@v5
+        if: runner.os != 'Windows'
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
           cache: pip
-      - name: Install clean environment
+      - name: Install uv for the frozen Windows runtime
+        if: runner.os == 'Windows'
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.32"
+          python-version: "3.12.13"
+      - name: Install clean environment (Ubuntu)
+        if: runner.os != 'Windows'
         run: >-
           python -m pip install
           -c requirements/reproduction.txt
           -e ".[dev,showcase]"
-      - name: Full release reproduction
+      - name: Install clean environment (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          uv venv --python 3.12.13 .ci-venv
+          uv pip install --python .ci-venv\Scripts\python.exe -c requirements/reproduction.txt -e ".[dev,showcase]"
+      - name: Verify frozen runtime (Ubuntu)
+        if: runner.os != 'Windows'
+        run: >-
+          python -c "import platform; assert platform.python_version() == '3.12.13', platform.python_version()"
+      - name: Verify frozen runtime (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          .ci-venv\Scripts\python.exe -c
+          "import platform; assert platform.python_version() == '3.12.13', platform.python_version()"
+      - name: Full release reproduction (Ubuntu)
+        if: runner.os != 'Windows'
         run: >-
           python scripts/reproduce_public_release.py
+          --mode full
+          --output artifacts/reproduction
+          --retain-failed-staging
+      - name: Full release reproduction (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          .ci-venv\Scripts\python.exe scripts/reproduce_public_release.py
           --mode full
           --output artifacts/reproduction
           --retain-failed-staging
@@ -55,6 +88,6 @@ jobs:
           name: reproduction-${{ matrix.os }}
           path: |
             artifacts/reproduction
-            artifacts/.reproduction.staging-*
+            artifacts/.lt-stage-*
           include-hidden-files: true
           if-no-files-found: error

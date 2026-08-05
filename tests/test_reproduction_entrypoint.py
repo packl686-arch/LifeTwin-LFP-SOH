@@ -12,6 +12,7 @@ import uuid
 
 import pytest
 
+from lifetwin.atomic_publish import AtomicPublishRetryExhausted
 from scripts.reproduce_public_release import (
     CORE_PHASE8_CSVS,
     FUTURE_ATTACK_HASH_PAIRS,
@@ -19,6 +20,7 @@ from scripts.reproduce_public_release import (
     PHASE1_SOLVER_ABSOLUTE_TOLERANCE,
     ReproductionError,
     STATE_HASH_COLUMNS,
+    STAGING_GLOB,
     V012_CORE_CSVS,
     V012_ANALYZER,
     _clean_git_head,
@@ -35,6 +37,8 @@ from scripts.reproduce_public_release import (
     _paired_sha256_columns_valid,
     _phase1_csv_semantic_comparison,
     _rmtree,
+    _auxiliary_path,
+    _staging_path,
     _v012_claim_guard,
     reproduce,
 )
@@ -655,7 +659,6 @@ def test_failed_reproduction_leaves_no_partial_output(
     def fail_command(*_args: object, **_kwargs: object) -> dict[str, object]:
         environment = _kwargs["environment"]
         scratch = Path(environment["LIFETWIN_TEST_SCRATCH"])
-        scratch.mkdir(parents=True)
         readonly = scratch / "readonly"
         readonly.write_bytes(b"git object")
         readonly.chmod(stat.S_IREAD)
@@ -666,7 +669,7 @@ def test_failed_reproduction_leaves_no_partial_output(
         reproduce(writable_root, output, "tests")
 
     assert not output.exists()
-    assert not list(output.parent.glob(".reproduction.staging-*"))
+    assert not list(output.parent.glob(STAGING_GLOB))
 
 
 def test_failed_reproduction_can_retain_unpublished_diagnostics(
@@ -684,7 +687,9 @@ def test_failed_reproduction_can_retain_unpublished_diagnostics(
     )
 
     def fail_command(*_args: object, **_kwargs: object) -> dict[str, object]:
-        staging = Path(_kwargs["environment"]["LIFETWIN_TEST_SCRATCH"]).parent
+        environment = _kwargs["environment"]
+        staging = next(output.parent.glob(STAGING_GLOB))
+        assert Path(environment["TMP"]).parent == output.parent
         (staging / "diagnostic.txt").write_text("failure evidence\n", encoding="utf-8")
         raise ReproductionError("intentional failure")
 
@@ -697,12 +702,96 @@ def test_failed_reproduction_can_retain_unpublished_diagnostics(
             retain_failed_staging=True,
         )
 
-    retained = list(output.parent.glob(".reproduction.staging-*"))
+    retained = list(output.parent.glob(STAGING_GLOB))
     assert not output.exists()
     assert len(retained) == 1
     assert (retained[0] / "diagnostic.txt").read_text(encoding="utf-8") == (
         "failure evidence\n"
     )
+
+
+def test_atomic_publish_exhaustion_always_retains_complete_staging(
+    writable_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = writable_root / "artifacts/reproduction"
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._preflight",
+        lambda *_: {"status": "passed"},
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._release_verification",
+        lambda *_: {"status": "passed"},
+    )
+
+    def successful_command(
+        command: list[str],
+        **_kwargs: object,
+    ) -> dict[str, object]:
+        return {
+            "command": command,
+            "returncode": 0,
+            "elapsed_seconds": 0.0,
+            "stdout": "",
+            "stderr": "",
+        }
+
+    def exhaust_publish(source: Path, destination: Path) -> int:
+        assert (source / "reproduction_summary.json").is_file()
+        raise AtomicPublishRetryExhausted(source, destination, 7)
+
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release._run_command",
+        successful_command,
+    )
+    monkeypatch.setattr(
+        "scripts.reproduce_public_release.publish_directory",
+        exhaust_publish,
+    )
+
+    with pytest.raises(
+        ReproductionError,
+        match="exhausted after 7 attempts",
+    ) as captured:
+        reproduce(writable_root, output, "tests")
+
+    retained = list(output.parent.glob(STAGING_GLOB))
+    assert len(retained) == 1
+    assert not output.exists()
+    assert (retained[0] / "reproduction_summary.json").is_file()
+    assert f"source={retained[0]}" in str(captured.value)
+    assert f"destination={output.resolve()}" in str(captured.value)
+
+
+def test_staging_path_is_short_and_independent_of_output_name() -> None:
+    output = PROJECT_ROOT / "artifacts" / "reproduction-windows-audit-20260805"
+    run_id = "f" * 32
+    staging = _staging_path(output, run_id)
+    legacy = output.parent / f".{output.name}.staging-{run_id}"
+
+    assert staging.parent == output.parent
+    assert staging.name == f".lt-stage-{run_id}"
+    assert output.name not in staging.name
+    assert len(str(legacy)) - len(str(staging)) == len(output.name)
+    assert len(staging.name) == 42
+
+
+def test_auxiliary_paths_are_short_siblings() -> None:
+    output = PROJECT_ROOT / "artifacts" / "reproduction-windows-audit-20260805"
+    run_id = "f" * 32
+
+    runtime_temp = _auxiliary_path(output, ".lt-tmp-", run_id)
+    test_scratch = _auxiliary_path(output, ".lt-test-", run_id)
+
+    assert runtime_temp.parent == output.parent
+    assert test_scratch.parent == output.parent
+    assert runtime_temp.name == ".lt-tmp-ffffffffffff"
+    assert test_scratch.name == ".lt-test-ffffffffffff"
+    assert output.name not in runtime_temp.name
+    assert output.name not in test_scratch.name
+    assert len(str(test_scratch)) < len(
+        str(output.parent / ".bt-full-20260805")
+    ) + 10
 
 
 def test_phase1_audit_summary_and_file_inventory(writable_root: Path) -> None:
@@ -830,6 +919,11 @@ def test_reproduction_summary_schema_v4_adds_v012_without_changing_v011(
     summary = reproduce(writable_root, output, "tests")
 
     assert summary["schema_version"] == 4
+    pytest_command = summary["pytest"]["command"]
+    assert pytest_command[-2] == "--basetemp"
+    assert Path(pytest_command[-1]).parent == output.parent
+    assert Path(pytest_command[-1]).name.startswith(".lt-test-")
+    assert not Path(pytest_command[-1]).exists()
     assert summary["evidence_v011"] == {
         "status": "skipped_by_mode",
         "mode": "tests",

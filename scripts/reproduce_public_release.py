@@ -20,6 +20,11 @@ import time
 from typing import Any
 import uuid
 
+from lifetwin.atomic_publish import (
+    AtomicPublishRetryExhausted,
+    publish_directory,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PHASE8_RUNNER = Path("scripts/run_calendar_v3_activation_development.py")
@@ -157,6 +162,11 @@ FUTURE_ATTACK_HASH_PAIRS = (
 )
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 REPRODUCTION_PYTHON = (3, 12)
+STAGING_PREFIX = ".lt-stage-"
+STAGING_GLOB = f"{STAGING_PREFIX}*"
+AUXILIARY_TOKEN_LENGTH = 12
+RUNTIME_TEMP_PREFIX = ".lt-tmp-"
+TEST_SCRATCH_PREFIX = ".lt-test-"
 
 
 @dataclass(frozen=True)
@@ -2211,6 +2221,22 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         )
 
 
+def _staging_path(output: Path, run_id: str | None = None) -> Path:
+    """Return a short, output-name-independent sibling used for atomic publishing."""
+    identifier = uuid.uuid4().hex if run_id is None else run_id
+    return output.parent / f"{STAGING_PREFIX}{identifier}"
+
+
+def _auxiliary_path(
+    output: Path,
+    prefix: str,
+    run_id: str | None = None,
+) -> Path:
+    """Return a short sibling for subprocess scratch data on Windows."""
+    identifier = uuid.uuid4().hex if run_id is None else run_id
+    return output.parent / f"{prefix}{identifier[:AUXILIARY_TOKEN_LENGTH]}"
+
+
 def reproduce(
     project_root: Path,
     output: Path,
@@ -2228,15 +2254,17 @@ def reproduce(
     preflight = _preflight(project_root, mode)
     release_verification = _release_verification(project_root)
     output.parent.mkdir(parents=True, exist_ok=True)
-    staging = output.parent / f".{output.name}.staging-{uuid.uuid4().hex}"
+    staging = _staging_path(output)
     staging.mkdir()
+    runtime_temp = _auxiliary_path(output, RUNTIME_TEMP_PREFIX)
+    test_scratch = _auxiliary_path(output, TEST_SCRATCH_PREFIX)
     try:
         environment = _command_environment(project_root)
-        runtime_temp = staging / "tmp"
         runtime_temp.mkdir()
+        test_scratch.mkdir()
         for variable in ("TMP", "TEMP", "TMPDIR"):
             environment[variable] = str(runtime_temp)
-        environment["LIFETWIN_TEST_SCRATCH"] = str(staging / "test-scratch")
+        environment["LIFETWIN_TEST_SCRATCH"] = str(test_scratch)
         command_summaries: dict[str, object] = {}
         phase8_comparisons: list[dict[str, object]] = []
         figure: dict[str, object] | None = None
@@ -2487,8 +2515,16 @@ def reproduce(
 
         pytest_result: dict[str, object]
         if mode in {"tests", "full"}:
+            pytest_command = [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "--basetemp",
+                str(test_scratch),
+            ]
             pytest_run = _run_command(
-                [sys.executable, "-m", "pytest", "-q"],
+                pytest_command,
                 cwd=project_root,
                 environment=environment,
             )
@@ -2499,7 +2535,7 @@ def reproduce(
             }
             pytest_result = {
                 "status": "passed",
-                "command": [sys.executable, "-m", "pytest", "-q"],
+                "command": pytest_command,
             }
         else:
             pytest_result = {
@@ -2510,7 +2546,7 @@ def reproduce(
         experiment_status = (
             "passed" if mode in {"experiment", "full"} else "skipped_by_mode"
         )
-        for scratch_path in (runtime_temp, staging / "test-scratch"):
+        for scratch_path in (runtime_temp, test_scratch):
             if scratch_path.exists():
                 _rmtree(scratch_path)
         summary: dict[str, object] = {
@@ -2538,13 +2574,28 @@ def reproduce(
             "commands": command_summaries,
         }
         _write_json(staging / "reproduction_summary.json", summary)
-        os.replace(staging, output)
+        publish_directory(staging, output)
         return summary
     except BaseException as error:
-        if retain_failed_staging:
-            raise ReproductionError(
-                f"{error}\nFailed diagnostic staging retained at: {staging}"
-            ) from error
+        auxiliary_cleanup_errors: list[OSError] = []
+        for scratch_path in (runtime_temp, test_scratch):
+            try:
+                if scratch_path.exists():
+                    _rmtree(scratch_path)
+            except OSError as cleanup_error:
+                auxiliary_cleanup_errors.append(cleanup_error)
+        publish_retry_exhausted = isinstance(
+            error,
+            AtomicPublishRetryExhausted,
+        )
+        if retain_failed_staging or publish_retry_exhausted:
+            detail = f"{error}\nFailed diagnostic staging retained at: {staging}"
+            if auxiliary_cleanup_errors:
+                detail += (
+                    "\nAuxiliary scratch cleanup also failed: "
+                    + "; ".join(str(item) for item in auxiliary_cleanup_errors)
+                )
+            raise ReproductionError(detail) from error
         try:
             if staging.exists():
                 _rmtree(staging)
@@ -2552,6 +2603,11 @@ def reproduce(
             raise ReproductionError(
                 "Reproduction failed and staging cleanup also failed: "
                 f"{staging} ({cleanup_error})"
+            ) from error
+        if auxiliary_cleanup_errors:
+            raise ReproductionError(
+                "Reproduction failed and auxiliary scratch cleanup also failed: "
+                + "; ".join(str(item) for item in auxiliary_cleanup_errors)
             ) from error
         raise
 
