@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "record_date": "2026-08-05",
+  "status": "local_r3_r4_passed_pending_post_evidence_r5_and_remote_actions",
+  "branch": "codex/windows-ci-atomic-closeout-20260805",
+  "base_commit": "af96cd3edad6abade1ef2425fcfe2544dd5c8d5b",
+  "code_commit": "18bd294d2abf6945cb54a59d44b936c47210fd61",
+  "protocol": {
+    "id": "lifetwin-windows-atomic-directory-publish-v1-20260805",
+    "sha256": "485e8cc5a735d28cd1557e361bd51156ccc30bb8f4afe8628b05757a365551c8",
+    "maximum_replace_attempts_including_first": 7,
+    "delays_before_attempts_2_through_7_seconds": [
+      0.05,
+      0.10,
+      0.20,
+      0.40,
+      0.80,
+      1.60
+    ],
+    "retryable_error": "Windows PermissionError with winerror 5 only",
+    "scope": "final os.replace directory publication only"
+  },
+  "changed_files": [
+    ".github/workflows/ci.yml",
+    "release_manifest.json",
+    "scripts/reproduce_public_release.py",
+    "scripts/run_calendar_v4_calibration_robustness.py",
+    "scripts/run_calendar_v4_hybrid_development.py",
+    "scripts/run_geisbauer_external_stress.py",
+    "scripts/run_geisbauer_robustness_audit.py",
+    "src/lifetwin/atomic_publish.py",
+    "tests/test_atomic_publish.py",
+    "tests/test_calendar_v4_and_geisbauer_runners.py",
+    "tests/test_reproduction_entrypoint.py"
+  ],
+  "validation": {
+    "diff_checks": {
+      "cached": "passed",
+      "unstaged": "passed"
+    },
+    "ruff": "passed",
+    "release_verification": {
+      "status": "passed",
+      "scanned_tracked_files": 355,
+      "hash_mismatches": 0,
+      "broken_markdown_links": 0
+    },
+    "atomic_publish_tests": {
+      "passed": 10,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "directly_related_tests": {
+      "passed": 73,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "repeat_stability": {
+      "summary_sha256": "880ee83383b605b0cc78460b3eaa4f8ecaacc5b93d66bef2d13c40fa56db8012",
+      "total_runs": 40,
+      "nonzero_exit_codes": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "groups": [
+        {
+          "id": "v4",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 88.771
+        },
+        {
+          "id": "external",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 134.115
+        },
+        {
+          "id": "v4robust",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 177.006
+        },
+        {
+          "id": "geirobust",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 24.338
+        }
+      ]
+    },
+    "full_pytest_candidate": {
+      "passed": 873,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 1,
+      "allowed_skip": "tests/test_v016_terminal.py:738",
+      "junit_sha256": "8d45143581dae5073e86fff6a1d8f356b8bd79ffc1dfe7e32c2f975494902d72"
+    }
+  },
+  "clean_full_reproductions": [
+    {
+      "id": "r3",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r3",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 873,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "elapsed_seconds": 931.754706,
+      "key_sha256": {
+        "reproduction_summary.json": "2d6a3a281a2424835c8e6ec8f9ef03e812a042dff8e8d122e2ba4418a5012726",
+        "evidence_v011/v4/result.json": "4ab67169e46bc24b50bc1634820b5b742583a3b39c5d6ddae5e04886092be675",
+        "evidence_v011/geisbauer/result.json": "12fa3d37e6258047b0edd3bc988aa28c9bd019359576d363379b4fd279491bec",
+        "evidence_v012/v4_calibration_robustness/result.json": "b209114b72e7344c20501277d6b8607e3da73a8a9fe9332e837b886a393bc8e3",
+        "evidence_v012/geisbauer_robustness/result.json": "94fa137038f2486f1314ca8ef9dd949efe5770b96bcbfccfba0817c00bf29da6",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    },
+    {
+      "id": "r4",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r4",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 873,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "elapsed_seconds": 1149.112798,
+      "key_sha256": {
+        "reproduction_summary.json": "c9734eec4b6b3e5294bbcf5de46c2ab588c33d4f09a5369bd7a7615aa4231dda",
+        "evidence_v011/v4/result.json": "4fe132dc56ad289545be93ba19ba9541bfa7d05096dd852ee6f035aaa042aabd",
+        "evidence_v011/geisbauer/result.json": "dfc36328dcbca3ee97135da568fd4ba2fc17be6e47051db22aea28fd72bedc0c",
+        "evidence_v012/v4_calibration_robustness/result.json": "9c737a36679509c937b3ee31891ff8291236ebf4d5f1ee12466b177985224093",
+        "evidence_v012/geisbauer_robustness/result.json": "68781ebd28eeafca4ac99d0d8fa15543ca1ecd13d1bcec35cea1d81e6fb4089c",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    }
+  ],
+  "evidence_boundary": {
+    "scientific_results_changed": false,
+    "thresholds_changed": false,
+    "seeds_changed": false,
+    "data_splits_changed": false,
+    "frozen_outputs_changed": false,
+    "new_model_validity_claim": false
+  },
+  "not_done": [
+    "No new model, dataset training, V2.1 formal experiment, presentation, or UI work was performed.",
+    "No main-branch push, pull request, merge, release, or tag was performed.",
+    "No enterprise data or private local data was accessed or published.",
+    "Post-evidence r5 and branch GitHub Actions are intentionally not claimed by this pre-r5 record."
+  ]
+}
