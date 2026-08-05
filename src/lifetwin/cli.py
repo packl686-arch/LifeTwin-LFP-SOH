@@ -4,7 +4,6 @@ import argparse
 import hashlib
 from importlib import metadata as importlib_metadata
 import json
-import os
 from pathlib import Path
 import shutil
 import sys
@@ -12,6 +11,10 @@ import uuid
 
 import pandas as pd
 
+from lifetwin.atomic_publish import (
+    AtomicPublishRetryExhausted,
+    publish_directory,
+)
 from lifetwin.data.beep import prepare_fastcharge_frames
 from lifetwin.data.attia import (
     ATTIA_AUTHOR_CODE_COMMIT,
@@ -1859,7 +1862,9 @@ def _calendar_prefix_predict(args: argparse.Namespace) -> int:
             + "\n",
             encoding="utf-8",
         )
-        os.replace(staging, output_dir)
+        publish_directory(staging, output_dir)
+    except AtomicPublishRetryExhausted:
+        raise
     except BaseException:
         if staging.exists():
             shutil.rmtree(staging)
