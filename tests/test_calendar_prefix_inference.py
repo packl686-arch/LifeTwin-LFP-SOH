@@ -16,6 +16,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 import lifetwin.inference.calendar_prefix as calendar_prefix
+from lifetwin import atomic_publish
 from lifetwin import cli
 from lifetwin.experiments.calendar_v4_hybrid_development import (
     CALIBRATION_CONDITION_IDS,
@@ -800,6 +801,151 @@ def test_cli_packages_both_golden_decisions_without_changing_the_forecast(
             float_format="%.17g",
         ).encode("utf-8")
         assert forecast_path.read_bytes() == expected_bytes
+
+
+def test_cli_retries_transient_windows_publish_without_recomputing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    golden_prefix_results: dict[
+        str, tuple[dict[str, object], pd.DataFrame]
+    ],
+) -> None:
+    output_dir = tmp_path / "retry-bundle"
+    expected_decision, expected_forecast = golden_prefix_results["fallback"]
+    real_replace = os.replace
+    predict_calls = 0
+    replace_calls = 0
+    sleeps: list[float] = []
+
+    def counted_predict(
+        *_args: object,
+        **_kwargs: object,
+    ) -> tuple[dict[str, object], pd.DataFrame]:
+        nonlocal predict_calls
+        predict_calls += 1
+        return copy.deepcopy(expected_decision), expected_forecast.copy(deep=True)
+
+    def flaky_replace(source: Path, destination: Path) -> None:
+        nonlocal replace_calls
+        replace_calls += 1
+        if replace_calls == 1:
+            error = PermissionError(13, "access denied")
+            error.winerror = 5
+            raise error
+        real_replace(source, destination)
+
+    monkeypatch.setattr(cli, "predict_calendar_prefix", counted_predict)
+    monkeypatch.setattr(atomic_publish.sys, "platform", "win32")
+    monkeypatch.setattr(atomic_publish.os, "replace", flaky_replace)
+    monkeypatch.setattr(atomic_publish.time, "sleep", sleeps.append)
+
+    assert cli._calendar_prefix_predict(_cli_args(output_dir)) == 0
+
+    assert predict_calls == 1
+    assert replace_calls == 2
+    assert sleeps == [0.05]
+    assert output_dir.is_dir()
+    assert sorted(path.name for path in output_dir.iterdir()) == [
+        "decision.json",
+        "forecast.csv",
+    ]
+
+
+def test_cli_non_winerror5_publish_failure_is_immediate_and_cleans_staging(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    golden_prefix_results: dict[
+        str, tuple[dict[str, object], pd.DataFrame]
+    ],
+) -> None:
+    output_dir = tmp_path / "nonretryable-bundle"
+    expected_decision, expected_forecast = golden_prefix_results["fallback"]
+    predict_calls = 0
+    replace_calls = 0
+    sleeps: list[float] = []
+
+    def counted_predict(
+        *_args: object,
+        **_kwargs: object,
+    ) -> tuple[dict[str, object], pd.DataFrame]:
+        nonlocal predict_calls
+        predict_calls += 1
+        return copy.deepcopy(expected_decision), expected_forecast.copy(deep=True)
+
+    def denied_replace(_source: Path, _destination: Path) -> None:
+        nonlocal replace_calls
+        replace_calls += 1
+        error = PermissionError(13, "sharing violation")
+        error.winerror = 32
+        raise error
+
+    monkeypatch.setattr(cli, "predict_calendar_prefix", counted_predict)
+    monkeypatch.setattr(atomic_publish.sys, "platform", "win32")
+    monkeypatch.setattr(atomic_publish.os, "replace", denied_replace)
+    monkeypatch.setattr(atomic_publish.time, "sleep", sleeps.append)
+
+    with pytest.raises(PermissionError) as captured:
+        cli._calendar_prefix_predict(_cli_args(output_dir))
+
+    assert captured.value.winerror == 32
+    assert predict_calls == 1
+    assert replace_calls == 1
+    assert sleeps == []
+    assert not output_dir.exists()
+    assert not list(tmp_path.glob(".nonretryable-bundle.staging-*"))
+
+
+def test_cli_publish_retry_exhaustion_retains_complete_staging(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    golden_prefix_results: dict[
+        str, tuple[dict[str, object], pd.DataFrame]
+    ],
+) -> None:
+    output_dir = tmp_path / "exhausted-bundle"
+    expected_decision, expected_forecast = golden_prefix_results["fallback"]
+    predict_calls = 0
+    replace_calls = 0
+    sleeps: list[float] = []
+
+    def counted_predict(
+        *_args: object,
+        **_kwargs: object,
+    ) -> tuple[dict[str, object], pd.DataFrame]:
+        nonlocal predict_calls
+        predict_calls += 1
+        return copy.deepcopy(expected_decision), expected_forecast.copy(deep=True)
+
+    def denied_replace(_source: Path, _destination: Path) -> None:
+        nonlocal replace_calls
+        replace_calls += 1
+        error = PermissionError(13, "access denied")
+        error.winerror = 5
+        raise error
+
+    monkeypatch.setattr(cli, "predict_calendar_prefix", counted_predict)
+    monkeypatch.setattr(atomic_publish.sys, "platform", "win32")
+    monkeypatch.setattr(atomic_publish.os, "replace", denied_replace)
+    monkeypatch.setattr(atomic_publish.time, "sleep", sleeps.append)
+
+    with pytest.raises(
+        atomic_publish.AtomicPublishRetryExhausted,
+        match="exhausted after 7 attempts",
+    ) as captured:
+        cli._calendar_prefix_predict(_cli_args(output_dir))
+
+    retained = list(tmp_path.glob(".exhausted-bundle.staging-*"))
+    assert captured.value.destination == output_dir
+    assert captured.value.attempts == 7
+    assert predict_calls == 1
+    assert replace_calls == 7
+    assert sleeps == list(atomic_publish.RETRY_DELAYS_SECONDS)
+    assert not output_dir.exists()
+    assert len(retained) == 1
+    assert sorted(path.name for path in retained[0].iterdir()) == [
+        "decision.json",
+        "forecast.csv",
+    ]
 
 
 def test_source_checkout_cli_runs_outside_repo_with_default_reference_paths(

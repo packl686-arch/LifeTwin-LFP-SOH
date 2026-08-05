@@ -9,6 +9,7 @@ import uuid
 
 import pytest
 
+from lifetwin import atomic_publish
 from lifetwin.data.geisbauer_calendar import (
     GEISBAUER_CALENDAR_OBSERVATIONS_SHA256,
 )
@@ -198,6 +199,53 @@ def test_v4_runner_rejects_changed_input_bytes_before_writing(
     with pytest.raises(ValueError, match="input SHA-256 mismatch"):
         v4_runner.run(changed, V4_CONFIG_PATH, artifact_dir)
     assert not artifact_dir.exists()
+
+
+def test_v4_runner_publish_retry_does_not_rerun_scientific_computation(
+    writable_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = writable_root / "v4_retry_artifacts"
+    real_compute = v4_runner.run_calendar_v4_hybrid_development
+    real_replace = os.replace
+    compute_calls = 0
+    replace_calls = 0
+    sleeps: list[float] = []
+
+    def counted_compute(
+        observations: object,
+        *,
+        config: object,
+    ) -> object:
+        nonlocal compute_calls
+        compute_calls += 1
+        return real_compute(observations, config=config)
+
+    def flaky_replace(source: Path, destination: Path) -> None:
+        nonlocal replace_calls
+        replace_calls += 1
+        if replace_calls == 1:
+            error = PermissionError(13, "access denied")
+            error.winerror = 5
+            raise error
+        real_replace(source, destination)
+
+    monkeypatch.setattr(
+        v4_runner,
+        "run_calendar_v4_hybrid_development",
+        counted_compute,
+    )
+    monkeypatch.setattr(atomic_publish.sys, "platform", "win32")
+    monkeypatch.setattr(atomic_publish.os, "replace", flaky_replace)
+    monkeypatch.setattr(atomic_publish.time, "sleep", sleeps.append)
+
+    result = v4_runner.run(NAUMANN_PATH, V4_CONFIG_PATH, output_dir)
+
+    assert result["artifacts"]
+    assert compute_calls == 1
+    assert replace_calls == 2
+    assert sleeps == [0.05]
+    assert output_dir.is_dir()
 
 
 def test_external_runner_rejects_changed_target_bytes_before_adapter_use(

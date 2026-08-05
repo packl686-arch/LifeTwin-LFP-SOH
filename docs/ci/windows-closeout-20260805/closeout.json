@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "record_date": "2026-08-05",
+  "last_updated": "2026-08-06",
+  "status": "closed_r8_and_remote_cross_platform_actions_passed",
+  "base_commit": "af96cd3edad6abade1ef2425fcfe2544dd5c8d5b",
+  "verified_source_commit": "a540cfca79f66983a2a242eacc2ca07a8790c731",
+  "code_commit": "18bd294d2abf6945cb54a59d44b936c47210fd61",
+  "followup_code_commit": "169d967f57903a8eada4b996ef9798aff178c5e2",
+  "protocol": {
+    "id": "lifetwin-windows-atomic-directory-publish-v1-20260805",
+    "sha256": "993422238f6427a9c6d98b12e2bcbbd60b0c2d1bf6013d74abab8ea2f7b433a9",
+    "maximum_replace_attempts_including_first": 7,
+    "delays_before_attempts_2_through_7_seconds": [
+      0.05,
+      0.10,
+      0.20,
+      0.40,
+      0.80,
+      1.60
+    ],
+    "retryable_error": "Windows PermissionError with winerror 5 only",
+    "scope": "final os.replace directory publication only"
+  },
+  "changed_files": [
+    ".github/workflows/ci.yml",
+    "release_manifest.json",
+    "scripts/reproduce_public_release.py",
+    "scripts/run_calendar_v4_calibration_robustness.py",
+    "scripts/run_calendar_v4_hybrid_development.py",
+    "scripts/run_geisbauer_external_stress.py",
+    "scripts/run_geisbauer_robustness_audit.py",
+    "src/lifetwin/atomic_publish.py",
+    "tests/test_atomic_publish.py",
+    "tests/test_calendar_v4_and_geisbauer_runners.py",
+    "tests/test_reproduction_entrypoint.py"
+  ],
+  "followup_changed_files": [
+    "release_manifest.json",
+    "src/lifetwin/cli.py",
+    "tests/test_calendar_prefix_inference.py"
+  ],
+  "r5_failure_and_diagnosis": {
+    "original_r5_status": "failed",
+    "failed_node": "tests/test_calendar_prefix_inference.py::test_source_checkout_cli_runs_outside_repo_with_default_reference_paths",
+    "formal_output_published": false,
+    "retained_staging": "artifacts/.lt-stage-70f3a1ddc6c2483dbb4fd80b6476040f",
+    "retained_staging_inventory_sha256": "0e0e308aa7fadd2b4b1dd8fc401e134d7c3797ce58db32087e9cfdcec0056fee",
+    "retained_staging_entry_count": 80,
+    "original_pytest_stdout_persisted": false,
+    "original_pytest_stderr_persisted": false,
+    "evidence_gap": "The r5 runner wrote command logs only after a successful return, so the original failing pytest subprocess stdout and stderr were not machine-retained.",
+    "diagnostic_protocol_sha256": "40f1fb62139a1e18add11af5261565d3d3d8a530a0f86f3d4ef1fba9ca5e3453",
+    "natural_node_reruns": {
+      "results": [
+        "passed",
+        "passed",
+        "failed"
+      ],
+      "stopped_after_first_failure": true,
+      "summary_sha256": "401e5dbdccd10bc11b637356f3a752c435c67573f0f1bd11d9672874acae6aba"
+    },
+    "direct_cli_child_trace": {
+      "combined_diagnostic_attempt": 4,
+      "exit_code": 1,
+      "output_published": false,
+      "error": "PermissionError: [WinError 5] at src/lifetwin/cli.py final os.replace(staging, output_dir)",
+      "stderr_sha256": "7b3bc15ddc5b1ca36c5920a2a2adb300382912063a460426b13db44fefd423c2",
+      "summary_sha256": "6d058cad844e492a23fd4a464d53f601c8ddbbf4119fea26107669ac0752e5c0"
+    },
+    "deterministic_before_fix_injection": {
+      "injected_error": "Windows PermissionError with winerror 5",
+      "observed_winerror": 5,
+      "predict_calendar_prefix_calls": 1,
+      "os_replace_calls": 1,
+      "output_published": false,
+      "summary_sha256": "6f9fc76031c7bd4253646f3c53d5b95eed2a34e0862144543e8c2127c62e06e6"
+    },
+    "root_cause_assessment": "confirmed"
+  },
+  "validation": {
+    "diff_checks": {
+      "cached": "passed",
+      "unstaged": "passed"
+    },
+    "ruff": "passed",
+    "release_verification": {
+      "status": "passed",
+      "scanned_tracked_files": 355,
+      "hash_mismatches": 0,
+      "broken_markdown_links": 0
+    },
+    "atomic_publish_tests": {
+      "passed": 10,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "directly_related_tests": {
+      "passed": 73,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "repeat_stability": {
+      "summary_sha256": "880ee83383b605b0cc78460b3eaa4f8ecaacc5b93d66bef2d13c40fa56db8012",
+      "total_runs": 40,
+      "nonzero_exit_codes": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "groups": [
+        {
+          "id": "v4",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 88.771
+        },
+        {
+          "id": "external",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 134.115
+        },
+        {
+          "id": "v4robust",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 177.006
+        },
+        {
+          "id": "geirobust",
+          "runs": 10,
+          "passed_runs": 10,
+          "elapsed_seconds": 24.338
+        }
+      ]
+    },
+    "full_pytest_candidate": {
+      "passed": 873,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 1,
+      "allowed_skip": "tests/test_v016_terminal.py:738",
+      "junit_sha256": "8d45143581dae5073e86fff6a1d8f356b8bd79ffc1dfe7e32c2f975494902d72"
+    },
+    "calendar_prefix_followup": {
+      "focused_tests": {
+        "passed": 48,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "atomic_and_related_tests": {
+        "passed": 83,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "junit_sha256": "733f1964979d17c4ccd6dbdfdae2cc4d8d0741daad72ed72ec535e32263807b3"
+      },
+      "source_checkout_cli_repeat_stability": {
+        "total_runs": 20,
+        "passed_runs": 20,
+        "nonzero_exit_codes": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "summary_sha256": "f4aa78cc2017808b660a1f6fa41e177b15bc71438161d645450405a908ed064b"
+      },
+      "full_pytest": {
+        "passed": 876,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1,
+        "allowed_skip": "tests/test_v016_terminal.py:738",
+        "junit_sha256": "db9baabe1ad289fc8cfbd4686102602e066a858806a77c15911368f13398c69e"
+      }
+    }
+  },
+  "clean_full_reproductions": [
+    {
+      "id": "r3",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r3",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 873,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "elapsed_seconds": 931.754706,
+      "key_sha256": {
+        "reproduction_summary.json": "2d6a3a281a2424835c8e6ec8f9ef03e812a042dff8e8d122e2ba4418a5012726",
+        "evidence_v011/v4/result.json": "4ab67169e46bc24b50bc1634820b5b742583a3b39c5d6ddae5e04886092be675",
+        "evidence_v011/geisbauer/result.json": "12fa3d37e6258047b0edd3bc988aa28c9bd019359576d363379b4fd279491bec",
+        "evidence_v012/v4_calibration_robustness/result.json": "b209114b72e7344c20501277d6b8607e3da73a8a9fe9332e837b886a393bc8e3",
+        "evidence_v012/geisbauer_robustness/result.json": "94fa137038f2486f1314ca8ef9dd949efe5770b96bcbfccfba0817c00bf29da6",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    },
+    {
+      "id": "r4",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r4",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 873,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "elapsed_seconds": 1149.112798,
+      "key_sha256": {
+        "reproduction_summary.json": "c9734eec4b6b3e5294bbcf5de46c2ab588c33d4f09a5369bd7a7615aa4231dda",
+        "evidence_v011/v4/result.json": "4fe132dc56ad289545be93ba19ba9541bfa7d05096dd852ee6f035aaa042aabd",
+        "evidence_v011/geisbauer/result.json": "dfc36328dcbca3ee97135da568fd4ba2fc17be6e47051db22aea28fd72bedc0c",
+        "evidence_v012/v4_calibration_robustness/result.json": "9c737a36679509c937b3ee31891ff8291236ebf4d5f1ee12466b177985224093",
+        "evidence_v012/geisbauer_robustness/result.json": "68781ebd28eeafca4ac99d0d8fa15543ca1ecd13d1bcec35cea1d81e6fb4089c",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    },
+    {
+      "id": "r6",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r6",
+      "git_head": "169d967f57903a8eada4b996ef9798aff178c5e2",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 876,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1,
+        "allowed_skip": "tests/test_v016_terminal.py:738"
+      },
+      "elapsed_seconds": 1971.11238,
+      "key_sha256": {
+        "reproduction_summary.json": "6447fee738faf028e56866937ddc51c5b7a672c6e12027ee936df29dcf9fae3b",
+        "evidence_v011/v4/result.json": "925cdbfc46d43348bb99087c978956961ca5b850eebf2f30ecf7080f5fb39cc1",
+        "evidence_v011/geisbauer/result.json": "79ad4e89ce4968962d6f10f771b6c1d03227ea85899e91c7a1ed47cccd86fe2c",
+        "evidence_v012/v4_calibration_robustness/result.json": "ac93f2d78509598e690d4a0139c78490f05443b8d03634fb8d58ce5592459208",
+        "evidence_v012/geisbauer_robustness/result.json": "594ea2c2fe26346ded5a0fe6cebb4111ed71e4fac9be25dcb2e40a5e961a885e",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    },
+    {
+      "id": "r7",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r7",
+      "git_head": "169d967f57903a8eada4b996ef9798aff178c5e2",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 876,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1,
+        "allowed_skip": "tests/test_v016_terminal.py:738"
+      },
+      "elapsed_seconds": 1318.182407,
+      "key_sha256": {
+        "reproduction_summary.json": "4fba4f164015994b7fa2f1752d3caca8c5789d8403707e324016f25bb5fab6be",
+        "evidence_v011/v4/result.json": "e3ffdafa667b5fe2628893c32d0a1f135145d2276bcf7d453682642321ebb407",
+        "evidence_v011/geisbauer/result.json": "dc2ab0adccebe72c5ad96cc7076da48c020ab73d187e889d61ee96b1c31d6b52",
+        "evidence_v012/v4_calibration_robustness/result.json": "6feb3f02d32b41524f69df9229fabd2fb432fa9874527f22fa529fca117a9f2e",
+        "evidence_v012/geisbauer_robustness/result.json": "5380044eb3bb82bd2152f1942ff44b1760e26c07d123d6220824a06bea0b22ff",
+        "phase1_audit/phase1_adversarial_audit.json": "af1b6fcadaa668aa68fc56e9bdb02a5865d954372ac9f56af42be9e46f5c5f18",
+        "phase8/result.json": "8d29860ae323cf6e59bcd4e746325c1c5cff1d04597574dd1c0cf6c49652f8db"
+      }
+    },
+    {
+      "id": "r8",
+      "output": "artifacts/reproduction-windows-closeout-20260805-r8",
+      "git_head": "a540cfca79f66983a2a242eacc2ca07a8790c731",
+      "git_worktree_clean": true,
+      "python": "3.12.13",
+      "exit_code": 0,
+      "status": "passed",
+      "release_verification": "passed",
+      "internal_pytest": {
+        "passed": 876,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 1,
+        "allowed_skip": "tests/test_v016_terminal.py:738"
+      },
+      "elapsed_seconds": 902.163998,
+      "summary_sha256": "d7d6fe9bf4fa893d75ba2342a06c84260a44e880749e8668243b3d7da25b0aed"
+    }
+  ],
+  "remote_actions": {
+    "run_id": 31028713233,
+    "url": "https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/runs/31028713233",
+    "head_commit": "a540cfca79f66983a2a242eacc2ca07a8790c731",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "quality": "success",
+      "reproduce (ubuntu-latest)": "success",
+      "reproduce (windows-latest)": "success"
+    },
+    "windows_python": "CPython 3.12.13",
+    "artifacts": [
+      "reproduction-ubuntu-latest",
+      "reproduction-windows-latest"
+    ]
+  },
+  "evidence_boundary": {
+    "scientific_results_changed": false,
+    "thresholds_changed": false,
+    "seeds_changed": false,
+    "data_splits_changed": false,
+    "frozen_outputs_changed": false,
+    "new_model_validity_claim": false
+  },
+  "not_done": [
+    "No new model, dataset training, V2.1 formal experiment, presentation, or UI work was performed.",
+    "No main-branch push, pull request, merge, release, or tag was performed.",
+    "No enterprise data or private local data was accessed or published.",
+    "The original r5 remains failed and is not rewritten by the later diagnostic or fix.",
+    "This engineering closeout is not new model-validity evidence."
+  ]
+}

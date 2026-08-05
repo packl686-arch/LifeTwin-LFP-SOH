@@ -4,7 +4,6 @@ import argparse
 import hashlib
 from importlib import metadata as importlib_metadata
 import json
-import os
 from pathlib import Path
 import shutil
 import sys
@@ -12,6 +11,10 @@ import uuid
 
 import pandas as pd
 
+from lifetwin.atomic_publish import (
+    AtomicPublishRetryExhausted,
+    publish_directory,
+)
 from lifetwin.experiments.calendar_landmark_readiness import (
     EXPECTED_CANONICAL_OUTCOME_SHA256,
     canonical_naumann_outcome_sha256,
@@ -57,6 +60,7 @@ def _sha256(path: Path) -> str:
 def _source_provenance() -> dict[str, object]:
     paths = (
         Path(__file__).resolve(),
+        PROJECT_ROOT / "src/lifetwin/atomic_publish.py",
         PROJECT_ROOT / "src/lifetwin/data/naumann.py",
         PROJECT_ROOT / "src/lifetwin/models/calendar_v2.py",
         PROJECT_ROOT / "src/lifetwin/models/calendar_v2_uncertainty.py",
@@ -172,7 +176,9 @@ def run(
         }
         result["artifacts"] = artifacts
         _write_json(result, staging / OUTPUT_FILES["result"])
-        os.replace(staging, output_dir)
+        publish_directory(staging, output_dir)
+    except AtomicPublishRetryExhausted:
+        raise
     except BaseException:
         if staging.exists():
             shutil.rmtree(staging)

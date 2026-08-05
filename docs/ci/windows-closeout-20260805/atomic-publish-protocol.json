@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "protocol_id": "lifetwin-windows-atomic-directory-publish-v1-20260805",
+  "frozen_at": "2026-08-05T13:38:09+08:00",
+  "frozen_before_implementation_and_new_full_reproduction": true,
+  "base_commit": "af96cd3edad6abade1ef2425fcfe2544dd5c8d5b",
+  "operation": "final directory publication only",
+  "maximum_replace_attempts_including_first": 7,
+  "delays_before_attempts_2_through_7_seconds": [
+    0.05,
+    0.10,
+    0.20,
+    0.40,
+    0.80,
+    1.60
+  ],
+  "retry_condition": {
+    "platform": "Windows",
+    "exception_type": "PermissionError",
+    "winerror": 5
+  },
+  "immediate_failure_conditions": [
+    "non-Windows platform",
+    "PermissionError with winerror other than 5",
+    "any other OSError or exception",
+    "destination exists before any attempt",
+    "destination appears between attempts",
+    "source staging directory is absent before any attempt"
+  ],
+  "safety_invariants": {
+    "never_overwrite_existing_destination": true,
+    "check_destination_absent_before_every_attempt": true,
+    "check_source_present_before_every_attempt": true,
+    "retry_wraps_only_os_replace": true,
+    "scientific_computation_is_never_retried": true,
+    "retain_source_staging_after_retry_exhaustion": true
+  },
+  "exhaustion_error_must_include": [
+    "source path",
+    "destination path",
+    "attempt count"
+  ],
+  "post_observation_change_policy": "Attempts, delays, retryable platform/error type, and success criteria are immutable after results are observed."
+}
