@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "protocol_id": "nasa_pcoe_official_bundle_prefix_stress_v1",
+  "status": "protocol_frozen_execution_blocked_pending_rights_review",
+  "freeze_date": "2026-08-06",
+  "semantic_sha256": "037d6d090cf42714ff638d876fdbe7149d60da48e33fd847351bf8597ed9ce9a",
+  "dataset": {
+    "dataset_id": "NASA_PCOE_OFFICIAL_BATTERY_BUNDLES_V1",
+    "source_representation": "six_official_catalog_zip_bundles_with_mat_members",
+    "chemistry": "unspecified_li_ion_not_lfp_evidence",
+    "task_role": "cross_domain_cycle_trajectory_and_rul_stress",
+    "physical_statistical_unit": "physical_battery_id",
+    "unique_physical_battery_count": 34,
+    "raw_redistribution_allowed": false
+  },
+  "rights_gate": {
+    "catalog_access_level": "public",
+    "algorithm_development_described_as_intended_use": true,
+    "dataset_specific_license_identifier": null,
+    "dataset_specific_license_url": null,
+    "private_parser_and_quality_research_allowed_by_project_policy": true,
+    "public_aggregate_result_release_confirmed": false,
+    "execution_allowed": false,
+    "blocking_reason": "dataset_specific_rights_review_not_closed"
+  },
+  "identity": {
+    "source_zip_count": 6,
+    "unique_physical_battery_count": 34,
+    "duplicate_physical_battery_ids": [
+      "B0025",
+      "B0026",
+      "B0027",
+      "B0028"
+    ],
+    "duplicate_evidence": "same_uncompressed_size_and_zip_crc32",
+    "duplicate_policy": "canonicalize_one_copy_when_central_directory_identity_matches_otherwise_stop",
+    "continuation_policy": "merge_only_by_time_and_cycle_identity_stop_on_overlapping_value_conflict",
+    "mat_rows_are_physical_cells": false
+  },
+  "partitions": {
+    "selection_basis": "physical_battery_id_and_source_bundle_only_no_outcomes",
+    "training": [
+      "B0005",
+      "B0006",
+      "B0007",
+      "B0018",
+      "B0029",
+      "B0030",
+      "B0031",
+      "B0032",
+      "B0033",
+      "B0034",
+      "B0036",
+      "B0038",
+      "B0039",
+      "B0040",
+      "B0045",
+      "B0046",
+      "B0047",
+      "B0048"
+    ],
+    "validation": [
+      "B0025",
+      "B0026",
+      "B0027",
+      "B0028",
+      "B0041",
+      "B0042",
+      "B0043",
+      "B0044"
+    ],
+    "locked_test": [
+      "B0049",
+      "B0050",
+      "B0051",
+      "B0052",
+      "B0053",
+      "B0054",
+      "B0055",
+      "B0056"
+    ],
+    "locked_test_score_limit": 1
+  },
+  "prefix_cycles": [
+    20,
+    40,
+    60,
+    100
+  ],
+  "score_end_cycle": 200,
+  "minimum_future_observations": 20,
+  "baselines": [
+    "target_prefix_persistence",
+    "nonpositive_linear_trend",
+    "constrained_sqrt_loss_trend"
+  ],
+  "prediction_constraints": {
+    "capacity_retention_lower_pct": 0.0,
+    "capacity_retention_upper_pct": 110.0,
+    "linear_slope_must_be_nonpositive": true,
+    "sqrt_loss_slope_must_be_nonpositive": true,
+    "deep_learning_allowed": false,
+    "hyperparameter_search_allowed": false
+  },
+  "future_label_firewall": {
+    "prepare_writes_separate_prefix_and_label_tables": true,
+    "predict_receives_label_path": false,
+    "predict_receives_suffix_values": false,
+    "prediction_written_before_score": true,
+    "prediction_manifest_sha256_required": true,
+    "future_suffix_mutation_must_not_change_prediction": true,
+    "future_suffix_mutation_must_change_score": true
+  },
+  "metrics": {
+    "primary": "trajectory_mae_pp_equal_cell_then_equal_prefix",
+    "auxiliary": [
+      "trajectory_iae_pp_normalized_by_cycle_horizon",
+      "trajectory_rmse_pp",
+      "endpoint_absolute_error_pp",
+      "refusal_fraction",
+      "unsupported_cell_prefix_fraction"
+    ],
+    "interval_metrics": "not_applicable_without_prefrozen_interval",
+    "grouping": [
+      "physical_battery_id",
+      "prefix_cycle",
+      "source_bundle",
+      "experiment_batch",
+      "temperature_c",
+      "discharge_cutoff_or_dynamic_condition",
+      "domain_group",
+      "prediction_status"
+    ],
+    "inference": "descriptive_only_no_significance_test"
+  },
+  "stopping_rules": {
+    "stop_on_duplicate_conflict": true,
+    "stop_on_partition_overlap": true,
+    "stop_on_prediction_future_access": true,
+    "stop_on_post_score_change_request": true,
+    "stop_on_rights_gate_failure": true,
+    "rerun_to_seek_better_result_allowed": false
+  },
+  "resources": {
+    "gpu_allowed": false,
+    "maximum_cpu_workers": 4,
+    "maximum_peak_memory_gib": 12,
+    "maximum_wall_clock_hours": 2,
+    "run_count": 1
+  },
+  "output": {
+    "ignored_directory": "artifacts/data-asset-intake-20260806/nasa-official-prefix-stress-v1",
+    "commit_raw_predictions": false,
+    "commit_future_labels": false,
+    "commit_extracted_data": false,
+    "public_result_scope_if_rights_confirmed": "aggregate_metrics_and_hashes_only"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "auxiliary_cross_domain_cycle_aging_stress_after_rights_gate"
+    ],
+    "prohibited": [
+      "lfp_chemistry_validation",
+      "calendar_aging_validation",
+      "stationary_storage_field_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "independent_confirmation"
+    ]
+  }
+}
