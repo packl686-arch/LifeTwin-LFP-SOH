@@ -33,6 +33,7 @@
     "reports/nasa_evidence_weighted_moe_v3_development_2026-08-03.md",
     "reports/fastcharge_lfp_safe_prior_v2_2026-08-04.md",
     "reports/fastcharge_lfp_trajectory_portability_v1_2026-08-04.md",
+    "reports/data_governance_forward_correction_closeout_20260807.md",
     "requirements/v015-formal.txt",
     "requirements/v021-formal.txt",
     "scripts/compile_independent_lfp_intake.py",
