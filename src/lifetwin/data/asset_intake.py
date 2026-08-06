@@ -5,10 +5,10 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import re
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Iterable
 from zipfile import ZipFile
 
-from lifetwin.data.beep import read_beep_summary
+from lifetwin.data.beep_identity import BeepIdentityRecord, read_beep_identity
 
 
 EXPECTED_TOTAL_FILES = 261
@@ -203,10 +203,10 @@ def audit_matr_json(source_directory: str | Path) -> dict[str, object]:
     errors: list[dict[str, str]] = []
     for path in paths:
         try:
-            records.append(read_beep_summary(path, hash_source=False))
+            records.append(read_beep_identity(path))
         except (OSError, TypeError, ValueError) as exc:
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
-    grouped: dict[str, list[Any]] = defaultdict(list)
+    grouped: dict[str, list[BeepIdentityRecord]] = defaultdict(list)
     for record in records:
         grouped[record.barcode].append(record)
     conflicts = {
@@ -222,12 +222,14 @@ def audit_matr_json(source_directory: str | Path) -> dict[str, object]:
             "batch_id": group[0].batch_id,
             "protocol_id": group[0].protocol_id,
             "channel_ids": sorted({record.channel_id for record in group}),
-            "source_files": sorted(record.source_file for record in group),
+            "source_files": sorted(record.source_filename for record in group),
         }
         for barcode, group in sorted(grouped.items())
     }
     return {
-        "status": "passed" if not errors and not conflicts else "failed",
+        "status": (
+            "blocked" if errors else "failed" if conflicts else "passed"
+        ),
         "json_file_count": len(paths),
         "parsed_json_file_count": len(records),
         "unique_barcode_count": len(grouped),
@@ -243,13 +245,27 @@ def audit_matr_json(source_directory: str | Path) -> dict[str, object]:
             sorted(Counter(group[0].protocol_id for group in grouped.values()).items())
         ),
         "protocol_count": len({group[0].protocol_id for group in grouped.values()}),
-        "summary_row_count": sum(record.summary_rows for record in records),
+        "summary_row_count": "not_read",
         "parse_error_count": len(errors),
         "identity_conflict_count": len(conflicts),
         "parse_errors": errors,
         "identity_conflicts": conflicts,
         "hash_source": False,
-        "cycles_interpolated_read": False,
+        "summary_materialized": False,
+        "cycles_interpolated_materialized": False,
+        "outcome_value_materialized_count": 0,
+        "read_beep_summary_call_count": 0,
+        "identity_field_whitelist": [
+            "barcode",
+            "channel_id",
+            "source_domain",
+            "batch_id",
+            "protocol_raw",
+            "protocol_id",
+            "beep_version",
+            "source_filename",
+            "source_size_bytes",
+        ],
         "physical_cell_key": "barcode",
         "barcode_detail": detail,
     }

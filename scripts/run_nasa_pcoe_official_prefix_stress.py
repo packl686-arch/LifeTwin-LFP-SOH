@@ -7,11 +7,12 @@ from pathlib import Path
 import pandas as pd
 
 from lifetwin.experiments.nasa_official_prefix_stress import (
+    NasaOfficialPrefixStressError,
     ensure_execution_authorized,
+    execute_score_once,
     load_nasa_official_prefix_stress_config,
     predict_prefix_baselines,
     prepare_prefix_and_future_labels,
-    score_prefix_baselines,
 )
 
 
@@ -54,31 +55,43 @@ def main() -> int:
     score.add_argument("prediction_manifest", type=Path)
     score.add_argument("output_directory", type=Path)
     args = parser.parse_args()
-    config = load_nasa_official_prefix_stress_config(args.config)
-    ensure_execution_authorized(config)
-    if args.command == "check-gate":
-        print(json.dumps({"execution_allowed": True}))
+    try:
+        config = load_nasa_official_prefix_stress_config(args.config)
+        ensure_execution_authorized(config)
+        if args.command == "check-gate":
+            print(json.dumps({"execution_allowed": True}))
+            return 0
+        if args.command == "prepare":
+            cycles = pd.read_csv(args.cycles, float_precision="round_trip")
+            prefixes, labels, audit = prepare_prefix_and_future_labels(cycles, config)
+            _write_csv(args.output_directory / "prefix_inputs.csv", prefixes)
+            _write_csv(args.output_directory / "future_labels.csv", labels)
+            _write_json(args.output_directory / "prepare_audit.json", audit)
+            return 0
+        if args.command == "predict":
+            prefixes = pd.read_csv(args.prefix_table, float_precision="round_trip")
+            predictions, manifest = predict_prefix_baselines(prefixes, config)
+            _write_csv(args.output_directory / "predictions.csv", predictions)
+            _write_json(args.output_directory / "prediction_manifest.json", manifest)
+            return 0
+        labels = pd.read_csv(args.future_labels, float_precision="round_trip")
+        predictions = pd.read_csv(args.predictions, float_precision="round_trip")
+        manifest = json.loads(args.prediction_manifest.read_text(encoding="utf-8"))
+        execute_score_once(labels, predictions, manifest, config, args.output_directory)
         return 0
-    if args.command == "prepare":
-        cycles = pd.read_csv(args.cycles, float_precision="round_trip")
-        prefixes, labels, audit = prepare_prefix_and_future_labels(cycles, config)
-        _write_csv(args.output_directory / "prefix_inputs.csv", prefixes)
-        _write_csv(args.output_directory / "future_labels.csv", labels)
-        _write_json(args.output_directory / "prepare_audit.json", audit)
-        return 0
-    if args.command == "predict":
-        prefixes = pd.read_csv(args.prefix_table, float_precision="round_trip")
-        predictions, manifest = predict_prefix_baselines(prefixes, config)
-        _write_csv(args.output_directory / "predictions.csv", predictions)
-        _write_json(args.output_directory / "prediction_manifest.json", manifest)
-        return 0
-    labels = pd.read_csv(args.future_labels, float_precision="round_trip")
-    predictions = pd.read_csv(args.predictions, float_precision="round_trip")
-    manifest = json.loads(args.prediction_manifest.read_text(encoding="utf-8"))
-    scores, summary = score_prefix_baselines(labels, predictions, manifest, config)
-    _write_csv(args.output_directory / "scores.csv", scores)
-    _write_json(args.output_directory / "score_summary.json", summary)
-    return 0
+    except NasaOfficialPrefixStressError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "blocked",
+                    "execution_allowed": False,
+                    "reason": str(exc),
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+        )
+        return 1
 
 
 if __name__ == "__main__":

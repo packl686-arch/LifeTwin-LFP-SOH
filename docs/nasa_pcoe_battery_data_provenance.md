@@ -61,11 +61,41 @@ date. They are not official NASA checksums.
 | `B0007.csv` | 49,943,430 | `251b6a074702fc07991db86c1760db843db967d6648f01f4270337d94461fd80` |
 | `B0018.csv` | 26,358,323 | `9ce1516d47b3cb2a4a03d9a6c671fdbc6e703468795cbe5ee772605989ac011f` |
 
-Before any scored experiment, obtain the upstream MAT archive from a recorded
-source, retain its hashes, freeze a deterministic conversion script, and compare
-operation counts, timestamps, capacities, cutoff behavior, and sampled arrays
-against these CSV files. A failed or incomplete crosswalk disqualifies the CSV
-bundle from quantitative evidence.
+The upstream MAT files are now locally present, but their presence does not
+authorize scoring or establish semantic equivalence to these four CSV files.
+Before any scored experiment, the project still requires dataset-specific
+rights resolution, protocol review, a frozen deterministic conversion, a
+completed CSV/MAT crosswalk, and new explicit execution authorization. Until
+then, comparing operation counts, timestamps, capacities, cutoff behavior, or
+sampled arrays and performing formal scoring remain prohibited.
+
+## 2026-08-06 extracted MAT metadata intake
+
+This intake concerns a different evidence object from the four third-party CSV
+files above. The extracted snapshot contains six top-level directories, 38 MAT
+files and 10 README/TXT files. Filename identity plus byte-count/SHA-256 duplicate
+rules yield 34 unique `Bxxxx` physical-battery IDs and 4 identical duplicate
+representation groups: B0025, B0026, B0027, and B0028. The count of 34 is an
+identity count for this snapshot, not a claim of 34 independent, same-
+distribution, or qualified test cells.
+
+The intake read only file metadata, streaming hashes, 128-byte MATLAB headers,
+README/TXT text, and top-level variable names, MATLAB types, and shapes through
+`scipy.io.whosmat`. It did not load MAT arrays or capacity values and did not
+prepare prefixes, predict, train, or score; all such access and execution counts
+are zero. SNL content access was also zero.
+
+The README files expose stopping thresholds, experimental anomalies, and parts
+of the outcome/protocol structure. Exposure is therefore fixed as
+`development_only_outcomes_and_protocol_structure_exposed`, not outcome-blind or
+independent confirmation. No semantic equivalence between the four CSV files and
+the 38 MAT files has been established.
+
+Possession and public access do not resolve dataset-specific licensing,
+chemistry, redistribution, or aggregate-result publication rights. The chemistry
+remains unspecified lithium-ion rather than LFP evidence, and the formal NASA
+execution gate remains closed. Rights resolution, protocol review, conversion
+freeze, and a new explicit authorization are required before any formal scoring.
 
 ## Chemistry and label caveats
 

@@ -127,3 +127,33 @@ samples; SNL has not validated the main model; reused MATR is not independent
 confirmation. Nothing here validates a Hithium cell, a storage station, or
 15–25-year prediction accuracy. V0.14 remains `failure`, V0.15 remains
 `inconclusive_not_success`, and V0.16/V2.1 remain implementation-only freezes.
+
+## 2026-08-06 V1.1/V1.2 addendum
+
+The historical V1 report above is preserved as written. V1.1 corrected the MATR
+identity boundary: the identity-only reader now stops before the `summary` key,
+does not call the summary parser, does not materialize `cycles_interpolated` or
+outcome values, and still resolves 140 JSON files to 135 barcodes with five
+additional segments and zero identity conflicts.
+
+A separate zero-outcome metadata intake of the extracted NASA ordinary-battery
+snapshot found six top-level directories, 38 MAT files, 10 README/TXT files,
+34 unique filename-derived `Bxxxx` identities, and 4 byte-count/SHA-256-identical
+duplicate representation groups. The 34 identities are not 34 independent,
+same-distribution, or qualified test cells. Only file metadata, 128-byte MATLAB
+headers, README/TXT text, and top-level `whosmat` schema were accessed.
+MAT/capacity-value reads, NASA prepare/predict/score, and SNL-content reads were
+all zero.
+
+README exposure fixes the role at
+`development_only_outcomes_and_protocol_structure_exposed`. NASA chemistry is
+not authoritatively confirmed, dataset-specific licensing and aggregate-result
+publication rights remain unresolved, and the formal NASA execution gate remains
+closed. NASA V3's four third-party CSV files remain a separate evidence object
+from this 38-MAT metadata intake.
+
+V1.2 restored the frozen SHA-256 of `src/lifetwin/data/beep.py`, migrated the
+identity reader to `src/lifetwin/data/beep_identity.py`, and passed public
+release verification without changing `frozen_files_sha256`, release identity,
+version, date, or any frozen research conclusion. None of these corrections
+produced a model result or increased the evidence grade.

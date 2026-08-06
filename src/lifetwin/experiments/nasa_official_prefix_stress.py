@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import copy
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
 from typing import Iterable
+import uuid
 
 import numpy as np
 import pandas as pd
@@ -66,6 +68,9 @@ FORBIDDEN_PREDICTION_INPUT_TOKENS = (
 
 class NasaOfficialPrefixStressError(ValueError):
     pass
+
+
+_SCORE_ATTEMPT_TOKEN = object()
 
 
 def canonical_json_sha256(value: dict[str, object]) -> str:
@@ -130,6 +135,8 @@ def validate_nasa_official_prefix_stress_config(
     for physical_id in NASA_DUPLICATE_IDS:
         if physical_id not in mapping:
             raise NasaOfficialPrefixStressError("Duplicate battery grouping is incomplete")
+    if config.get("partitions", {}).get("locked_test_score_limit") != 1:
+        raise NasaOfficialPrefixStressError("Locked-test score limit changed")
     firewall = config.get("future_label_firewall", {})
     required_firewall = {
         "prepare_writes_separate_prefix_and_label_tables": True,
@@ -154,6 +161,14 @@ def ensure_execution_authorized(config: dict[str, object]) -> None:
     validate_nasa_official_prefix_stress_config(config)
     rights = config.get("rights_gate", {})
     if not isinstance(rights, dict) or rights.get("execution_allowed") is not True:
+        raise NasaOfficialPrefixStressError(
+            "Official NASA scoring is blocked pending dataset-specific rights review"
+        )
+    if (
+        rights.get("dataset_specific_license_identifier") is None
+        or rights.get("dataset_specific_license_url") is None
+        or rights.get("public_aggregate_result_release_confirmed") is not True
+    ):
         raise NasaOfficialPrefixStressError(
             "Official NASA scoring is blocked pending dataset-specific rights review"
         )
@@ -197,7 +212,7 @@ def prepare_prefix_and_future_labels(
     cycles: pd.DataFrame,
     config: dict[str, object],
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, object]]:
-    config = validate_nasa_official_prefix_stress_config(config)
+    ensure_execution_authorized(config)
     frame = _validate_cycle_table(cycles, config)
     prefixes: list[pd.DataFrame] = []
     labels: list[pd.DataFrame] = []
@@ -266,7 +281,7 @@ def predict_prefix_baselines(
     prefix_table: pd.DataFrame,
     config: dict[str, object],
 ) -> tuple[pd.DataFrame, dict[str, object]]:
-    config = validate_nasa_official_prefix_stress_config(config)
+    ensure_execution_authorized(config)
     forbidden = [
         column
         for column in prefix_table.columns
@@ -384,8 +399,14 @@ def score_prefix_baselines(
     predictions: pd.DataFrame,
     manifest: dict[str, object],
     config: dict[str, object],
+    *,
+    _attempt_token: object | None = None,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
-    config = validate_nasa_official_prefix_stress_config(config)
+    ensure_execution_authorized(config)
+    if _attempt_token is not _SCORE_ATTEMPT_TOKEN:
+        raise NasaOfficialPrefixStressError(
+            "Scoring must use the atomic single-attempt entry point"
+        )
     if tuple(future_labels.columns) != LABEL_COLUMNS:
         raise NasaOfficialPrefixStressError("Future-label schema changed")
     if tuple(predictions.columns) != PREDICTION_COLUMNS:
@@ -500,3 +521,90 @@ def score_prefix_baselines(
         "inference": "descriptive_only_no_significance_test",
     }
     return scores, summary
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _append_receipt(path: Path, value: dict[str, object], *, create: bool) -> None:
+    mode = "x" if create else "a"
+    with path.open(mode, encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n")
+
+
+def execute_score_once(
+    future_labels: pd.DataFrame,
+    predictions: pd.DataFrame,
+    manifest: dict[str, object],
+    config: dict[str, object],
+    output_directory: str | Path,
+) -> tuple[pd.DataFrame, dict[str, object], dict[str, object]]:
+    """Score once into a new directory and retain an append-only attempt receipt."""
+    ensure_execution_authorized(config)
+    output = Path(output_directory)
+    if output.exists():
+        raise NasaOfficialPrefixStressError("Score output directory already exists")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    prediction_sha256 = canonical_frame_sha256(predictions, PREDICTION_COLUMNS)
+    future_label_sha256 = canonical_frame_sha256(future_labels, LABEL_COLUMNS)
+    protocol_id = str(config["protocol_id"])
+    attempt_key = hashlib.sha256(
+        f"{protocol_id}|{prediction_sha256}|{future_label_sha256}".encode("utf-8")
+    ).hexdigest()
+    registry = output.parent / ".score-receipts"
+    registry.mkdir(parents=True, exist_ok=True)
+    registry_receipt = registry / f"{attempt_key[:32]}.jsonl"
+    attempt_id = str(uuid.uuid4())
+    base_receipt = {
+        "protocol_id": protocol_id,
+        "config_semantic_sha256": canonical_json_sha256(config),
+        "prediction_sha256": prediction_sha256,
+        "future_label_sha256": future_label_sha256,
+        "score_attempt_key_sha256": attempt_key,
+        "attempt_id": attempt_id,
+    }
+    started = {**base_receipt, "timestamp_utc": _utc_now(), "status": "started"}
+    try:
+        _append_receipt(registry_receipt, started, create=True)
+    except FileExistsError as exc:
+        raise NasaOfficialPrefixStressError(
+            "Duplicate locked-test score attempt rejected"
+        ) from exc
+    try:
+        output.mkdir(exist_ok=False)
+        output_receipt = output / "score_attempt_receipt.jsonl"
+        _append_receipt(output_receipt, started, create=True)
+        scores, summary = score_prefix_baselines(
+            future_labels,
+            predictions,
+            manifest,
+            config,
+            _attempt_token=_SCORE_ATTEMPT_TOKEN,
+        )
+        with (output / "scores.csv").open("x", encoding="utf-8", newline="") as stream:
+            scores.to_csv(stream, index=False, lineterminator="\n", float_format="%.17g")
+        with (output / "score_summary.json").open("x", encoding="utf-8") as stream:
+            json.dump(summary, stream, indent=2, ensure_ascii=False, sort_keys=True)
+            stream.write("\n")
+        completed = {
+            **base_receipt,
+            "timestamp_utc": _utc_now(),
+            "status": "completed",
+        }
+        _append_receipt(output_receipt, completed, create=False)
+        _append_receipt(registry_receipt, completed, create=False)
+        return scores, summary, completed
+    except Exception as exc:
+        failed = {
+            **base_receipt,
+            "timestamp_utc": _utc_now(),
+            "status": "failed",
+            "error_type": type(exc).__name__,
+        }
+        if output.is_dir():
+            receipt = output / "score_attempt_receipt.jsonl"
+            if receipt.exists():
+                _append_receipt(receipt, failed, create=False)
+        _append_receipt(registry_receipt, failed, create=False)
+        raise

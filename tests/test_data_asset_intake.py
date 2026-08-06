@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import builtins
+import hashlib
+import json
 from pathlib import Path
 import re
 from types import SimpleNamespace
@@ -9,6 +11,9 @@ from zipfile import ZipFile
 import pytest
 
 import lifetwin.data.asset_intake as intake
+import lifetwin.data.beep as beep
+import lifetwin.data.beep_identity as beep_identity
+import scripts.audit_data_assets as audit_script
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -79,12 +84,15 @@ def _record(path: Path, barcode: str, batch: str, protocol: str):
         batch_id=batch,
         protocol_id=protocol,
         channel_id=1,
-        source_file=path.name,
-        summary_rows=5,
+        source_filename=path.name,
+        source_size_bytes=path.stat().st_size,
+        source_domain="domain",
+        protocol_raw="raw",
+        beep_version="1",
     )
 
 
-def test_matr_same_barcode_segments_merge_without_hashing(
+def test_matr_identity_audit_never_calls_summary_parser(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -101,17 +109,47 @@ def test_matr_same_barcode_segments_merge_without_hashing(
         "c_structure.json": _record(paths[2], "TWO", "B2", "P2"),
     }
 
-    def fake_reader(path, *, hash_source):
-        assert hash_source is False
+    def fake_reader(path):
         return records[Path(path).name]
 
-    monkeypatch.setattr(intake, "read_beep_summary", fake_reader)
+    monkeypatch.setattr(intake, "read_beep_identity", fake_reader)
+    monkeypatch.setattr(
+        beep,
+        "read_beep_summary",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("summary parser called")
+        ),
+    )
     audit = intake.audit_matr_json(tmp_path)
     assert audit["json_file_count"] == 3
     assert audit["unique_barcode_count"] == 2
     assert audit["multi_segment_barcode_count"] == 1
     assert audit["identity_conflict_count"] == 0
-    assert audit["cycles_interpolated_read"] is False
+    assert audit["summary_materialized"] is False
+    assert audit["cycles_interpolated_materialized"] is False
+    assert audit["outcome_value_materialized_count"] == 0
+    assert audit["read_beep_summary_call_count"] == 0
+    assert audit["summary_row_count"] == "not_read"
+    assert not hasattr(records["a_structure.json"], "summary")
+    assert not hasattr(records["a_structure.json"], "capacity")
+    assert not hasattr(records["a_structure.json"], "cycle_life")
+
+
+def test_identity_reader_stops_before_invalid_summary_payload(tmp_path: Path) -> None:
+    path = tmp_path / "synthetic_structure.json"
+    path.write_bytes(
+        b'{"@module":"beep.structure","@class":"ProcessedCyclerRun",'
+        b'"barcode":"test-cell","protocol":'
+        b'"2017-05-12_tests/20170512-1C-80per-1C.json","channel_id":7,'
+        b'"summary":THIS_IS_NOT_JSON,"@version":"synthetic-v1"}'
+    )
+    record = beep_identity.read_beep_identity(path)
+    assert record.barcode == "TEST-CELL"
+    assert record.channel_id == 7
+    assert record.beep_version == "synthetic-v1"
+    assert not hasattr(record, "summary")
+    assert not hasattr(record, "capacity")
+    assert not hasattr(record, "cycle_life")
 
 
 def test_matr_conflicting_segment_identity_fails_audit_status(
@@ -128,12 +166,34 @@ def test_matr_conflicting_segment_identity_fails_audit_status(
     }
     monkeypatch.setattr(
         intake,
-        "read_beep_summary",
-        lambda path, hash_source=False: records[Path(path).name],
+        "read_beep_identity",
+        lambda path: records[Path(path).name],
     )
     audit = intake.audit_matr_json(tmp_path)
     assert audit["status"] == "failed"
     assert audit["identity_conflict_count"] == 1
+
+
+def test_matr_same_channel_different_barcodes_do_not_merge(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = tmp_path / "a_structure.json"
+    second = tmp_path / "b_structure.json"
+    _touch(first)
+    _touch(second)
+    records = {
+        first.name: _record(first, "ONE", "B1", "P1"),
+        second.name: _record(second, "TWO", "B1", "P1"),
+    }
+    monkeypatch.setattr(
+        intake,
+        "read_beep_identity",
+        lambda path: records[Path(path).name],
+    )
+    audit = intake.audit_matr_json(tmp_path)
+    assert audit["unique_barcode_count"] == 2
+    assert audit["additional_segment_file_count"] == 0
 
 
 def test_matr_mat_representations_add_zero_cells(tmp_path: Path) -> None:
@@ -192,3 +252,44 @@ def test_public_asset_files_have_no_local_paths_or_personal_information() -> Non
     assert not re.search(r"(?<![A-Za-z])[A-Za-z]:[\\/]", text)
     assert not re.search(r"[\w.+-]+@[\w.-]+", text)
     assert "users.noreply" not in text.casefold()
+
+
+def test_audit_output_is_non_overwriting_and_manifest_verified(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    output = tmp_path / "audit-output"
+    monkeypatch.setattr(audit_script, "collect_file_metadata", lambda _root: [])
+    monkeypatch.setattr(
+        audit_script,
+        "validate_expected_inventory",
+        lambda _files: {"status": "passed", "observed": {}},
+    )
+    statuses = {
+        "audit_snl_metadata": "passed_metadata_only",
+        "audit_matr_json": "passed",
+        "audit_matr_mat_representations": "passed_no_duplicate_counting",
+        "audit_nasa_battery_zip_metadata": "passed_central_directory_only",
+        "audit_nasa_randomized_zip_metadata": (
+            "inventory_only_physical_identity_not_verified"
+        ),
+        "audit_calce_metadata": "passed_metadata_only",
+        "audit_oxford_metadata": "passed_source_record_and_file_metadata",
+    }
+    for name, status in statuses.items():
+        monkeypatch.setattr(
+            audit_script,
+            name,
+            lambda *_args, _status=status: {"status": _status},
+        )
+    report = audit_script.run_audit(source, output)
+    assert report["status"] == "passed"
+    manifest = json.loads((output / "output_manifest.json").read_text("utf-8"))
+    for entry in manifest["entries"]:
+        path = output / entry["relative_path"]
+        assert path.stat().st_size == entry["byte_count"]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+    with pytest.raises(FileExistsError):
+        audit_script.run_audit(source, output)
