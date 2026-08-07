@@ -308,7 +308,7 @@
     "tests/conftest.py": "cd0846474e65884d8cce46e3415f30f837ab1944a58b217814e77a6e112d8501",
     "tests/test_atomic_publish.py": "d431e21f14c0c0f4de8c98f459dc0bac8f1d283f7e90406c3d6580c2760651a4",
     "tests/test_calendar_landmark_readiness.py": "c2075e8a1317276ad85e88601a1e8240178ea8696735dd3b775d796ba59e086b",
-    "tests/test_calendar_prefix_inference.py": "473140e7806170a092e399ec3e5510bbaeba8c39cc051e1e1d6b9b5755adfc86",
+    "tests/test_calendar_prefix_inference.py": "366c55b02c8feb89ef70836a7d73dbff2485416b4ac5b3a5c94d07779964ce55",
     "tests/test_calendar_v3_gate_fallback.py": "43ae6e9fd7a121da4078e46e8b1ac85dce92634b29ec64da508c8193b3bd503c",
     "tests/test_calendar_v4_and_geisbauer_runners.py": "1723c09ba18f9815fbd8013092344e452adaf598e5bdf83c15ab19eba2cc3d07",
     "tests/test_calendar_v4_calibration_robustness.py": "31a9453ed2d6e1bd5f9e222bfec4a1f0af18614dc9cc03e33c562d69f0162328",

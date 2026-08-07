@@ -986,7 +986,8 @@ def test_source_checkout_cli_runs_outside_repo_with_default_reference_paths(
     assert summary["status"] == (
         "research_forecast_generated_operationally_abstained"
     )
-    assert decision["lifetwin_version"] == "0.14.0"
+    project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text("utf-8"))
+    assert decision["lifetwin_version"] == project["project"]["version"]
     assert decision["support"]["prefix_supported"] is True
     assert decision["artifacts"]["forecast"]["row_count"] == 25
     assert decision["artifacts"]["forecast"]["sha256"] == hashlib.sha256(
@@ -994,7 +995,6 @@ def test_source_checkout_cli_runs_outside_repo_with_default_reference_paths(
     ).hexdigest()
     assert len(forecast) == 25
 
-    project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text("utf-8"))
     assert project["project"]["scripts"]["lifetwin"] == "lifetwin.cli:main"
 
 
