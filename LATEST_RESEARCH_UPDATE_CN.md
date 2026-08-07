@@ -68,6 +68,17 @@ NASA V3 的四个第三方 CSV 与上述 38 个 MAT 元数据接入是两个不�
 - [NASA 四 CSV 与解压 MAT 的来源边界](docs/nasa_pcoe_battery_data_provenance.md)
 - [机器可读数据资产登记](docs/data_asset_register_20260806.csv)
 
+## 2026-08-07 跨平台复现恢复
+
+冻结提交 `b872c33` 的 public-release CI 已在 GitHub 托管的 Ubuntu 和 Windows 上完成
+全量复现，quality、两端 reproduction 与 Pages build/deploy/report 均通过；两端均为
+`914 passed, 0 skipped`。本次留痕保留了此前 GitHub 官方事故期间的失败和取消尝试，
+并在事故 resolved、Actions/Pages operational 后复核了最终状态。
+
+这只更新工程发布与跨平台可复现性事实，不增加模型精度、独立验证、NASA/BEEP、真实
+电芯/电站或 15–25 年结论。运行、job、artifact 哈希和证据边界见
+[跨平台 CI 恢复关闭报告](reports/cross_platform_ci_recovery_closeout_20260807.md)。
+
 ## 独立验证候选已冻结（2026-08-04）
 
 项目已把 FastCharge V2 中表现最稳健的安全硬门控结构提名为下一份未接触长期 LFP 数据的主候选，并固定安全池门槛、局部风险算法、邻居数/风险余量训练网格、回退规则和区间发行门槛。候选语义 SHA-256 为 `596108e19ca0a8c7fb712bf82ca5be93817524f5f0c912f3b71b180a0fcba3af`。这是开发结果之后的候选提名，不是独立确认。
