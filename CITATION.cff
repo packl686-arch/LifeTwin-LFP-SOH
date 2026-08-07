@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: Liu
     given-names: Jincheng
-version: 0.14.0
-date-released: 2026-07-22
+version: 0.14.1
+date-released: 2026-08-07
 keywords:
   - battery state of health
   - lithium iron phosphate
