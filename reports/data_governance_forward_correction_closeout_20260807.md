@@ -1,57 +1,28 @@
-# Data-governance forward-correction audit lineage — 2026-08-07
+# 数据治理仅向前纠正审计谱系——2026-08-07
 
-## Status
+## 状态
 
-Success. This report preserves the public lineage of the V1.2 through V1.4
-data-governance audits without publishing their ignored local artifact bundles.
-Every output-manifest hash below was recomputed from the actual manifest bytes,
-and every listed manifest entry was independently checked against its file byte
-count and SHA-256 before this report was written.
+成功。本报告保存 V1.2 至 V1.4 数据治理审计的公开谱系，但不发布其 ignored 本地 artifact 包。下表中每个 output manifest 哈希都根据实际 manifest bytes 重新计算；写入本报告前，也逐项独立核对了 manifest 记录与对应文件的 byte count 和 SHA-256。
 
-| Audit | Status | Output-manifest SHA-256 | Entries | Role |
+| 审计 | 状态 | Output manifest SHA-256 | 条目数 | 作用 |
 |---|---|---:|---:|---|
-| V1.2 release-boundary closeout | success | `e70092f6d2ab141188eb95424d9de3e4c005839d29b8c6d5274708e323b4ced0` | 6 | Restored the frozen `beep.py` boundary and moved identity-only intake to an unfrozen module. |
-| V1.3 evidence synchronization | success | `c4312fe1261ca232400fe610337f82f1b31bdeb1f4bda43f30b93b518de1fb4f` | 7 | Synchronized the already completed MATR, NASA metadata-only, and release-boundary evidence into project documents. |
-| V1.3.1 canonical-count correction | success | `0bf5878c5a9659485638450ece52184cf0d3994007e7d2daad93d8718fa9dd50` | 4 | Corrected the normative source-file count without altering the original V1.3 record. |
-| V1.4 final precommit review | success | `ad59c6b981651b98f6aa4594f172d174694e1b29de0cfe41fdaf3e61f5bed7e1` | 24 | Reverified Git scope, security boundaries, five historical manifests, the full test suite, release policy, and canonical source hashes. |
+| V1.2 发布边界收口 | success | `e70092f6d2ab141188eb95424d9de3e4c005839d29b8c6d5274708e323b4ced0` | 6 | 恢复冻结的 `beep.py` 边界，并将 identity-only 接入移至非冻结模块。 |
+| V1.3 证据同步 | success | `c4312fe1261ca232400fe610337f82f1b31bdeb1f4bda43f30b93b518de1fb4f` | 7 | 将已经完成的 MATR、NASA metadata-only 与发布边界证据同步到项目文档。 |
+| V1.3.1 规范计数纠正 | success | `0bf5878c5a9659485638450ece52184cf0d3994007e7d2daad93d8718fa9dd50` | 4 | 纠正规范源文件数量，不修改原始 V1.3 记录。 |
+| V1.4 最终预提交审查 | success | `ad59c6b981651b98f6aa4594f172d174694e1b29de0cfe41fdaf3e61f5bed7e1` | 24 | 复核 Git 范围、安全边界、五个历史 manifest、完整测试套件、发布政策与规范源文件哈希。 |
 
-## Canonical source-hash correction
+## 规范源文件哈希计数纠正
 
-V1.3 recorded 301 unchanged paths, but its recursive workspace scan included 88
-Python files from temporary `.pytest-tmp` repository copies. The unchanged-hash
-finding remains true for those recorded paths, but 301 is not the normative
-project-source count.
+V1.3 记录了 301 个未变化路径，但其递归工作区扫描包含临时 `.pytest-tmp` 仓库副本中的 88 个 Python 文件。对这些记录路径而言，“哈希未变化”的判断仍然成立，但 301 不是规范项目源文件数量。
 
-V1.3.1 defined the canonical collection as the actual output of
-`git ls-files -- '*.py'` plus `release_manifest.json`: 212 indexed Python files
-and one release manifest, for 213 files total. The V1.3 before and after tables
-fully covered those 213 paths, the filtered tables were identical, and an
-independent current recomputation also matched. The canonical set contained zero
-artifact, pytest-temporary, or other temporary paths. Future source-hash
-references must therefore use 213, while the original 301-path record remains
-preserved as historical evidence.
+V1.3.1 将规范集合定义为 `git ls-files -- '*.py'` 的实际输出加 `release_manifest.json`：212 个 Git 索引 Python 文件和 1 个 release manifest，共 213 个文件。V1.3 的 before/after 两个表完整覆盖这 213 个路径；过滤后的两个表完全一致，独立复算的当前哈希也一致。规范集合中的 artifact、pytest 临时路径和其他临时路径数量均为 0。因此，后续源文件哈希引用必须使用 213；原始 301 路径记录继续作为历史证据保留。
 
-## V1.4 verification
+## V1.4 验证
 
-V1.4 collected 914 tests. Its accepted full run completed naturally with 913
-passed, one existing Windows symlink-capability skip, zero failures, zero errors,
-and zero xfails. The first invocation used a 168-character Windows basetemp and
-produced 42 path-derived failures; its JUnit showed that every failure referenced
-that overlong basetemp. That invocation was retained as invalid rather than
-hidden. The single permitted corrected invocation used a 93-character ignored
-basetemp and passed.
+V1.4 收集到 914 项测试。被接受的完整运行自然结束：913 passed、1 个既有的 Windows symlink 能力限制 skip、0 failure、0 error、0 xfail。第一次调用使用了 168 个字符的 Windows basetemp，产生 42 个由路径长度导致的失败；其 JUnit 显示每个失败都引用该过长 basetemp。该次调用作为无效运行保留，没有隐藏。唯一一次允许的纠正调用改用 93 个字符的 ignored basetemp，随后通过。
 
-Full Ruff, public-release verification, Git diff checks, the blocked NASA
-execution gate, all five historical output-manifest recomputations, and the
-213-file canonical hash recheck passed. The cached diff remained empty and Git
-status was byte-for-byte unchanged during the V1.4 review.
+全仓 Ruff、公开发布校验、Git diff 检查、保持 blocked 的 NASA 执行门、五个历史 output manifest 的复算，以及 213 文件规范哈希复核均通过。整个 V1.4 审查期间，cached diff 保持为空，Git status 逐字节不变。
 
-## Evidence boundary
+## 证据边界
 
-This lineage records data identity, metadata-only access, rights gating, release
-integrity, and verification status. It does not publish raw NASA or BEEP data,
-does not establish NASA chemistry as LFP, and does not create a model result,
-accuracy improvement, independent validation, real-station validation, or
-higher evidence grade. NASA dataset-specific licensing and public
-aggregate-result release rights remain unresolved, so formal NASA prepare,
-predict, and score execution remains blocked.
+本谱系记录数据身份、metadata-only 访问、权利门禁、发布完整性和验证状态。它不发布 NASA 或 BEEP 原始数据，不证明 NASA 化学体系为 LFP，也不产生模型结果、精度提升、独立验证、真实电站验证或更高证据等级。NASA 数据集特定许可与公开发布汇总派生结果的权利仍未解决，因此 NASA 正式 `prepare`、`predict` 和 `score` 执行继续保持 blocked。
