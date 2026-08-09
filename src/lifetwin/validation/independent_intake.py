@@ -695,7 +695,7 @@ def _readiness_failures(intake: Mapping[str, object]) -> list[str]:
         and any_exposed
     ):
         failures.append("outcome_blindness_claim_inconsistent")
-    if any_exposed:
+    if any_exposed and outcome_class != "locked_retrospective_replication":
         failures.append("outcome_values_exposed_before_freeze")
     if outcome_class == "unclassifiable":
         failures.append("outcome_history_unclassifiable")

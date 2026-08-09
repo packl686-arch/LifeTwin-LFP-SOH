@@ -1,0 +1,133 @@
+{
+  "schema_version": "lifetwin.fastcharge_v5_support_uncertainty.v1",
+  "evidence_role": "outcome_exposed_public_development_not_independent_confirmation",
+  "selection_semantic_sha256": "78f8c913e8b38b4821f2dfafd7f0d5ef6be2aeecdd4fe6e7a754c95e7f0c7222",
+  "training_cycle_sha256": "4a7ae36ac155f016fb8a0c7c6589c2e7e0cde78e5e292a77ec55ddca9c98b846",
+  "crossfit_prediction_sha256": "229b2216563148956f208af7a0596215361325dc30be24be40ba3f07d5e464dd",
+  "physical_cell_count": 41,
+  "gate": {
+    "selected_gate_id": "union_q99",
+    "selected_gate": {
+      "quantile": 0.99,
+      "thresholds": {
+        "mean_reference_distance": 4.693308451593586,
+        "mean_reference_std_pp": 0.9730532476190525,
+        "mean_disagreement_pp": 1.8542727444131561
+      }
+    },
+    "selection_rule": "prefer_no_gate_within_0p02pp_mean_tie; otherwise require_p90_regression_not_above_0p05pp",
+    "all_gate_records": {
+      "no_gate": {
+        "quantile": null,
+        "thresholds": {}
+      },
+      "distance_q9": {
+        "quantile": 0.9,
+        "thresholds": {
+          "mean_reference_distance": 2.3832491835665066,
+          "mean_reference_std_pp": 0.38223073418336817,
+          "mean_disagreement_pp": 0.9591656987967989
+        }
+      },
+      "dispersion_q9": {
+        "quantile": 0.9,
+        "thresholds": {
+          "mean_reference_distance": 2.3832491835665066,
+          "mean_reference_std_pp": 0.38223073418336817,
+          "mean_disagreement_pp": 0.9591656987967989
+        }
+      },
+      "disagreement_q9": {
+        "quantile": 0.9,
+        "thresholds": {
+          "mean_reference_distance": 2.3832491835665066,
+          "mean_reference_std_pp": 0.38223073418336817,
+          "mean_disagreement_pp": 0.9591656987967989
+        }
+      },
+      "union_q9": {
+        "quantile": 0.9,
+        "thresholds": {
+          "mean_reference_distance": 2.3832491835665066,
+          "mean_reference_std_pp": 0.38223073418336817,
+          "mean_disagreement_pp": 0.9591656987967989
+        }
+      },
+      "distance_q95": {
+        "quantile": 0.95,
+        "thresholds": {
+          "mean_reference_distance": 2.9508363906194175,
+          "mean_reference_std_pp": 0.45804085334511085,
+          "mean_disagreement_pp": 1.0888894964713354
+        }
+      },
+      "dispersion_q95": {
+        "quantile": 0.95,
+        "thresholds": {
+          "mean_reference_distance": 2.9508363906194175,
+          "mean_reference_std_pp": 0.45804085334511085,
+          "mean_disagreement_pp": 1.0888894964713354
+        }
+      },
+      "disagreement_q95": {
+        "quantile": 0.95,
+        "thresholds": {
+          "mean_reference_distance": 2.9508363906194175,
+          "mean_reference_std_pp": 0.45804085334511085,
+          "mean_disagreement_pp": 1.0888894964713354
+        }
+      },
+      "union_q95": {
+        "quantile": 0.95,
+        "thresholds": {
+          "mean_reference_distance": 2.9508363906194175,
+          "mean_reference_std_pp": 0.45804085334511085,
+          "mean_disagreement_pp": 1.0888894964713354
+        }
+      },
+      "distance_q99": {
+        "quantile": 0.99,
+        "thresholds": {
+          "mean_reference_distance": 4.693308451593586,
+          "mean_reference_std_pp": 0.9730532476190525,
+          "mean_disagreement_pp": 1.8542727444131561
+        }
+      },
+      "dispersion_q99": {
+        "quantile": 0.99,
+        "thresholds": {
+          "mean_reference_distance": 4.693308451593586,
+          "mean_reference_std_pp": 0.9730532476190525,
+          "mean_disagreement_pp": 1.8542727444131561
+        }
+      },
+      "disagreement_q99": {
+        "quantile": 0.99,
+        "thresholds": {
+          "mean_reference_distance": 4.693308451593586,
+          "mean_reference_std_pp": 0.9730532476190525,
+          "mean_disagreement_pp": 1.8542727444131561
+        }
+      },
+      "union_q99": {
+        "quantile": 0.99,
+        "thresholds": {
+          "mean_reference_distance": 4.693308451593586,
+          "mean_reference_std_pp": 0.9730532476190525,
+          "mean_disagreement_pp": 1.8542727444131561
+        }
+      }
+    }
+  },
+  "interval": {
+    "selected_method_id": "hybrid_scaled",
+    "nominal_coverage": 0.9,
+    "minimum_overall_coverage": 0.87,
+    "minimum_prefix_coverage": 0.8,
+    "selection_metric": "minimum_cross_conformal_weighted_interval_score",
+    "eligible_method_found": true
+  },
+  "calibration_sha256": "1920c64dd8466236c8c1fd1830e33ab381088c7d559bedd7c072fff7879bae9c",
+  "evaluation_suffix_used_for_selection": false,
+  "formal_cross_domain_coverage_claim": false
+}

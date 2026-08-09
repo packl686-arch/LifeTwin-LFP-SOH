@@ -1,0 +1,41 @@
+{
+  "schema_version": "lifetwin.private_enterprise_schedule_v4_1.amendment.v1",
+  "protocol_id": "private_enterprise_schedule_v4_1_2026_08_06",
+  "status": "preregistered_before_hithium_data_access_after_outcome_exposed_snl_oracle_audit",
+  "author": "Jincheng Liu",
+  "registered_date": "2026-08-06",
+  "primary_comparator": "v3_dual_clock_kernel_shrinkage_constant_prefix_efc_per_day",
+  "candidate": "v4_1_explicit_elapsed_dual_clock",
+  "retained_negative_control": "v4_declared_schedule_delta_prior",
+  "amendment_rationale": "A post-outcome development diagnostic did not support direct future-condition coefficient shifts. V4.1 isolates the less assumptive explicit-elapsed dual-clock component. The diagnostic is not independent validation and no Hithium outcome was accessed.",
+  "schedule_modes": {
+    "deployment_candidate": [
+      "declared_operating_plan",
+      "operator_scenario"
+    ],
+    "oracle_upper_bound": [
+      "realized_future_schedule"
+    ]
+  },
+  "model_contract": {
+    "prefix_posterior_is_preserved": true,
+    "forecast_elapsed_days_used_by_model": true,
+    "forecast_equivalent_full_cycles_used_by_model": true,
+    "planned_condition_fields_used_only_for_support_diagnostics": true,
+    "future_condition_delta_applied_to_prediction": false,
+    "planned_charge_c_rate_used_by_model": false,
+    "target_capacity_suffix_permitted": false,
+    "oracle_result_primary_evidence_eligible": false
+  },
+  "primary_metric": "condition_equal_trajectory_iae_pp",
+  "decision_gates": {
+    "noninferiority_margin_pp": 0.02,
+    "desired_relative_improvement_fraction": 0.05,
+    "minimum_improved_condition_fraction": 0.75,
+    "maximum_worst_condition_regression_pp": 0.2,
+    "minimum_issued_fraction": 0.8,
+    "minimum_issued_pointwise_interval_coverage": 0.9
+  },
+  "decision_rule": "V4.1 may replace V3 only when a deployment-candidate schedule passes every frozen gate on the batch-disjoint Hithium calibration partition. Otherwise V3 remains primary. The full V4 condition-delta model remains a negative control and cannot be revived by retuning on that calibration result.",
+  "claim_boundary": "This amendment was frozen without Hithium measurements, but after an outcome-exposed public-data diagnostic; therefore V4.1 requires separately controlled Hithium calibration and one locked-test execution. Oracle schedules cannot support deployment claims. No result alone establishes 15-25 year accuracy."
+}

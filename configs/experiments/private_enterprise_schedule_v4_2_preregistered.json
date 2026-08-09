@@ -1,0 +1,42 @@
+{
+  "schema_version": "lifetwin.private_enterprise_schedule_v4_2.preregistration.v1",
+  "protocol_id": "private_enterprise_schedule_v4_2_2026_08_06",
+  "status": "preregistered_before_hithium_data_access_after_outcome_exposed_public_development",
+  "author": "Jincheng Liu",
+  "registered_date": "2026-08-06",
+  "primary_comparator": "v3_dual_clock_kernel_shrinkage_constant_prefix_efc_per_day",
+  "secondary_comparator": "v4_1_explicit_elapsed_dual_clock",
+  "candidate": "v4_2_support_gated_bounded_delta",
+  "retained_negative_control": "v4_declared_schedule_delta_prior",
+  "model_contract": {
+    "prefix_posterior_is_preserved": true,
+    "explicit_elapsed_and_efc_used": true,
+    "raw_condition_delta_source": "frozen_hierarchical_condition_prior",
+    "maximum_condition_delta_weight": 0.25,
+    "support_gate": "max_0_min_1_1_minus_schedule_distance_over_training_threshold",
+    "maximum_adjustment_fraction_of_training_loco_diagnostic_half_width": 0.25,
+    "same_cohort_weight_or_bound_tuning_permitted": false,
+    "planned_charge_c_rate_used_by_model": false,
+    "target_capacity_suffix_permitted": false,
+    "oracle_result_primary_evidence_eligible": false
+  },
+  "primary_metric": "condition_equal_trajectory_iae_pp",
+  "decision_gates": {
+    "noninferiority_margin_pp": 0.02,
+    "desired_relative_improvement_fraction": 0.05,
+    "minimum_improved_condition_fraction": 0.75,
+    "maximum_worst_condition_regression_pp": 0.2,
+    "minimum_issued_fraction": 0.8,
+    "minimum_issued_pointwise_interval_coverage": 0.9
+  },
+  "execution_order": [
+    "score_frozen_v3_on_hithium_calibration",
+    "score_default_v4_1_on_hithium_calibration",
+    "score_explicit_v4_2_on_hithium_calibration",
+    "apply_unchanged_gate_to_each_candidate_against_v3",
+    "select_at_most_one_candidate_before_locked_test"
+  ],
+  "tie_break_rule": "If both V4.1 and V4.2 pass every gate, select the lower condition-equal trajectory IAE. If the absolute difference is at most 0.02 pp, select V4.1 as the simpler candidate.",
+  "failure_action": "Retain frozen V3. Do not retune the V4.2 weight, interval fraction, support gate, or promotion thresholds on the same Hithium calibration outcomes.",
+  "claim_boundary": "V4.2 was specified after public development outcomes were exposed but before any Hithium measurement was accessed. Synthetic unit tests establish implementation behavior only. Hithium calibration can select a candidate but only a once-opened batch-disjoint locked test can raise enterprise evidence. No 15-25 year accuracy claim is permitted."
+}

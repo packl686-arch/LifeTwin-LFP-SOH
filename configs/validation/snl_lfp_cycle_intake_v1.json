@@ -1,0 +1,103 @@
+{
+  "schema_version": "lifetwin.snl_lfp_cycle_intake.v1",
+  "intake_id": "snl_lfp_battery_archive_intake_v1_2026_08_05",
+  "created_at_utc": "2026-08-05T02:33:34Z",
+  "prepared_by": "Jincheng Liu",
+  "dataset": {
+    "dataset_id": "SNL_BATTERY_ARCHIVE_LFP_CYCLE_V1",
+    "title": "Sandia National Laboratories commercial 18650 LFP cycling study",
+    "source_page": "https://batteryarchive.org/snl_study.html",
+    "paper_url": "https://doi.org/10.1149/1945-7111/abae37",
+    "access_mode": "written_request_then_time_limited_google_drive_share",
+    "received_at_utc": "2026-08-05T02:02:06Z",
+    "chemistry": "LFP_graphite",
+    "aging_mode": "controlled_cycle_aging",
+    "physical_cell_count": 30,
+    "condition_cluster_count": 12,
+    "raw_artifacts": [
+      {
+        "logical_name": "SNL LFP.zip",
+        "byte_size": 263826451,
+        "sha256": "006a335cbcdabc858a85ab0cdbc59a7001150751cf22abe8a7132c85ef63223d",
+        "redistributable": false
+      },
+      {
+        "logical_name": "SNL Metadata.xlsx",
+        "byte_size": 13996,
+        "sha256": "4cf981b4a54efd0e526a026711e82a3ad7ec17cd462b13ac40b8930b1b5ae8a3",
+        "redistributable": false
+      }
+    ],
+    "metadata_lfp_rows_canonical_sha256": "9deb97fd61fe28e1d6e2a70fddad14db19084d72995e3ebbedea1a90db7774c4"
+  },
+  "permission_record": {
+    "basis": "written_email_reply_and_private_file_share",
+    "publicly_redistributable": false,
+    "request_email_screenshot_sha256": "c9b6709f5c3bfd1ec1f3c48dfec11ecf09d6b00b39f262a32b9ba5af6c8c2624",
+    "reply_email_screenshot_sha256": "5a5a829325ee28effdf85f0c168b91ee80315b1353fdcac13fb74d4493bcf53e",
+    "drive_share_screenshot_sha256": "63b2ac160a073ce6f2ee6446bc6403f329a616a35fdef0418eb13d976ac7bd4f",
+    "research_and_model_development_confirmed": true,
+    "competition_use_explicitly_confirmed": false,
+    "public_aggregate_results_explicitly_confirmed": false,
+    "raw_redistribution_confirmed": false,
+    "commercial_model_development_confirmed": false,
+    "current_execution_boundary": "local_noncommercial_research_only_until_competition_and_public_aggregate_scope_is_clarified",
+    "record_quality_note": "Screenshot hashes are provisional. Preserve the complete request, reply, and share notification as EML or PDF before publication."
+  },
+  "required_attribution": {
+    "data_source": "batteryarchive.org",
+    "experiment_paper_doi": "10.1149/1945-7111/abae37",
+    "publication_reference_return_requested": true,
+    "institutional_policy_may_add_requirements": true
+  },
+  "structure_audit": {
+    "zip_member_count": 60,
+    "cycle_summary_member_count": 30,
+    "timeseries_member_count": 30,
+    "uncompressed_byte_size": 1157422326,
+    "duplicate_member_names": 0,
+    "metadata_lfp_row_count": 30,
+    "metadata_condition_cluster_count": 12,
+    "capacity_values_parsed_before_experiment_freeze": false,
+    "known_structure_exposure": [
+      "archive member names",
+      "archive member byte sizes",
+      "CSV headers",
+      "metadata workbook rows and condition fields"
+    ]
+  },
+  "outcome_exposure": {
+    "classification": "locked_retrospective_replication",
+    "maximum_evidence_role": "D3_external_cycle_trajectory_retrospective",
+    "reason": "Aggregate published cycle-life information and archive member sizes were seen before the dataset-specific freeze; individual capacity trajectories were not parsed before the freeze.",
+    "exposure_log": [
+      {
+        "material": "Battery Archive poster search snippet",
+        "exposure": "aggregate processed-subset cell count and cycle-life range",
+        "individual_capacity_values_exposed": false
+      },
+      {
+        "material": "SNL LFP.zip central directory",
+        "exposure": "member names, compressed sizes, and uncompressed sizes",
+        "individual_capacity_values_exposed": false
+      }
+    ]
+  },
+  "claim_boundary": {
+    "allowed_after_valid_execution": [
+      "locked_retrospective_external_cycle_aging_replication",
+      "cross_protocol_LFP_cycle_trajectory_stress_test",
+      "software_label_firewall_validation"
+    ],
+    "prohibited": [
+      "outcome_blind_independent_confirmation",
+      "calendar_aging_validation",
+      "stationary_storage_field_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_interval_coverage",
+      "raw_data_redistribution",
+      "commercial_use_rights"
+    ]
+  }
+}

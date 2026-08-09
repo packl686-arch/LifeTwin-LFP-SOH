@@ -1,0 +1,160 @@
+{
+  "schema_version": "lifetwin.fastcharge_v5_pairwise_screen.v1",
+  "evidence_role": "outcome_exposed_public_development_not_independent_confirmation",
+  "selection_data": "41_training_cells_only",
+  "selection_protocol": "deterministic_batch_stratified_physical_cell_5fold; held-out cells excluded from target and reference roles",
+  "training_cycle_sha256": "4a7ae36ac155f016fb8a0c7c6589c2e7e0cde78e5e292a77ec55ddca9c98b846",
+  "score_table_sha256": "be92b00f222b2b7a35e45a99bd239748b2e155f7faa6b0dbb1b834a5c0c3635f",
+  "screened_pair_specs": [
+    {
+      "model_id": "pairwise_ridge_a10",
+      "family": "ridge",
+      "parameters": {
+        "alpha": 10.0
+      }
+    },
+    {
+      "model_id": "pairwise_huber_fast",
+      "family": "huber",
+      "parameters": {
+        "alpha": 0.0001,
+        "epsilon": 1.35,
+        "max_iter": 300
+      }
+    },
+    {
+      "model_id": "pairwise_extra_trees_leaf3_48",
+      "family": "extra_trees",
+      "parameters": {
+        "min_samples_leaf": 3,
+        "n_estimators": 48
+      }
+    },
+    {
+      "model_id": "pairwise_extra_trees_leaf8_48",
+      "family": "extra_trees",
+      "parameters": {
+        "min_samples_leaf": 8,
+        "n_estimators": 48
+      }
+    },
+    {
+      "model_id": "pairwise_extra_trees_leaf16_48",
+      "family": "extra_trees",
+      "parameters": {
+        "min_samples_leaf": 16,
+        "n_estimators": 48
+      }
+    },
+    {
+      "model_id": "pairwise_hist_gbdt_leaf20",
+      "family": "hist_gbdt",
+      "parameters": {
+        "min_samples_leaf": 20,
+        "max_iter": 160
+      }
+    },
+    {
+      "model_id": "pairwise_hist_gbdt_leaf40",
+      "family": "hist_gbdt",
+      "parameters": {
+        "min_samples_leaf": 40,
+        "max_iter": 160
+      }
+    },
+    {
+      "model_id": "pairwise_hist_gbdt_leaf80",
+      "family": "hist_gbdt",
+      "parameters": {
+        "min_samples_leaf": 80,
+        "max_iter": 160
+      }
+    }
+  ],
+  "screened_direct_specs": [
+    {
+      "model_id": "direct_ridge_a1",
+      "family": "ridge",
+      "parameters": {
+        "alpha": 1.0
+      }
+    },
+    {
+      "model_id": "direct_ridge_a100",
+      "family": "ridge",
+      "parameters": {
+        "alpha": 100.0
+      }
+    },
+    {
+      "model_id": "direct_pcr95",
+      "family": "pcr",
+      "parameters": {
+        "variance": 0.95,
+        "alpha": 1.0
+      }
+    },
+    {
+      "model_id": "direct_pls6",
+      "family": "pls",
+      "parameters": {
+        "components": 6
+      }
+    },
+    {
+      "model_id": "direct_extra_trees_leaf5",
+      "family": "extra_trees",
+      "parameters": {
+        "min_samples_leaf": 5,
+        "n_estimators": 128
+      }
+    },
+    {
+      "model_id": "direct_hist_gbdt_leaf20",
+      "family": "hist_gbdt",
+      "parameters": {
+        "min_samples_leaf": 20,
+        "max_iter": 160
+      }
+    }
+  ],
+  "screened_reference_counts": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "screened_aggregations": [
+    "single_nearest",
+    "weighted_mean",
+    "weighted_median"
+  ],
+  "selected_candidate_id": "pairwise_extra_trees_leaf3_48__k12__weighted_mean",
+  "selected_model_spec": {
+    "model_id": "pairwise_extra_trees_leaf3_48",
+    "family": "extra_trees",
+    "parameters": {
+      "min_samples_leaf": 3,
+      "n_estimators": 48
+    }
+  },
+  "selected_reference_count": 12,
+  "selected_aggregation": "weighted_mean",
+  "selected_mean_trajectory_mae_pp": 0.35440177320602056,
+  "fixed_neighbor_k8_weighted_mean_mae_pp": 0.47098559815908003,
+  "relative_improvement_vs_fixed_neighbor": 0.24753161329931395,
+  "paired_cell_bootstrap": {
+    "physical_cell_count": 41,
+    "repetitions": 10000,
+    "mean_delta_mae_pp": -0.1165838249530595,
+    "lower_delta_mae_pp": -0.22163912469213568,
+    "upper_delta_mae_pp": -0.014814373944462429
+  },
+  "training_cv_gate": {
+    "minimum_relative_improvement": 0.05,
+    "bootstrap_upper_delta_must_be_below_pp": 0.0,
+    "passed": true
+  },
+  "selection_is_independent_confirmation": false,
+  "evaluation_suffix_used_for_selection": false
+}

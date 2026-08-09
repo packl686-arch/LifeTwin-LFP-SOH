@@ -4,7 +4,7 @@
 
 ## 一句话结论
 
-项目已经形成一条可审计的技术路线：只向预测器提供目标电芯的早期数据，利用训练电芯学习“相似轨迹迁移 + 风险门控”，并在证据不足时回退到训练集验证过的安全模型。最新公开 LFP 大样本实验中，安全硬门控模型将 cycle-300 轨迹 MAE 从持续值基线的 0.725 个百分点降至 0.286 个百分点，降幅 60.5%。
+项目已经形成一条可审计的技术路线：只向预测器提供目标电芯的早期数据，利用训练电芯学习“参考条件化残差 + 支持门控”，并在证据不足时回退到稳定模型。最新 V5 公开 LFP 开发实验中，成对参考残差模型将 cycle-300 轨迹 MAE 从 V2 稳定硬门控的 0.286 个百分点降至 0.208 个百分点，降幅 27.3%；支持门控后的 90% 共形区间覆盖率为 93.10%，平均宽度相对 V2 缩窄 50.4%。
 
 这是一项公开数据上的回顾性研发结果，不代表海辰产品精度，也不能直接证明 15-25 年寿命预测能力。
 
@@ -22,16 +22,20 @@
 
 | 方法 | 主测试集 MAE | 次测试集 MAE | 总体 MAE |
 |---|---:|---:|---:|
+| V5 参考条件化残差 | **0.222** | **0.194** | **0.208** |
+| V5 支持门控中心 | 0.222 | 0.221 | 0.221 |
 | 安全硬门控 | **0.341** | 0.231 | **0.286** |
 | 相似电芯增量迁移 | 0.361 | 0.231 | 0.297 |
 | 安全先验连续混合 | 0.416 | **0.201** | 0.310 |
 | 持续值基线 | 0.939 | 0.506 | 0.725 |
 
-单位均为容量保持率百分点。冻结的 V2 主模型通过全部预设开发门槛；但实测最优的是安全硬门控，而不是连续混合模型。这个负责任的区分很重要：项目保留失败和非最优结果，不用事后改写主指标。
+单位均为容量保持率百分点。V5 模型只用 41 个训练电芯做物理电芯五折选择；81 个评估电芯的未来后缀未参与选择。V5 无门控中心的点精度最好，而支持门控中心略有退化；后者的价值在于更明确的回退和更紧的区间，不被包装成点精度提升。项目保留失败和非最优结果，不用事后改写主指标。
 
 ## 可复核材料
 
 - [FastCharge V2 完整技术报告](reports/fastcharge_lfp_safe_prior_v2_2026-08-04.md)
+- [FastCharge V5 完整技术报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
+- [FastCharge V5 小型公开证据包](showcase/evidence_v5/README.md)
 - [FastCharge V1 失败分析](reports/fastcharge_lfp_trajectory_portability_v1_2026-08-04.md)
 - [NASA V3 小样本方法开发报告](reports/nasa_evidence_weighted_moe_v3_development_2026-08-03.md)
 - [FastCharge V2 冻结配置](configs/experiments/fastcharge_lfp_safe_prior_v2.json)
@@ -90,3 +94,35 @@ NASA V3 的四个第三方 CSV 与上述 38 个 MAT 元数据接入是两个不�
 - [数据 intake 模板](configs/validation/independent_lfp_dataset_intake.template.json)
 - [intake 编译器](scripts/compile_independent_lfp_intake.py)
 - [对抗测试](tests/test_independent_lfp_intake.py)
+
+## 企业私有盲测候选修订（2026-08-06）
+
+面向海辰内部循环数据的接口已拆成开发、批次独立校准和一次性锁定测试，并密封预测、拒绝决策、运行配置、未来计划与完成清单。当前主模型仍是冻结V3双时钟模型。
+
+完整V4曾尝试按未来温度、SOC窗口、放电倍率和分段EFC/天直接修正长期衰减系数。结果暴露后的开发诊断不支持该机制，因此它只保留为负对照，不晋升。新候选V4.1仅使用预测时已声明的未来日期与EFC坐标；其他计划字段只判断是否超出训练支持域，不直接推动容量曲线。V4.1仍不是海辰验证结果，必须通过不变的批次独立校准门槛后，才有资格进入一次锁定测试。
+
+- [V4.1机器可读修订协议](configs/experiments/private_enterprise_schedule_v4_1_amendment.json)
+- [V4.1修订记录](reports/private_schedule_v4_1_amendment_2026-08-06.md)
+- [海辰私有盲测执行手册](docs/hithium_private_blind_execution_cn.md)
+
+V4.2作为最后一个有限候选已经在接触海辰数据前冻结：工况修正权重最高为25%，且修正幅度不超过训练集内部LOCO诊断半区间的25%；离训练支持域越远，权重越接近零。它不是默认模式，也没有真实数据性能结论。合成全流程演练中，V4.1和V4.2都未满足预设改善门槛，系统按规则回退V3，并在不打开锁定真值的情况下密封了锁定预测。这一结果证明失败路径能正常工作，而不是证明V3具有企业精度。
+
+- [V4.2预注册协议](configs/experiments/private_enterprise_schedule_v4_2_preregistered.json)
+- [V4.2技术记录](reports/private_schedule_v4_2_preregistration_2026-08-06.md)
+- [数据集证据矩阵](configs/validation/dataset_evidence_matrix_2026_08.json)
+- [第二轮正确性审计](reports/private_enterprise_correctness_reaudit_2026-08-06.md)
+
+## 文献驱动的 V5 研发与首轮结果（2026-08-09）
+
+在系统阅读早期寿命、完整轨迹、参考电芯迁移、Gaussian Process、physics-informed、mixture-of-experts、knee、跨域迁移和不确定性论文后，下一条高价值路线被收敛为 V5-RCGP：保留冻结 V3/安全硬门控作为中心，只让“成对参考残差”和“GP 在线残差”在训练内部证据充分时修正它；没有 partial-charge、relaxation、ICA/DVA 或阻抗等诊断证据时，不启用带电化学名称的机理门控。
+
+V5 不自动加入已经冻结的海辰锁定测试。首轮 H1 成对参考实验已经执行：41 个训练电芯内部选择 `12 个参考 + ExtraTrees 成对残差 + 加权均值`，训练内相对固定近邻改善 24.8%；在 81 个公开评估电芯上相对 V2 改善 27.3%，物理电芯 bootstrap 区间未跨零。支持门控和共形区间的子门槛也已执行，覆盖率为 93.10%、平均宽度 1.4155 pp、单区间 WIS 0.1284。
+
+动态 landmark 与在线 residual audit 已按冻结协议执行。较长前缀重新运行 V5 在 81 个公开评估电芯上把 transition-equal MAE 从 0.2644 pp 降至 0.1738 pp，物理电芯聚类 bootstrap 95% 区间为 [-0.1195, -0.0659] pp；但 P40→P60 的改善很弱，三个 transition 合计只改善 64.2% 的 cell-transition。三种固定 Matern GP 均未达到 70% 电芯改善门槛；训练内唯一合格的 P40 轻量 offset 在公开评估只改善 66.7% 电芯，因此也不激活。完整 H2 明确为未通过，而不再是“尚未评估”；当前 V5 中心与 hybrid conformal 区间保持不变。Transformer/CNN 仍因训练电芯规模不足而不进入。
+
+- [论文证据矩阵与完整 V5 实验设计](docs/literature_model_review_and_v5_experiment_plan_2026_08_cn.md)
+- [V5 机器可读开发协议](configs/experiments/v5_rcgp_literature_informed_development.json)
+- [V5 协议防回退测试](tests/test_v5_rcgp_development_plan.py)
+- [V5 实验报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
+- [V5 动态 landmark 与在线残差审计](reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md)
+- [V5 公开证据](showcase/evidence_v5/README.md)

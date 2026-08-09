@@ -1,0 +1,37 @@
+{
+  "schema_version": "lifetwin.private_enterprise_schedule_v4.preregistration.v1",
+  "protocol_id": "private_enterprise_schedule_v4_2026_08_06",
+  "status": "preregistered_before_hithium_data_access",
+  "author": "Jincheng Liu",
+  "registered_date": "2026-08-06",
+  "primary_comparator": "v3_dual_clock_kernel_shrinkage_constant_prefix_efc_per_day",
+  "candidate": "v4_declared_schedule_delta_prior",
+  "schedule_modes": {
+    "deployment_candidate": [
+      "declared_operating_plan",
+      "operator_scenario"
+    ],
+    "oracle_upper_bound": [
+      "realized_future_schedule"
+    ]
+  },
+  "model_contract": {
+    "schedule_adaptation_weight": 1.0,
+    "prefix_posterior_is_preserved": true,
+    "future_condition_delta_is_applied_per_schedule_segment": true,
+    "planned_charge_c_rate_used_by_model": false,
+    "target_capacity_suffix_permitted": false,
+    "oracle_result_primary_evidence_eligible": false
+  },
+  "primary_metric": "condition_equal_trajectory_iae_pp",
+  "decision_gates": {
+    "noninferiority_margin_pp": 0.02,
+    "desired_relative_improvement_fraction": 0.05,
+    "minimum_improved_condition_fraction": 0.75,
+    "maximum_worst_condition_regression_pp": 0.2,
+    "minimum_issued_fraction": 0.8,
+    "minimum_issued_pointwise_interval_coverage": 0.9
+  },
+  "decision_rule": "V4 may replace V3 only when the deployment-candidate schedule mode passes every noninferiority, worst-condition, issue-rate, and coverage gate on a batch-disjoint calibration partition. Oracle-only improvement cannot promote V4.",
+  "claim_boundary": "This protocol was frozen without Hithium measurements. Public SNL outcomes and private-development diagnostics were already exposed, so they cannot independently confirm V4. A Hithium-specific claim requires separately controlled development, calibration, and one locked-test execution. No result alone establishes 15-25 year accuracy."
+}

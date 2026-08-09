@@ -1,0 +1,213 @@
+{
+  "schema_version": "lifetwin.feishu_workflow.v1",
+  "workflow_id": "lifetwin_evidence_agent_v1",
+  "status": "deployment_blueprint_requires_enterprise_tenant_credentials",
+  "owner": "Jincheng Liu",
+  "purpose": "Orchestrate auditable SOH prediction tasks without allowing a language model to invent numeric predictions or override evidence refusals.",
+  "data_boundary": {
+    "raw_bms_and_rpt_leave_enterprise_domain": false,
+    "raw_training_rows_written_to_feishu": false,
+    "feishu_receives": [
+      "task_metadata",
+      "model_and_data_version_hashes",
+      "prediction_summary",
+      "interval_and_support_status",
+      "decision_and_approval_log"
+    ],
+    "public_demo_contains_hithium_data": false
+  },
+  "feishu_capabilities": [
+    {
+      "capability": "Feishu_Aily",
+      "role": "tool-calling workflow orchestration and evidence adjudication"
+    },
+    {
+      "capability": "Base",
+      "role": "cell, model, task, prediction, evidence and approval registry"
+    },
+    {
+      "capability": "Miaoda",
+      "role": "role-specific research, quality and operations dashboard"
+    },
+    {
+      "capability": "Enterprise_Doubao",
+      "role": "bounded explanation from model-produced structured JSON"
+    },
+    {
+      "capability": "Minutes",
+      "role": "review decisions, owners and follow-up extraction"
+    }
+  ],
+  "aily_tools": [
+    {
+      "tool_id": "validate_lifetwin_input",
+      "required_inputs": [
+        "task_id",
+        "cell_id",
+        "prediction_time",
+        "data_manifest_uri"
+      ],
+      "returns": [
+        "qualification_status",
+        "failure_reasons",
+        "validated_manifest_sha256"
+      ]
+    },
+    {
+      "tool_id": "run_lifetwin_prediction",
+      "precondition": "qualification_status=passed",
+      "returns": [
+        "prediction_id",
+        "trajectory_uri",
+        "summary_metrics",
+        "evidence_status",
+        "operational_action",
+        "prediction_sha256"
+      ]
+    },
+    {
+      "tool_id": "register_lifetwin_result",
+      "precondition": "prediction_sha256 verified",
+      "returns": [
+        "base_record_id",
+        "approval_route"
+      ]
+    },
+    {
+      "tool_id": "score_lifetwin_prediction",
+      "precondition": "authorized future truth release and frozen prediction hash",
+      "returns": [
+        "score_id",
+        "metric_bundle",
+        "promotion_gate_status"
+      ]
+    }
+  ],
+  "workflow_states": [
+    "draft",
+    "data_qualification",
+    "qualified",
+    "predicting",
+    "predicted",
+    "warning_review",
+    "refused",
+    "approved_for_shadow_use",
+    "truth_pending",
+    "scored",
+    "promotion_review",
+    "closed"
+  ],
+  "state_rules": [
+    {
+      "from": "data_qualification",
+      "condition": "qualification_status!=passed",
+      "to": "refused"
+    },
+    {
+      "from": "predicted",
+      "condition": "operational_action=refuse_recommended",
+      "to": "refused"
+    },
+    {
+      "from": "predicted",
+      "condition": "operational_action=predict_with_warning",
+      "to": "warning_review"
+    },
+    {
+      "from": "predicted",
+      "condition": "operational_action=predict",
+      "to": "approved_for_shadow_use"
+    }
+  ],
+  "base_tables": [
+    {
+      "table_id": "cell_registry",
+      "primary_key": "cell_id",
+      "fields": [
+        "cell_id",
+        "product_family",
+        "chemistry",
+        "format",
+        "manufacturing_batch",
+        "station_or_test_id",
+        "data_classification",
+        "owner"
+      ]
+    },
+    {
+      "table_id": "model_registry",
+      "primary_key": "model_version",
+      "fields": [
+        "model_version",
+        "model_sha256",
+        "training_manifest_sha256",
+        "config_sha256",
+        "evidence_scope",
+        "prohibited_claims",
+        "promotion_status"
+      ]
+    },
+    {
+      "table_id": "prediction_tasks",
+      "primary_key": "task_id",
+      "fields": [
+        "task_id",
+        "cell_id",
+        "prediction_time",
+        "landmark",
+        "data_manifest_sha256",
+        "model_version",
+        "workflow_state",
+        "requester",
+        "created_at"
+      ]
+    },
+    {
+      "table_id": "prediction_evidence",
+      "primary_key": "prediction_id",
+      "fields": [
+        "prediction_id",
+        "task_id",
+        "prediction_sha256",
+        "trajectory_uri",
+        "soh_endpoint",
+        "interval_lower",
+        "interval_upper",
+        "support_score",
+        "route",
+        "evidence_status",
+        "operational_action",
+        "refusal_reasons"
+      ]
+    },
+    {
+      "table_id": "approval_and_truth",
+      "primary_key": "record_id",
+      "fields": [
+        "record_id",
+        "prediction_id",
+        "reviewer",
+        "approval_action",
+        "override_reason",
+        "truth_release_authorization",
+        "score_sha256",
+        "promotion_gate_status"
+      ]
+    }
+  ],
+  "agent_guardrails": [
+    "Never calculate or guess SOH values without a successful model-tool response.",
+    "Never translate a refusal into a usable prediction.",
+    "Always show evidence scope, model version, prediction hash and prohibited claims.",
+    "Never expose raw enterprise measurements in messages or public links.",
+    "Require named approval and a reason for every manual override.",
+    "Do not describe outcome-exposed development evidence as independent validation."
+  ],
+  "failure_policy": {
+    "tool_timeout": "stop_and_record_failure",
+    "hash_mismatch": "refuse_and_escalate_security_review",
+    "model_service_unavailable": "retain_last_approved_result_without_reissuing",
+    "unsupported_domain": "refuse_and_create_data_coverage_task",
+    "language_model_unavailable": "preserve_structured_result_without_narrative"
+  }
+}

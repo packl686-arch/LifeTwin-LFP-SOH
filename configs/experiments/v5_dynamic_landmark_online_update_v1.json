@@ -1,0 +1,103 @@
+{
+  "schema_version": "lifetwin.fastcharge_v5_dynamic_landmark.config.v1",
+  "experiment_id": "fastcharge_v5_dynamic_landmark_online_update_v1",
+  "status": "frozen_before_formal_dynamic_landmark_execution_on_2026_08_09",
+  "freeze_timestamp_utc": "2026-08-09T03:51:35Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "outcome_exposed_public_development_not_independent_confirmation",
+  "purpose": "Test whether a newly observed target-cell prefix supports a safe reissue and whether a target-specific residual update should be activated around the frozen V5 center.",
+  "inputs": {
+    "training_crossfit_predictions": {
+      "path": "artifacts/fastcharge-v5-support-uncertainty/crossfit_predictions.csv",
+      "sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+      "physical_cell_count": 41,
+      "selection_role": "only_source_for_candidate_selection"
+    },
+    "public_evaluation_predictions": {
+      "path": "artifacts/fastcharge-v5-pairwise-development/selected_predictions.parquet",
+      "sha256": "e29c3aae8d74722515e27b47dd45ea2646b085c529300462cddc91ce44413178",
+      "physical_cell_count": 81,
+      "selection_role": "descriptive_evaluation_only_never_candidate_selection"
+    },
+    "canonical_cycles": {
+      "path": "artifacts/fastcharge-safe-prior-v2/canonical_cycles.parquet",
+      "sha256": "322c30de63c7dafb5fde2653c5b45b637dd6c0828ee9294a27d5276c3296e286",
+      "score_end_cycle": 300
+    }
+  },
+  "data_firewall": {
+    "candidate_selection_uses_training_cells_only": true,
+    "selection_group": "physical_cell_id",
+    "training_selector_audit": "leave_one_physical_cell_out_on_already_crossfit_predictions",
+    "target_residual_history": "only_observations_after_previous_prefix_and_at_or_before_current_landmark",
+    "future_target_outcomes_available_to_update": false,
+    "public_evaluation_outcomes_available_to_candidate_selection": false,
+    "random_row_split_permitted": false,
+    "realized_future_schedule_permitted": false
+  },
+  "landmarks": {
+    "registered_prefix_cycles": [20, 40, 60, 100],
+    "registered_transitions": [[20, 40], [40, 60], [60, 100]],
+    "score_end_cycle": 300,
+    "common_future_support": "cycles_strictly_after_current_landmark_through_cycle_300",
+    "base_reissue_definition": "compare_previous_prefix_V5_and_current_prefix_V5_on_identical_future_cycles",
+    "residual_update_definition": "fit_only_previous_issuance_residuals_observed_by_current_landmark_then_add_the_frozen_correction_to_the_current_prefix_V5_center"
+  },
+  "candidate_rules": {
+    "fallback": "no_update",
+    "robust_offset": {
+      "statistics": ["last_residual", "median_last_5", "median_last_10", "median_all"],
+      "shrinkage": [0.25, 0.5, 0.75, 1.0]
+    },
+    "fixed_gaussian_process": {
+      "kernel": "constant_1_times_matern_3_over_2",
+      "normalized_cycle_length_scales": [0.1, 0.2, 0.4],
+      "observation_noise_variance_pp2": 0.04,
+      "mean_function": "zero_residual_around_current_frozen_v5_center",
+      "hyperparameter_optimizer": "none",
+      "normalize_target": false,
+      "absolute_correction_cap_pp": 1.5
+    },
+    "future_prediction_clip_pct": [0.0, 110.0]
+  },
+  "selection": {
+    "unit": "physical_cell_equal_trajectory_mae",
+    "performed_separately_by_transition": true,
+    "primary_order": ["mean_updated_trajectory_mae_pp", "candidate_id"],
+    "eligibility": {
+      "mean_delta_mae_must_be_below_pp": 0.0,
+      "minimum_fraction_cells_improved": 0.7,
+      "maximum_p90_cell_delta_mae_pp": 0.05
+    },
+    "no_eligible_candidate_action": "select_no_update",
+    "evaluation_split_retuning_permitted": false
+  },
+  "decision_gates": {
+    "dynamic_reissue_is_reported_separately_from_residual_update": true,
+    "H2_online_update_pass_requires_every_transition_to_be_eligible": true,
+    "H2_online_update_minimum_fraction_cells_improved": 0.7,
+    "full_H2_also_requires_frozen_interval_subgate": true,
+    "failure_action": "retain_current_prefix_v5_center_and_existing_hybrid_conformal_interval"
+  },
+  "stopping_rules": {
+    "candidate_rounds": 1,
+    "same_exposed_evaluation_cohort_second_round_permitted": false,
+    "failed_gp_branch_action": "do_not_activate_gp_and_do_not_relabel_the_interval_subgate_as_full_H2",
+    "future_work": "repeat_the_frozen_protocol_on_a_new_outcome_blind_cell_batch_or_private_truth_vault"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "retrospective_training_only_candidate_selection",
+      "outcome_exposed_public_dynamic_landmark_diagnostic",
+      "software_and_firewall_validation"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "calendar_aging_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_cross_domain_coverage",
+      "production_deployment_claim"
+    ]
+  }
+}

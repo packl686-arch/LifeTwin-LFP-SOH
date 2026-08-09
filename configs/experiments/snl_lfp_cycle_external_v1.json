@@ -1,0 +1,171 @@
+{
+  "schema_version": "lifetwin.snl_lfp_cycle_external.config.v1",
+  "experiment_id": "snl_lfp_cycle_external_v1",
+  "status": "frozen_before_individual_capacity_value_parsing",
+  "freeze_timestamp_utc": "2026-08-05T02:33:34Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "locked_retrospective_external_cycle_trajectory_replication",
+  "dataset": {
+    "dataset_id": "SNL_BATTERY_ARCHIVE_LFP_CYCLE_V1",
+    "raw_zip_sha256": "006a335cbcdabc858a85ab0cdbc59a7001150751cf22abe8a7132c85ef63223d",
+    "metadata_xlsx_sha256": "4cf981b4a54efd0e526a026711e82a3ad7ec17cd462b13ac40b8930b1b5ae8a3",
+    "metadata_lfp_rows_canonical_sha256": "9deb97fd61fe28e1d6e2a70fddad14db19084d72995e3ebbedea1a90db7774c4",
+    "expected_physical_cells": 30,
+    "expected_condition_clusters": 12,
+    "cycle_summary_member_suffix": "_cycle_data.csv",
+    "timeseries_used_by_primary_model": false
+  },
+  "source_training": {
+    "dataset_id": "MATR_FASTCHARGE_TABLE9_TRAJECTORY_V1",
+    "training_cycles_relative_path": "artifacts/fastcharge-safe-prior-v2/training_cycles.parquet",
+    "training_cycles_sha256": "ce43933e2de291f689735b9109499b6c0b2a6a137f123df1a1b4756c9ee75d34",
+    "source_config_relative_path": "configs/experiments/fastcharge_lfp_safe_prior_v2.json",
+    "source_config_file_sha256": "87974bbbb7220bf0b0940534a7122a38695da1f94a01bc805afd6d958630d91d",
+    "expected_training_cells": 41,
+    "target_dataset_training_or_tuning": false
+  },
+  "adapter": {
+    "metadata_cell_id_rule": "replace_the_single_charge_discharge_rate_separator_slash_with_hyphen",
+    "required_raw_cycle_indices": "every_integer_1_through_300_exactly_once",
+    "duplicate_cycle_policy": "fail",
+    "missing_cycle_policy": "fail_cell_and_report_protocol_deviation",
+    "nonfinite_or_nonpositive_discharge_capacity_policy": "fail_before_prediction",
+    "normalization": "median_discharge_capacity_cycles_1_to_5",
+    "time_axis": "raw_cycle_index",
+    "equivalent_full_cycle": "cycle_index_times_metadata_DOD_fraction",
+    "primary_model_input_fields": [
+      "cycle_index",
+      "discharge_capacity_ah"
+    ],
+    "condition_fields_for_stratified_scoring_only": [
+      "temperature_c",
+      "min_soc_pct",
+      "max_soc_pct",
+      "discharge_c_rate"
+    ],
+    "forbidden_model_inputs": [
+      "target_cycles_after_landmark",
+      "target_cycle_life",
+      "archive_member_byte_size",
+      "timeseries_after_landmark",
+      "condition_cluster_outcomes"
+    ]
+  },
+  "prediction_firewall": {
+    "target_partitions": "all_30_SNL_LFP_cells_external_evaluation_only",
+    "target_prefix_cycles": [
+      20,
+      40,
+      60,
+      100
+    ],
+    "score_end_cycle": 300,
+    "training_history_rule": "complete_histories_only_from_MATR_training_split",
+    "target_rule": "only_rows_at_or_before_the_current_prefix",
+    "prediction_bundle_must_be_hashed_before_truth_linkage": true,
+    "prediction_process_must_not_receive_raw_zip_path": true,
+    "scoring_unit": "physical_cell_then_condition_cluster_equal_weight"
+  },
+  "base_experts": {
+    "model_ids": [
+      "target_prefix_persistence",
+      "target_prefix_full_linear",
+      "target_prefix_robust_recent_linear",
+      "target_prefix_constrained_sqrt_linear",
+      "nearest_neighbor_delta_transfer"
+    ],
+    "robust_recent_window_cycles": 20,
+    "prediction_clip_pct": [
+      0.0,
+      110.0
+    ],
+    "nearest_neighbor_count": 8
+  },
+  "capacity_only_signature": {
+    "feature_ids": [
+      "capacity_full_slope_pp_per_cycle",
+      "capacity_recent_slope_pp_per_cycle",
+      "capacity_slope_disagreement_pp_per_cycle",
+      "capacity_residual_std_pp",
+      "capacity_recovery_fraction"
+    ],
+    "robust_scale": "source_training_median_absolute_deviation_times_1p4826_with_floors",
+    "scale_floors": {
+      "capacity_full_slope_pp_per_cycle": 0.005,
+      "capacity_recent_slope_pp_per_cycle": 0.005,
+      "capacity_slope_disagreement_pp_per_cycle": 0.005,
+      "capacity_residual_std_pp": 0.01,
+      "capacity_recovery_fraction": 0.01
+    }
+  },
+  "safe_hard_selector": {
+    "model_id": "capacity_only_safe_hard_local_risk_selector",
+    "qualification_source": "MATR_training_strict_leave_one_cell_out",
+    "persistence_anchor_always_included": true,
+    "maximum_relative_mae_vs_persistence": 1.25,
+    "maximum_absolute_mae_above_persistence_pp": 0.1,
+    "neighbor_count": 8,
+    "neighbor_weighting": "inverse_signature_distance",
+    "dispersion_penalty": 0.5,
+    "minimum_relative_local_risk_margin": 0.1,
+    "supported_case": "choose_lowest_local_risk_expert_within_safe_pool",
+    "ambiguous_case": "choose_lowest_global_training_LOO_risk_expert_within_safe_pool",
+    "out_of_domain_threshold": "1.5_times_source_training_LOO_99th_percentile_mean_neighbor_distance",
+    "out_of_domain_case": "refuse_primary_numeric_output_but_retain_labeled_diagnostic_expert_outputs",
+    "continuous_mixture_is_primary": false
+  },
+  "uncertainty": {
+    "method": "source_training_LOO_absolute_residual_quantile_by_prefix_and_forecast_cycle",
+    "nominal_pointwise_coverage": 0.9,
+    "status": "diagnostic_only",
+    "reason": "SNL conditions are not exchangeable with the MATR fast-charge training cohort and there is no independent route calibration."
+  },
+  "evaluation": {
+    "primary_metric": "condition_cluster_equal_trajectory_mae_pp",
+    "secondary_metrics": [
+      "physical_cell_equal_trajectory_mae_pp",
+      "condition_cluster_equal_endpoint_absolute_error_pp",
+      "issued_cell_fraction",
+      "improved_condition_cluster_fraction",
+      "worst_condition_cluster_regression_vs_persistence_pp",
+      "exact_one_sided_cluster_sign_flip_p_value"
+    ],
+    "comparators": [
+      "target_prefix_persistence",
+      "each_fixed_base_expert",
+      "lowest_global_training_LOO_risk_expert"
+    ],
+    "descriptive_success_gate": {
+      "minimum_relative_cluster_equal_mae_improvement_vs_persistence": 0.05,
+      "minimum_absolute_cluster_equal_mae_improvement_pp": 0.1,
+      "minimum_improved_condition_cluster_fraction": 0.6,
+      "maximum_worst_condition_cluster_regression_pp": 0.5,
+      "minimum_issued_cell_fraction": 0.8,
+      "maximum_exact_one_sided_cluster_sign_flip_p_value": 0.05,
+      "minimum_condition_clusters": 8,
+      "interpretation": "retrospective_descriptive_gate_not_outcome_blind_confirmation"
+    }
+  },
+  "rights_and_release": {
+    "local_noncommercial_research_execution": true,
+    "public_aggregate_results": "hold_until_Battery_Archive_clarifies_competition_and_publication_scope",
+    "raw_data_redistribution": false,
+    "permission_artifacts_in_public_repository": false
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "locked_retrospective_external_LFP_cycle_trajectory_replication",
+      "cross_protocol_robustness_stress_test",
+      "target_future_label_firewall_validation"
+    ],
+    "prohibited": [
+      "outcome_blind_independent_confirmation",
+      "calendar_aging_validation",
+      "stationary_storage_field_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_predictive_interval_coverage",
+      "commercial_use_rights"
+    ]
+  }
+}

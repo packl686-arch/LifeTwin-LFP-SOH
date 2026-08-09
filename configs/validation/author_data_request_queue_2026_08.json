@@ -1,0 +1,152 @@
+{
+  "schema_version": "lifetwin.author_data_request_queue.v1",
+  "queue_id": "lifetwin_long_term_lfp_author_requests_2026_08",
+  "prepared_at_utc": "2026-08-04T10:39:57Z",
+  "prepared_by": "Jincheng Liu",
+  "project": {
+    "name": "LifeTwin",
+    "status": "noncommercial_research_and_competition_prototype",
+    "deployed_product": false,
+    "contains_hithium_internal_data": false
+  },
+  "global_use_boundary": {
+    "first_analysis": "locked_retrospective_external_evaluation",
+    "candidate_tuning_on_requested_outcomes": false,
+    "raw_data_redistribution": false,
+    "commercial_model_development": false,
+    "public_outputs_without_additional_permission": [
+      "aggregate_metrics",
+      "aggregate_figures",
+      "derived_tables_that_do_not_reconstruct_raw_measurements"
+    ],
+    "permission_required_before_acquisition_or_use": true
+  },
+  "requests": [
+    {
+      "request_id": "yagci_offenburg_2025_stationary_request_v1",
+      "priority": 1,
+      "status": "sent_primary_address_bounced_secondary_delivery_unconfirmed",
+      "recipient": {
+        "to": [
+          "mehmet.yagci@hs-offenburg.de"
+        ],
+        "cc": [
+          "wolfgang.bessler@hs-offenburg.de"
+        ]
+      },
+      "subject": "Data request: 180 Ah stationary-storage LFP calendar-aging study",
+      "dataset_id": "yagci_offenburg_2025_stationary",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.est.2025.116774",
+        "https://opus.hs-offenburg.de/10762"
+      ],
+      "published_design": {
+        "chemistry": "commercial 180 Ah stationary-storage LFP/graphite",
+        "calendar_duration_days_approx": 850,
+        "temperatures_c": [
+          35,
+          50
+        ],
+        "storage_soc_pct": [
+          75,
+          100
+        ],
+        "data_availability_statement": "Data will be made available on request."
+      },
+      "minimum_requested_fields": [
+        "anonymous_physical_cell_id",
+        "calendar_or_cycle_campaign_id",
+        "storage_temperature_c",
+        "storage_soc_pct",
+        "elapsed_storage_days_or_measurement_date",
+        "rpt_discharge_capacity_ah_or_capacity_retention_pct",
+        "rpt_test_temperature_c",
+        "rpt_charge_discharge_protocol",
+        "missing_anomaly_exclusion_or_replacement_flags"
+      ],
+      "optional_requested_fields": [
+        "rpt_voltage_current_time_curves",
+        "dc_internal_resistance",
+        "charge_and_discharge_energy",
+        "coulombic_and_energy_efficiency",
+        "differential_voltage_analysis_outputs",
+        "temperature_excursions_or_interrupted_storage_events",
+        "cell_batch_or_lot_identifier"
+      ],
+      "acceptable_formats": [
+        "CSV",
+        "XLSX",
+        "MAT"
+      ],
+      "maximum_possible_evidence_tier": "D3_long_horizon_trajectory_retrospective",
+      "evidence_limit": "Published outcomes have already been seen, so this dataset cannot provide outcome-blind confirmation.",
+      "delivery_record": {
+        "recorded_from_requester_message_on": "2026-08-06",
+        "primary_recipient_event_local": "2026-08-05T10:12:00+08:00",
+        "primary_recipient_result": "failed_address_not_found_or_cannot_receive_mail",
+        "cc_recipient_result": "not_reported_delivery_unconfirmed",
+        "next_action": "Do not resend to the failed address. Allow the copied coauthor a normal response window, then use one verified institutional contact route if needed."
+      }
+    },
+    {
+      "request_id": "vachenauer_tum_2025_shelf_request_v1",
+      "priority": 2,
+      "status": "closed_author_declined_to_share_requested_data",
+      "recipient": {
+        "to": [
+          "veronika.vachenauer@tum.de"
+        ],
+        "cc": []
+      },
+      "subject": "Data request: ten-year LiFePO4/C shelf-life study",
+      "dataset_id": "vachenauer_tum_2025_shelf",
+      "primary_sources": [
+        "https://doi.org/10.1016/j.jpowsour.2025.237779",
+        "https://portal.fis.tum.de/en/publications/shelf-life-of-lithium-ion-batteries-recommissioning-lifeposub4sub/"
+      ],
+      "published_design": {
+        "chemistry": "commercial 26650 LiFePO4/graphite",
+        "physical_cell_count": 100,
+        "storage_duration_years": 10,
+        "storage_temperature_c": 6,
+        "storage_soc_pct": 50,
+        "intermediate_checkups_during_storage": false,
+        "data_availability_statement": "Data will be made available on request."
+      },
+      "minimum_requested_fields": [
+        "anonymous_physical_cell_id_preserved_across_bol_and_endpoint",
+        "bol_capacity_ah",
+        "post_storage_capacity_ah",
+        "bol_internal_resistance",
+        "post_storage_internal_resistance",
+        "exact_elapsed_storage_time_or_start_and_end_dates",
+        "storage_temperature_c",
+        "storage_soc_pct",
+        "capacity_and_resistance_test_protocols",
+        "missing_anomaly_exclusion_or_failure_flags"
+      ],
+      "optional_requested_fields": [
+        "storage_condition_excursions_or_handling_events",
+        "pseudo_ocv_curves",
+        "differential_voltage_analysis_outputs",
+        "post_storage_rate_capability_results",
+        "post_storage_cycle_aging_trajectories",
+        "cell_batch_or_lot_identifier"
+      ],
+      "acceptable_formats": [
+        "CSV",
+        "XLSX",
+        "MAT"
+      ],
+      "maximum_possible_evidence_tier": "D2_long_horizon_endpoint",
+      "evidence_limit": "The uninterrupted storage interval has no intermediate observations, so the data can test a decade endpoint but not dynamic landmark forecasting.",
+      "response_record": {
+        "recorded_from_requester_message_on": "2026-08-06",
+        "result": "author_declined_to_disclose_requested_data",
+        "raw_data_acquired": false,
+        "permission_granted": false,
+        "next_action": "Close the request without repeated solicitation. Retain only the published aggregate endpoint as literature context."
+      }
+    }
+  ]
+}

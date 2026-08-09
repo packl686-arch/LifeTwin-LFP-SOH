@@ -291,6 +291,41 @@ def test_development_only_intake_does_not_offer_confirmation_freeze_steps() -> N
     assert draft["outcome_blindness"]["classification"] == "unclassifiable"
 
 
+def test_exposed_outcomes_can_reach_locked_retrospective_freeze_review() -> None:
+    candidate = load_independent_candidate_config(CANDIDATE_PATH)
+    intake = _ready_intake()
+    intake["outcome_exposure"]["classification"] = (
+        "locked_retrospective_replication"
+    )
+    intake["outcome_exposure"]["classification_reason"] = (
+        "Target outcomes were exposed before the dataset-specific protocol was frozen; "
+        "the candidate and scorer are now locked for retrospective replication only."
+    )
+    intake["outcome_exposure"]["target_outcome_exposure_log"][0][
+        "target_values_exposed"
+    ] = True
+    intake["structure_audit"]["outcome_values_inspected"] = True
+
+    report, draft = compile_independent_lfp_intake(intake, candidate)
+
+    assert report["failure_reasons"] == []
+    assert report["readiness_status"] == (
+        "ready_for_locked_retrospective_freeze_review"
+    )
+    assert report["maximum_evidence_tier_after_valid_execution"] == (
+        "D3_long_horizon_trajectory_retrospective"
+    )
+    assert report["allowed_claim_role_after_valid_execution"] == (
+        "retrospective_replication"
+    )
+    assert draft["outcome_blindness"]["classification"] == (
+        "locked_retrospective_replication"
+    )
+    assert draft["claim_boundaries"]["allowed_claims"] == [
+        "locked_retrospective_replication"
+    ]
+
+
 def test_intake_cli_blocks_template_and_refuses_overwrite(tmp_path: Path) -> None:
     output_directory = tmp_path / "compiled"
     command = [
