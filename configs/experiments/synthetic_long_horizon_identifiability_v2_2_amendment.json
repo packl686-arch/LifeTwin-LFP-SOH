@@ -1,7 +1,7 @@
 {
   "schema_version": "lifetwin_synthetic_long_horizon_v2_2/1.0.0",
   "protocol_id": "synthetic_long_horizon_identifiability_v2_2",
-  "status": "preregistered_preimplementation",
+  "status": "implementation_frozen",
   "title": "V2.2 whole-bundle validation and capability-bound partition amendment",
   "design_date": "2026-08-09",
   "design_witnesses": [
