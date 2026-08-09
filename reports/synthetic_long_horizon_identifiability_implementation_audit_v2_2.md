@@ -1,8 +1,11 @@
 # Synthetic Long-Horizon Identifiability V2.2 Implementation Audit
 
-Status: `implementation_frozen`  
-Protocol: `synthetic_long_horizon_identifiability_v2_2`  
-Only formal attempt: `v022-formal-20260809-a1`  
+Status: `implementation_frozen`
+
+Protocol: `synthetic_long_horizon_identifiability_v2_2`
+
+Only formal attempt: `v022-formal-20260809-a1`
+
 Audit date: 2026-08-09
 
 ## Result-free boundary
@@ -73,10 +76,15 @@ changed. Seeds and identifiers are new only because V2.2 is a new protocol.
 
 ## Execution boundary
 
-The next commit must be the direct child of implementation commit
-`f92280584c4f6aacc3b52b9398ce38a17dded38c` and may contain only this audit and
-the machine-readable freeze record. Formal execution is authorized only from
-that clean direct-child commit, with CPython 3.12.13, the exact V2.2 lock,
+The first attestation commit, `1fe3f8f`, was preserved but rejected before
+launch because `git diff --check` reported three Markdown trailing-whitespace
+lines in this audit. No generator, seed, truth, or formal root was involved.
+This forward-only correction removes those bytes and hardens the environment
+guard so the final direct-child attestation may change only the machine-readable
+freeze record; the audit bytes are bound from that record.
+
+Formal execution is authorized only from the corrected clean direct-child
+freeze commit, with CPython 3.12.13, the exact V2.2 lock,
 single-thread environment variables, `PYTHONHASHSEED=0`, fresh pairwise-disjoint
 roots under the V2.2 worktree, and the sole attempt ID
 `v022-formal-20260809-a1`.

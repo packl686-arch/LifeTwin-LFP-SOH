@@ -61,11 +61,13 @@ _IMPLEMENTATION_METADATA_CHANGES = tuple(
     sorted(
         {
             _FREEZE_RECORD_RELATIVE_PATH.as_posix(),
-            _IMPLEMENTATION_AUDIT_RELATIVE_PATH.as_posix(),
         }
     )
 )
 _PREREG_BYTE_SHA256 = "6a720047bbca0671a86ac7ebabaaa15693e1b69b9ff660f7c6cea0ea5b26893a"
+_IMPLEMENTATION_AUDIT_BYTE_SHA256 = (
+    "9606b113d185cfc588088439f7a3819fa30282b3a49c93e6f088850a9fd21d3b"
+)
 _DESIGN_FREEZE_COMMIT = "2fb17af12a742dca51107a26300b199e13f27fe7"
 _EXPECTED_HASH_SENTINEL = 2830379724976353799
 _THREAD_ENVIRONMENT = (
@@ -218,6 +220,8 @@ def _validate_freeze_record(
         "preregistration_byte_sha256": _PREREG_BYTE_SHA256,
         "environment_lock_path": _LOCK_RELATIVE_PATH.as_posix(),
         "environment_lock_byte_sha256": _LOCK_BYTE_SHA256,
+        "implementation_audit_path": _IMPLEMENTATION_AUDIT_RELATIVE_PATH.as_posix(),
+        "implementation_audit_byte_sha256": _IMPLEMENTATION_AUDIT_BYTE_SHA256,
         "formal_v2_2_generation_executed_before_implementation_freeze": False,
         "v2_2_outcome_exposure_before_implementation_freeze": False,
     }
@@ -319,8 +323,15 @@ def verify_formal_environment(
     amendment_path = root / _AMENDMENT_RELATIVE_PATH
     prereg_path = root / _PREREG_RELATIVE_PATH
     freeze_record_path = root / _FREEZE_RECORD_RELATIVE_PATH
+    implementation_audit_path = root / _IMPLEMENTATION_AUDIT_RELATIVE_PATH
     lock_path = root / _LOCK_RELATIVE_PATH
-    for path in (amendment_path, prereg_path, freeze_record_path, lock_path):
+    for path in (
+        amendment_path,
+        prereg_path,
+        freeze_record_path,
+        implementation_audit_path,
+        lock_path,
+    ):
         if not path.is_file():
             raise V022EnvironmentError(f"Required freeze file is absent: {path}")
     try:
@@ -335,6 +346,8 @@ def verify_formal_environment(
         raise V022EnvironmentError("V2.2 preregistration hash changed")
     if _sha256_path(lock_path) != _LOCK_BYTE_SHA256:
         raise V022EnvironmentError("V2.2 environment lock hash changed")
+    if _sha256_path(implementation_audit_path) != _IMPLEMENTATION_AUDIT_BYTE_SHA256:
+        raise V022EnvironmentError("V2.2 implementation audit hash changed")
 
     source_hashes = _source_hashes(root)
     _verify_paths_are_tracked(
@@ -343,6 +356,7 @@ def verify_formal_environment(
             amendment_path,
             prereg_path,
             freeze_record_path,
+            implementation_audit_path,
             lock_path,
             *(root / relative for relative in source_hashes),
         ),
