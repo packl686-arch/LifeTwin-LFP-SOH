@@ -1,6 +1,8 @@
 # LifeTwin 储能电池长期 SOH 预测竞赛材料包
 
-作者：Jincheng Liu
+团队：LifeTwin
+
+成员：刘锦城（Jincheng Liu）、张益诚
 项目仓库：<https://github.com/packl686-arch/LifeTwin-LFP-SOH>
 
 ## 一句话方案
