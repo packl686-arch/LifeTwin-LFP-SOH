@@ -4,7 +4,7 @@
   "attempt_id": "v022-formal-20260809-a1",
   "review_status": "implementation_frozen",
   "design_freeze_commit": "2fb17af12a742dca51107a26300b199e13f27fe7",
-  "implementation_source_commit": "f92280584c4f6aacc3b52b9398ce38a17dded38c",
+  "implementation_source_commit": "6bd7439afd0b26686e788ceaf518cc9d647963a5",
   "amendment_path": "configs/experiments/synthetic_long_horizon_identifiability_v2_2_amendment.json",
   "amendment_byte_sha256": "aaadd5b9d5436d6ccfa08806250f0a48bef93e04446d0c089cb2eb5cf8ce0f29",
   "amendment_semantic_sha256": "88f6e32067b9637a931b149e9950f2a690c3e4558effbde6a5002cba8bd5b6a2",
@@ -12,7 +12,9 @@
   "preregistration_byte_sha256": "6a720047bbca0671a86ac7ebabaaa15693e1b69b9ff660f7c6cea0ea5b26893a",
   "environment_lock_path": "requirements/v022-formal.txt",
   "environment_lock_byte_sha256": "ae29836c3fa7130b2b12af0c804349b9ebe2bf3628804b49e67320041208b02b",
-  "implementation_source_tree_sha256": "e4517316ffabf8848503e6d7cebb0df368816f359d42042db8b5e591b4e4ef46",
+  "implementation_audit_path": "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_2.md",
+  "implementation_audit_byte_sha256": "9606b113d185cfc588088439f7a3819fa30282b3a49c93e6f088850a9fd21d3b",
+  "implementation_source_tree_sha256": "c71282cf7dbe643e52598488f83efe9b48b893a1e61204d8bcf6b5e18de3dc24",
   "implementation_source_byte_hashes": {
     "scripts/run_calendar_long_horizon_v017.py": "af172ec3beaa77a2d9fd22789c645b637077c808bd27e9404de95f9e16331585",
     "src/lifetwin/experiments/calendar_long_horizon_synthetic.py": "0f4488ffe8bd07364c6ca7775b13209ba051ccacba17859d60de91eccf7dc090",
@@ -34,7 +36,7 @@
     "src/lifetwin/experiments/calendar_long_horizon_v017_analysis.py": "df00da8da755dac7e6ad126ca8145c5cee88929d8546db8b0f19e1ceee649fea",
     "src/lifetwin/experiments/calendar_long_horizon_v017_collision.py": "83c82b8a2af24bfa18d9e877ebbdd103cc932ec7b62514b738aa2acf03ac2368",
     "src/lifetwin/experiments/calendar_long_horizon_v017_contract.py": "381342f1cb8c66e17e4643ed3eb15c6d80fa5b005fc709980e1099ac1caf8a16",
-    "src/lifetwin/experiments/calendar_long_horizon_v017_environment.py": "39dda862e198f49b1c2bc352481500b38d04b7491774502518cb221268e08ded",
+    "src/lifetwin/experiments/calendar_long_horizon_v017_environment.py": "d280e05ec6e52609760f837ecec303fc084e22301f1b90141807ec8054ce353b",
     "src/lifetwin/experiments/calendar_long_horizon_v017_firewall.py": "f05734e32ad4ebe2b97fc41c547b0e0da647ff0827bf90bcb7e7074da1e460e0",
     "src/lifetwin/experiments/calendar_long_horizon_v017_fit.py": "2319daadb1a6fb43934b4d14c4625d1031f862025abb3c6d831ae552eb38dfda",
     "src/lifetwin/experiments/calendar_long_horizon_v017_generation.py": "af93d70cf4d0e7f34970dee55b34698a7612c9d8eba5379b5ca0b8f1bb67f011",
@@ -44,7 +46,7 @@
     "src/lifetwin/experiments/calendar_long_horizon_v017_pipeline.py": "3afbbeff3961ee4447f451235bd2bd86e78ed62be27d22ea74235b4c4ec410ca",
     "src/lifetwin/experiments/calendar_long_horizon_v017_prediction.py": "6a3f77099ff1285b892f6d92478d99d9d4f93ffbb7262d35e456f9c7256bb87b",
     "src/lifetwin/experiments/calendar_long_horizon_v017_prediction_capsule.py": "e9ab2c677e9ed9432c0db465314289589022b9e3a5e66bd828800fbfe0f8ea36",
-    "src/lifetwin/experiments/calendar_long_horizon_v017_prediction_environment.py": "bc31084b3ac1308e80cc7c3a455409275f59ae57f14766870763e8df48885189",
+    "src/lifetwin/experiments/calendar_long_horizon_v017_prediction_environment.py": "ed581793e410be1558e2be6b0a8a5555003e8618b656e43b34826f5b95e92c68",
     "src/lifetwin/experiments/calendar_long_horizon_v017_protocol.py": "a5771c61bdd6625dea60f5d3fbe2fd801b9442443a4a8488a92fe0ce471ed903",
     "src/lifetwin/experiments/calendar_long_horizon_v017_provenance.py": "fffaaeb65c30729c97322c7002af1863680a493e80c323b4d457488ddf77d8ab",
     "src/lifetwin/experiments/calendar_long_horizon_v017_runner.py": "54d8ca85e20c37f84e76f561ec1cab8fdb3eaba245e98db9fc71c7cb096be6d2",
@@ -55,9 +57,10 @@
     "src/lifetwin/experiments/calendar_long_horizon_v017_training.py": "ababfeed96b20abbb228e5b63d21a667c110645828122d532828094aef35e568"
   },
   "execution_metadata_paths": [
-    "reports/synthetic_long_horizon_identifiability_freeze_record_v2_2.json",
-    "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_2.md"
+    "reports/synthetic_long_horizon_identifiability_freeze_record_v2_2.json"
   ],
+  "superseded_prelaunch_attestation_commit": "1fe3f8f",
+  "superseded_prelaunch_attestation_reason": "git diff --check reported Markdown trailing whitespace; no generator, seed, truth, or formal root existed",
   "formal_v2_2_generation_executed_before_implementation_freeze": false,
   "v2_2_outcome_exposure_before_implementation_freeze": false,
   "v2_2_seed_consumed_before_implementation_freeze": false,
@@ -69,5 +72,5 @@
     "ruff": "passed",
     "compile_and_import": "passed"
   },
-  "created_utc": "2026-08-09T09:02:20Z"
+  "created_utc": "2026-08-09T09:09:01Z"
 }
