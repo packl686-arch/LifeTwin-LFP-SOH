@@ -1,0 +1,99 @@
+{
+  "claim_boundary": [
+    "Outcome-informed training-only hypothesis generation",
+    "Nested held-out-cell gate audit, not independent confirmation",
+    "No Hithium, calendar-aging, 15-25 year, or production claim"
+  ],
+  "decision": "retain_v5_and_freeze_nominated_transitions_for_future_blind_test",
+  "evidence_role": "nested_training_development_for_a_future_outcome_blind_test",
+  "experiment_id": "fastcharge_v6_1_gated_state_update_development",
+  "exposed_81_cell_evaluation_used": false,
+  "full_training_selected_gate_by_current_prefix": {
+    "100": "a0p25_d04_r00",
+    "40": "no_update",
+    "60": "a0p1_d02_r70"
+  },
+  "gate_candidate_count_including_fallback": 11,
+  "implementation": {
+    "module_path": "src/lifetwin/experiments/fastcharge_v6_bounded_state.py",
+    "module_sha256": "918e6357148da3107a13b2a838d745e4f599918272d2e389de93951583662646",
+    "runner_path": "scripts/run_fastcharge_v6_1_gated_state_development.py",
+    "runner_sha256": "57c0255dfd5708883a150afb06888718d556ae76752c0ca3c93ed5d9a9712829"
+  },
+  "nested_future_blind_nomination": {
+    "any_transition_nominated": true,
+    "nominated_current_prefix_cycles": [
+      100
+    ],
+    "transitions": [
+      {
+        "activation_count": 0,
+        "activation_coverage": 0.0,
+        "activation_precision": null,
+        "active_maximum_delta_mae_pp": null,
+        "active_p90_delta_mae_pp": null,
+        "current_prefix_cycle": 40,
+        "mean_gated_delta_mae_pp": 0.0,
+        "modal_gate_selection_fraction": 1.0,
+        "nominated_for_future_blind_test": false,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 20,
+        "selected_gate_counts": {
+          "no_update": 41
+        }
+      },
+      {
+        "activation_count": 1,
+        "activation_coverage": 0.024390243902439025,
+        "activation_precision": 0.0,
+        "active_maximum_delta_mae_pp": 0.037665142187992995,
+        "active_p90_delta_mae_pp": 0.037665142187992995,
+        "current_prefix_cycle": 60,
+        "mean_gated_delta_mae_pp": 0.000918662004585195,
+        "modal_gate_selection_fraction": 0.8536585365853658,
+        "nominated_for_future_blind_test": false,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 40,
+        "selected_gate_counts": {
+          "a0p1_d02_r70": 2,
+          "a0p1_d04_r00": 1,
+          "a0p25_d06_r50": 35,
+          "no_update": 3
+        }
+      },
+      {
+        "activation_count": 10,
+        "activation_coverage": 0.24390243902439024,
+        "activation_precision": 0.8,
+        "active_maximum_delta_mae_pp": 0.047472773960225756,
+        "active_p90_delta_mae_pp": 0.03202154032657387,
+        "current_prefix_cycle": 100,
+        "mean_gated_delta_mae_pp": -0.019628500544838452,
+        "modal_gate_selection_fraction": 0.975609756097561,
+        "nominated_for_future_blind_test": true,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 60,
+        "selected_gate_counts": {
+          "a0p25_d04_r00": 40,
+          "a0p25_d06_r50": 1
+        }
+      }
+    ]
+  },
+  "nominated_current_prefix_cycles": [
+    100
+  ],
+  "physical_cell_count": 41,
+  "protocol_sha256": "05de7800862864dbeb649928f9014c11fde28980e193e076fb46a559f7129534",
+  "runtime_versions": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0",
+    "scipy": "1.18.0"
+  },
+  "schema_version": "lifetwin.fastcharge_v6_1_gated_state.result.v1",
+  "training_input_sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+  "v5_champion_remains_active": true,
+  "v6_1_gate_activated": false
+}

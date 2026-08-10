@@ -126,3 +126,15 @@ V5 不自动加入已经冻结的海辰锁定测试。首轮 H1 成对参考实�
 - [V5 实验报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
 - [V5 动态 landmark 与在线残差审计](reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md)
 - [V5 公开证据](showcase/evidence_v5/README.md)
+
+## V6 有界残差状态与选择性门控（2026-08-10）
+
+V6 保持冻结 V5 不动，只在 41 个训练电芯的 cross-fit predictions 上开发有界残差趋势更新，并明确禁止再次使用 81 个已暴露评估电芯。无门控 V6 在 P100 将嵌套留一电芯 MAE 从 0.24360 pp 降至 0.21093 pp，但仅改善 53.66% 电芯；P40 还出现 +0.00941 pp 退化，所以完整晋级门槛失败，V5 继续作为 champion。
+
+V6.1 随后把候选改成 abstaining specialist：只有全历史与最近 10 点残差斜率同号，且 P60→P100 历史段的投影变化至少为 0.04 pp 时，才允许使用 25% 斜率修正，否则精确回退 V5。严格外层留一电芯门控审计中，P100 激活 10/41 个电芯、改善 8/10，全体 P100 MAE 降至 0.22397 pp；active p90 和最大退化分别为 0.03202 pp 与 0.04747 pp。P40 不激活，P60 门控失败。
+
+这仍是 outcome-informed 训练开发，不是独立确认。P100 规则已冻结为下一批至少 40 个新电芯的 outcome-blind 候选；预测与 activation flag 必须在打开 cycles 101-300 真值前完成哈希承诺，同批数据不允许改阈值重跑。当前 V6.1 未激活，也不支持海辰产品、日历老化或 15 至 25 年准确率宣称。
+
+- [V6/V6.1 完整报告](reports/fastcharge_v6_bounded_state_development_2026-08-10.md)
+- [V6 机器可读证据](showcase/evidence_v6/README.md)
+- [P100 下一批盲测冻结规则](configs/experiments/v6_1_p100_gated_state_blind_candidate.json)

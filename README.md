@@ -11,12 +11,16 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 - [V5 模型与不确定性报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
 - [动态 landmark 与在线残差审计](reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md)
 - [V5 小型机器可读证据包](showcase/evidence_v5/README.md)
+- [V6 有界状态更新与选择性门控报告](reports/fastcharge_v6_bounded_state_development_2026-08-10.md)
+- [V6 训练内 challenger 证据包](showcase/evidence_v6/README.md)
 - [海辰私有数据盲测执行手册](docs/hithium_private_blind_execution_cn.md)
 - [飞书 AI 工作流设计](docs/feishu_ai_workflow_cn.md)
 
 在 MATR FastCharge 公开 LFP 队列的回顾性开发中，V5 只用 41 个训练电芯完成物理电芯级模型选择，在 81 个公开评估电芯上的 cycle-300 轨迹 MAE 为 **0.2082 pp**，相对 V2 稳定硬门控降低 **27.3%**。支持门控后的 90% 共形区间覆盖率为 **93.10%**，平均宽度为 **1.4155 pp**。
 
 动态 landmark 审计进一步发现：较长前缀重签发的 transition-equal MAE 从 0.2644 pp 降至 **0.1738 pp**，但收益并非每个时点都稳定；三种冻结 GP 候选均未达到 70% 电芯改善门槛，因此系统保留 V5 中心并关闭额外 GP 修正。这项负结果体现了项目的核心原则：**模型只能凭新证据晋级，不能凭复杂度或叙事晋级。**
+
+后续 V6 训练内实验进一步验证了“全量残差更新”仍不够稳定；V6.1 因而改成选择性门控。嵌套留一电芯审计中，P100 门控触发 `10/41` 个电芯并改善其中 `8/10`，全体 P100 MAE 从 `0.24360 pp` 降至 `0.22397 pp`。由于门控由同一批 41 个训练电芯启发，它只被冻结为下一批 outcome-blind 候选，**没有启用、没有再次查看 81 个已暴露评估电芯，当前 champion 仍是 V5**。
 
 > 边界：仓库不包含海辰内部测量，也不公开 MATR、SNL 等上游原始数据。上述数字属于结果已暴露的公开循环老化开发证据，不是海辰产品验证、日历老化确认或 15 至 25 年准确率证明。
 
@@ -351,4 +355,4 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 公开工程版本：`0.14.1`（标签冻结于 2026-08-07）
 
-研究状态更新：2026-08-09
+研究状态更新：2026-08-10
