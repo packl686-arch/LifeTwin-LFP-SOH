@@ -1,0 +1,81 @@
+{
+  "schema_version": "lifetwin.fastcharge_v7_p100_reissue_innovation_blind_candidate.config.v1",
+  "experiment_id": "fastcharge_v7_p100_reissue_innovation_blind_candidate",
+  "status": "frozen_after_training_development_before_any_new_confirmation_outcomes",
+  "freeze_timestamp_utc": "2026-08-10T08:45:00Z",
+  "prepared_by": "Jincheng Liu",
+  "source_development_protocol": {
+    "path": "configs/experiments/v7_reissue_innovation_development.json",
+    "sha256": "05c188eb57f812602644bd1b7d972d0e8eb3c5ff04351d6774003090f1477d67",
+    "evidence_role": "outcome_informed_training_only_method_development"
+  },
+  "source_development_result": {
+    "public_path": "showcase/evidence_v7/reissue_innovation_decision.json",
+    "sha256": "4ee84cf84399393b2d6adc0e2bb53e240525aaa11a2d6435adbd5b95ea9a5942"
+  },
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "remains_active_until_every_blind_gate_passes": true
+  },
+  "eligible_transition": {
+    "previous_prefix_cycle": 60,
+    "current_prefix_cycle": 100,
+    "score_start_cycle": 101,
+    "score_end_cycle": 300
+  },
+  "frozen_update_rule": {
+    "previous_residual_history": "P60_issuance_observed_minus_v5_center_at_cycles_61_through_100",
+    "history_slope_estimator": "theil_sen_all_40_residuals",
+    "recent_history_slope_estimator": "theil_sen_last_10_residuals",
+    "reissue_shift": "P100_v5_center_minus_stored_P60_v5_center_at_cycles_101_through_300",
+    "reissue_shift_slope_estimator": "theil_sen_over_cycles_101_through_300",
+    "raw_unassimilated_slope_formula": "history_slope_minus_reissue_shift_slope",
+    "maximum_absolute_unassimilated_slope_pp_per_cycle": 0.02,
+    "require_history_slope_sign_agreement": true,
+    "require_unassimilated_history_slope_sign_agreement": true,
+    "minimum_projected_unassimilated_change_pp": 0.01,
+    "projected_change_formula": "abs(bounded_unassimilated_slope_pp_per_cycle) * 40",
+    "minimum_absolute_history_spearman": 0.0,
+    "projection_scale": 0.5,
+    "correction_formula": "0.5 * bounded_unassimilated_slope_pp_per_cycle * (future_cycle - 100)",
+    "absolute_correction_cap_pp": 1.0,
+    "future_prediction_clip_pct": [0.0, 110.0],
+    "failed_gate_action": "exact_no_update_fallback_to_current_P100_v5_center"
+  },
+  "other_transition_action": {
+    "P20_to_P40": "no_update",
+    "P40_to_P60": "no_update"
+  },
+  "blind_data_requirements": {
+    "minimum_physical_cell_count": 40,
+    "required_prefixes": [60, 100],
+    "required_stored_previous_forecast": "P60_v5_center_cycles_101_through_300",
+    "required_current_forecast": "P100_v5_center_cycles_101_through_300",
+    "required_common_future_support": "cycles_101_through_300",
+    "selection_unit": "physical_cell",
+    "outcomes_hidden_until_predictions_and_activation_flags_are_hash_committed": true,
+    "same_batch_retuning_permitted": false,
+    "exposed_81_cell_public_evaluation_permitted": false
+  },
+  "confirmation_gate": {
+    "minimum_activation_count": 6,
+    "minimum_activation_coverage": 0.15,
+    "minimum_activation_precision": 0.7,
+    "mean_all_cell_gated_delta_mae_must_be_below_pp": 0.0,
+    "maximum_active_p90_delta_mae_pp": 0.05,
+    "maximum_active_delta_mae_pp": 0.1,
+    "all_endpoints_required": true,
+    "failure_action": "retain_v5_and_record_the_blind_negative_result_without_same_batch_retuning"
+  },
+  "claim_boundaries": {
+    "before_confirmation": "future_blind_candidate_only_not_an_active_model",
+    "after_single_batch_pass": "fastcharge_cycle_aging_domain_confirmation_only",
+    "always_prohibited_without_separate_evidence": [
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "storage_station_warranty_claim",
+      "unconditional_cross_domain_coverage"
+    ]
+  }
+}

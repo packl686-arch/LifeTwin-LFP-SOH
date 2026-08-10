@@ -138,3 +138,16 @@ V6.1 随后把候选改成 abstaining specialist：只有全历史与最近 10 �
 - [V6/V6.1 完整报告](reports/fastcharge_v6_bounded_state_development_2026-08-10.md)
 - [V6 机器可读证据](showcase/evidence_v6/README.md)
 - [P100 下一批盲测冻结规则](configs/experiments/v6_1_p100_gated_state_blind_candidate.json)
+
+## V7 重发感知创新状态（2026-08-10）
+
+V7 针对 V6.1 的“重复修正”风险做了机制改进：到达新 landmark 后，先计算当前 V5 重发中心相对上一次中心已经吸收的轨迹斜率，再从历史残差斜率中扣除这一部分，只对未吸收创新量做有界投影。激活还要求历史全段与最近 10 点斜率同号、创新量与历史方向同号；证据不足时修正严格为零。
+
+在 41 个训练电芯的外层留一电芯审计中，P100 激活 9/41 个电芯并实现 9/9 改善，全体 P100 MAE 从 0.24360 pp 降至 0.20628 pp，相对下降约 15.32%；active p90 与最差 delta 均为负。对相同 9 个激活电芯和相同投影尺度的匹配消融中，V6 式原始历史斜率改善 8/9，而 V7 改善 9/9，说明扣除已吸收变化主要改善了尾部安全性。
+
+项目新增了 MATR Batch 1/2 双向留出压力门槛。P40 虽通过逐电芯门槛，却在批次迁移测试中失败；P60 同样失败，因此二者均被淘汰。只有 P100 在两次批次留出中均保持 100% 激活精度并通过。该压力测试仍来自同一训练队列，不是外部确认。V7 P100 规则已冻结等待至少 40 个新物理电芯的 outcome-blind 测试；V5 继续作为当前 champion，81 个已暴露公开评估电芯未被再次使用。
+
+- [V7 完整报告](reports/fastcharge_v7_reissue_innovation_development_2026-08-10.md)
+- [V7 开发协议](configs/experiments/v7_reissue_innovation_development.json)
+- [V7 P100 盲测冻结规则](configs/experiments/v7_p100_reissue_innovation_blind_candidate.json)
+- [V7 机器可读证据](showcase/evidence_v7/README.md)

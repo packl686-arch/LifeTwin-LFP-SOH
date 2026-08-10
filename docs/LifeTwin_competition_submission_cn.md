@@ -48,8 +48,9 @@ flowchart LR
 1. **参考电芯条件化残差学习**：不直接从零预测长曲线，而是先找到早期行为最相似的训练电芯，再学习“目标与参考在早期的差异，如何转化为未来衰减差异”。
 2. **双时钟动态数字孪生**：同时保留日历时间与循环吞吐量两个老化时钟；每次新 RPT 到来只做受约束更新，不推翻已有稳定先验。
 3. **证据门控而非盲目黑盒**：根据相似度、参考分歧、输入质量和区间宽度决定“采用候选模型、回退稳定模型、带警告预测或拒绝签发”。
-4. **AI Agent 驱动的业务闭环**：飞书 Aily 不替代数值模型，而是编排数据校验、模型调用、证据判定、审批与报告；每一步写入多维表格并保留哈希。
-5. **失败也进入产品逻辑**：未通过门槛的方法保留为负对照，不能在同一公开结果上反复调参后包装成成功。
+4. **重发感知创新状态**：新 landmark 到来时，先扣除当前模型重发轨迹已经吸收的变化，只对仍未解释且方向稳定的残差创新量做有界修正，避免同一趋势被重复计算。
+5. **AI Agent 驱动的业务闭环**：飞书 Aily 不替代数值模型，而是编排数据校验、模型调用、证据判定、审批与报告；每一步写入多维表格并保留哈希。
+6. **失败也进入产品逻辑**：未通过逐电芯或批次迁移门槛的方法保留为负对照，不能在同一公开结果上反复调参后包装成成功。
 
 #### 2.2 Before / After
 
@@ -90,6 +91,10 @@ flowchart LR
 ![LifeTwin V5 动态 landmark 审计](assets/v5_dynamic_landmark_audit.png)
 
 三种预先冻结的 Matern GP 均未达到“至少 70% 电芯改善”的门槛。训练内唯一合格的 P40 轻量 offset 在公开评估只改善 66.7% 电芯，因此也不激活。系统按规则**保留当前前缀 V5 中心与 hybrid conformal 区间，不启用 GP 在线残差分支**。完整 H2 因此是明确的“未通过”，而不是“尚未评估”；当前仍不存在正式跨域覆盖保证。
+
+后续 V7 训练内研究没有再次查看上述 81 个评估电芯，而是只使用 41 个训练电芯的 cross-fit 预测，开发“重发感知创新状态”。严格外层留一电芯审计中，P100 仅激活 9/41 个电芯并实现 9/9 改善，全体 P100 MAE 从 0.24360 pp 降至 0.20628 pp，相对下降约 15.32%；MATR Batch 1/2 双向留出压力测试也均通过。P40 虽通过逐电芯门槛，却因批次迁移失败被淘汰；P60 同样淘汰。V7 P100 规则只冻结用于下一批 outcome-blind 测试，**当前 champion 仍是 V5**。
+
+![LifeTwin V7 重发感知创新状态证据](assets/v7_reissue_innovation_results.png)
 
 这些结果属于**结果已暴露的公开数据回顾性开发证据**，用于证明方法可行性和软件闭环，不是独立确认，不代表海辰产品精度，也不能外推为 15 至 25 年实证准确率。
 
@@ -331,6 +336,9 @@ V5 控制台交互回放支持度门控、公开开发指标与飞书工作流�
 - V5 训练内选择：`showcase/evidence_v5/pairwise_training_selection.json`
 - V5 公开开发评分：`showcase/evidence_v5/pairwise_evaluation_summary.json`
 - V5 支持门控与区间评分：`showcase/evidence_v5/support_uncertainty_score_summary.json`
+- V7 重发感知创新状态报告：`reports/fastcharge_v7_reissue_innovation_development_2026-08-10.md`
+- V7 嵌套与批次压力证据：`showcase/evidence_v7/`
+- V7 P100 结果盲测协议：`configs/experiments/v7_p100_reissue_innovation_blind_candidate.json`
 - 海辰私有盲测手册：`docs/hithium_private_blind_execution_cn.md`
 - 海辰数据字典：`docs/hithium_private_data_dictionary_cn.md`
 - 数据资格矩阵：`configs/validation/dataset_evidence_matrix_2026_08.json`
