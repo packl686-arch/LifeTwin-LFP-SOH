@@ -1,0 +1,326 @@
+{
+  "schema_version": "lifetwin_synthetic_long_horizon_v2_4/1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2_4",
+  "status": "preregistered_post_root_cause_pre_formalization",
+  "title": "V2.4 member-fit state-mask and atomic commitment amendment",
+  "design_date": "2026-08-10",
+  "design_witnesses": [
+    "Jincheng Liu"
+  ],
+  "authorization": {
+    "formal_execution_authorized_after_all_freeze_gates": true,
+    "authorization_scope": "One fresh formal lifecycle after preregistration, implementation tests, environment verification, source freeze and collision preflight all pass.",
+    "generation_before_freeze_forbidden": true,
+    "additional_confirmation_after_freeze_required": false
+  },
+  "attempt_registry": {
+    "only_attempt_id": "v024-formal-20260810-a1",
+    "maximum_attempts": 1,
+    "a2_or_replacement_attempt_forbidden": true,
+    "retry_for_better_result_forbidden": true,
+    "resume_rule": "A platform interruption may resume only the same attempt when the frozen recovery implementation proves identical commit, environment, seed roots, paths, committed bytes and ledger prefix. Otherwise publish the frozen terminal disposition and stop.",
+    "pre_generation_collision_rule": "All four formal roots must be absent and no artifact, process record or launch marker may already name the attempt. Any collision stops before generation."
+  },
+  "immutable_history": {
+    "v014_status": "failure",
+    "v015_status": "inconclusive_not_success",
+    "v021_attempt_id": "v021-formal-20260808-a1",
+    "v021_terminal_registry": "terminal_pre_prediction",
+    "v021_scientific_status": "unclassified_terminal_not_success",
+    "v021_reason_code": "UNKNOWN_PRE_PREDICTION_EXCEPTION",
+    "v021_prediction_commitment_existed": false,
+    "v021_score_root_empty": true,
+    "v021_may_be_reclassified_repaired_resumed_or_rerun": false,
+    "v021_freeze_commit": "9f886202de07fd46bc6fd0604e60315b32801bc2",
+    "v021_freeze_parent": "d676d7c3a7fffb7806e92822c35d4a027d8677bf",
+    "v021_amendment_byte_sha256": "3c1348be3dd6e0f86df84283b7a27e57f4e5747c1356497f77bb39c695f06a4e",
+    "v021_preregistration_byte_sha256": "ae346fe8aa5699a7b3ad0d124e8ec29851a16fcbf485309e8c3c441749540efc",
+    "v021_implementation_audit_byte_sha256": "88470000f4b913ee36514e51aba646bda6d2dd6342b414e84190f7c2b9f39f29",
+    "v021_freeze_record_byte_sha256": "c42414209ac365246fd3e52e142b6c1c9a64ff7bcc8a69d3f29348b1cc5369bd",
+    "v021_public_closeout_byte_sha256": "a614b97df6d6d2891912d67410f1384d10141952fc07bd46551e7035eb185951",
+    "v021_root_cause_audit_byte_sha256": "99d4dea6438b98e7e6c3c8ed213f499740f4c6176f4c36c4050472cab177a9cd",
+    "v021_terminal_artifacts": {
+      "terminal_artifact_manifest.json": "ea2afaf70cf253ecd28f24f700d716c8011a41fec44bfb0c5fd541dda602b0ea",
+      "terminal_attempt_record.json": "a7feec9d99f8726e5f83a2dd0933f4d9f360b0ed3a1836ca9951970804bbefd7",
+      "terminal_exposure_log_snapshot.jsonl": "8cf8040c3f1afd25f904bec76299e0699b7cb95ca740f3cf65b8896fa0716e40"
+    },
+    "v022_attempt_id": "v022-formal-20260809-a1",
+    "v022_terminal_registry": "terminal_pre_prediction",
+    "v022_scientific_status": "void",
+    "v022_classification_mode": "proven_integrity",
+    "v022_reason_code": "INTEGRITY_PARTITION_CONTRACT_MISMATCH",
+    "v022_last_completed_phase": "label_free_fit_committed",
+    "v022_attempted_phase": "center_truth_opened",
+    "v022_fit_commitment_existed": true,
+    "v022_prediction_commitment_existed": false,
+    "v022_opened_truth_files": [],
+    "v022_score_root_empty": true,
+    "v022_may_be_reclassified_repaired_resumed_or_rerun": false,
+    "v022_freeze_commit": "4f116325f6d414f3e3a452cc53541b989b4dfe5b",
+    "v023_attempt_id": "v023-formal-20260810-a1",
+    "v023_terminal_registry": "terminal_pre_prediction",
+    "v023_scientific_status": "void",
+    "v023_classification_mode": "proven_integrity",
+    "v023_reason_code": "INTEGRITY_WHOLE_BUNDLE_CONTRACT_MISMATCH",
+    "v023_last_completed_phase": "fresh_generation_committed",
+    "v023_attempted_phase": "label_free_fit_committed",
+    "v023_fit_commitment_file_existed_as_partial_artifact": true,
+    "v023_registered_fit_commitment": null,
+    "v023_prediction_commitment_existed": false,
+    "v023_opened_truth_files": [],
+    "v023_score_root_empty": true,
+    "v023_may_be_reclassified_repaired_resumed_or_rerun": false,
+    "v023_freeze_commit": "ce8eb08437de61ab368320e9b39050c517021cb8",
+    "forward_only_rule": "V2.4 uses new files, directories, commits, protocol identity, seeds, data identities and attempt roots. No predecessor commit, branch, tag, release, report, manifest, artifact or log may be deleted, overwritten, amended, rebased, squashed or retroactively edited."
+  },
+  "exposure_disclosure": {
+    "known_v021_root_cause": "The V2.1 runner sliced a valid center_development subset and then applied the whole-bundle formal row-count contract to that subset.",
+    "known_v021_trigger": "prefix_pack.csv had 7200 valid center rows while the inherited whole-bundle contract required 71400 rows.",
+    "v021_truth_opened": [
+      "center_development_truth.csv"
+    ],
+    "v021_truth_values_or_rows_reusable": false,
+    "v021_generated_rows_ids_hashes_states_predictions_or_scores_reusable": false,
+    "known_v022_trigger": "risk_bundle.csv contained structural NaN values that the V2.2 blanket partition isfinite check rejected before any truth was opened.",
+    "known_v022_sufficient_root_cause": "The inherited label-free pipeline intentionally emits structural NaN for unavailable raw risk and unissued calibrated probability, while the V2.2 partition validator required every numeric cell to be finite.",
+    "v022_truth_opened": [],
+    "v022_formal_rows_values_states_predictions_or_scores_reusable": false,
+    "known_v023_trigger": "member_fit_diagnostics.csv contained a nonfinite numeric value that the V0.18 whole-bundle blanket finite check rejected before any truth was opened.",
+    "known_v023_sufficient_root_cause": "The frozen fitter retains every failed variant and intentionally emits structural NaN for its three diagnostics and eight raw forecasts, while the V0.18 whole-bundle validator required every numeric cell to be finite.",
+    "v023_truth_opened": [],
+    "v023_formal_member_fit_values_read_sampled_searched_or_hashed_for_v024_design": false,
+    "v023_formal_rows_values_states_predictions_or_scores_reusable": false,
+    "allowed_information": [
+      "the disclosed V2.1, V2.2 and V2.3 structural implementation causes and test gaps",
+      "the immutable V2, V2.1, V2.2 and V2.3 protocol, implementation, freeze and terminal identities",
+      "outcome-independent schemas, formulas, thresholds, endpoints and gates frozen before predecessor execution"
+    ]
+  },
+  "scientific_inheritance": {
+    "base_protocol_id": "synthetic_long_horizon_identifiability_v2_3",
+    "inheritance_rule": "Except for the new protocol and attempt identity, fresh seed roots and generated identities, exact member-fit state masks, typed member-fit contract classification, atomic fit commitment ordering and forward-only isolation rules in this amendment, every V2, V2.1, V2.2 and V2.3 scientific rule remains unchanged.",
+    "unchanged": [
+      "six core generating families and every generating equation and distribution",
+      "all seven partitions and their frozen cluster counts",
+      "twelve prefix days and eight forecast days with their units",
+      "the exact 86 model variants and all features and optimizers",
+      "all fit credibility, calibration, issuance and rejection thresholds",
+      "all five primary endpoints and secondary endpoints",
+      "all eight-family, novel-mechanism and safety gates",
+      "bootstrap, Clopper-Pearson and permutation procedures",
+      "placebo, stress-permutation and information-firewall negative controls",
+      "success conditions, scored-failure obligations and reporting denominators"
+    ],
+    "omission_rule": "An omitted predecessor rule remains binding and cannot be weakened by implementation interpretation."
+  },
+  "fresh_generation": {
+    "generation_has_started": false,
+    "seed_consumed": false,
+    "sealed_truth_created_or_opened": false,
+    "seed_roots": {
+      "center_development": 202608100401,
+      "risk_development": 202608100402,
+      "calibration": 202608100403,
+      "test": 202608100404,
+      "audit": 202608100405,
+      "novel_mechanism_test": 202608100406,
+      "novel_mechanism_audit": 202608100407,
+      "intrinsic_matched_pairs": 202608100408,
+      "stress_plan_matched_pairs": 202608100409,
+      "random_rankings": 202608100410,
+      "bootstrap": 202608100411,
+      "stress_permutations": 202608100412,
+      "placebo_covariate": 202608100413
+    },
+    "seed_derivation": "For each named stream, derive the first 16 hexadecimal digits of SHA256(synthetic_long_horizon_identifiability_v2_4|seed_root|partition|family_id|zero_based_index|stream_name), interpret as unsigned and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) only in the frozen environment.",
+    "freshness_rule": "All V2.4 rows, opaque IDs, pair IDs, content hashes, noise realizations, fitted states, predictions and scores must be newly derived from the V2.4 protocol identity and roots. Equality to any registered V2, V2.1, V2.2 or V2.3 seed, ID or content coordinate is an integrity failure.",
+    "pilot_or_test_generation_forbidden": true
+  },
+  "path_isolation": {
+    "repo_relative_root_parent": "artifacts",
+    "label_free_root": "artifacts/v024-formal-20260810-a1-label-free",
+    "sealed_truth_root": "artifacts/v024-formal-20260810-a1-sealed-truth",
+    "score_root": "artifacts/v024-formal-20260810-a1-score",
+    "termination_root": "artifacts/v024-formal-20260810-a1-termination",
+    "operator_evidence_root": "artifacts/operator-evidence/v024-formal-20260810-a1",
+    "formal_roots_must_be_absent_before_launch": true,
+    "resolved_roots_must_be_pairwise_distinct": true,
+    "v021_v022_v023_and_v024_path_prefixes_must_not_overlap": true,
+    "v024_process_may_write_predecessor_tree_or_roots": false,
+    "pre_and_post_predecessor_history_snapshot_required": true
+  },
+  "whole_bundle_contract": {
+    "validation_must_precede_partition_slicing": true,
+    "formal_false_forbidden": true,
+    "required_tables": {
+      "prefix_pack.csv": 71400,
+      "forecast_coordinates.csv": 47600,
+      "operating_pack.csv": 5950,
+      "member_fit_diagnostics.csv": 511700,
+      "member_forecast_bundle.csv": 4093600
+    },
+    "rules": [
+      "exact frozen column order and no unknown columns",
+      "exact protocol, config and attempt identity",
+      "exact row counts, key uniqueness and cross-partition opaque-ID uniqueness",
+      "exact partition membership, prefix and forecast grids and units",
+      "all required values finite, infinity forbidden, and every structural-null mask exact",
+      "exact 86 variants per cluster and eight forecasts per successful variant",
+      "source byte SHA-256 values match the label-free commitments"
+    ]
+  },
+  "partition_contract": {
+    "cardinality": {
+      "center_development": [600, 7200, 4800, 600, 51600, 412800],
+      "risk_development": [600, 7200, 4800, 600, 51600, 412800],
+      "calibration": [900, 10800, 7200, 900, 77400, 619200],
+      "test": [1900, 22800, 15200, 1900, 163400, 1307200],
+      "audit": [950, 11400, 7600, 950, 81700, 653600],
+      "intrinsic_matched_pairs": [500, 6000, 4000, 500, 43000, 344000],
+      "stress_plan_matched_pairs": [500, 6000, 4000, 500, 43000, 344000]
+    },
+    "cardinality_order": [
+      "clusters",
+      "prefix_pack.csv",
+      "forecast_coordinates.csv",
+      "operating_pack.csv",
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv"
+    ],
+    "proofs": [
+      "each partition has only its declared partition value and exact table-specific cardinality",
+      "partition key sets are pairwise disjoint",
+      "the union of all partition key sets exactly reconstructs each whole-bundle key set",
+      "each partition view binds the five source file hashes and its canonical key-set hash",
+      "mutation after capability issuance is rejected"
+    ]
+  },
+  "capability_architecture": {
+    "route": "whole_bundle_formal_validation_then_capability_bound_partition_slice",
+    "whole_bundle_capability": "WholeBundleValidated",
+    "partition_capability": "ValidatedPartitionView",
+    "issuer_rule": "Capabilities have exact runtime types and can only be issued by private module factories after all corresponding checks pass.",
+    "pipeline_rule": "The V2.4 partition pipeline accepts only V024ValidatedPartitionView and exposes no formal boolean, truth path, sealed root, outcome frame or scoring parameter.",
+    "truth_order_rule": "The required label-free partition capability must exist before open_truth_for_phase can be called.",
+    "forbidden_shortcuts": [
+      "formal=False",
+      "lowering required_rows",
+      "deriving expected counts from observed rows",
+      "skipping schema, hash, key, unit or finite-value checks",
+      "constructing or forging capabilities directly",
+      "opening truth to diagnose a label-free contract error"
+    ]
+  },
+  "numeric_output_contract": {
+    "policy": "Schema and cross-table state determine the exact finite-versus-structural-NaN mask. No value may be filled, clipped or silently coerced to pass validation.",
+    "infinity_allowed": false,
+    "risk_bundle": {
+      "raw_risk_score": "finite exactly when feature_bundle.all_features_finite is true; otherwise NaN",
+      "calibrated_catastrophic_probability": "finite in [0,1] exactly for hard-eligible prefix_only and visible_stress rows; otherwise NaN",
+      "count_columns": "successful_structure_family_count, fit_failure_count and effective_unique_shape_count are always finite"
+    },
+    "member_fit": {
+      "status_registry": "fit_status is exactly succeeded or failed; every cluster retains the exact 86-variant registry and every diagnostic key retains exactly eight frozen forecast days.",
+      "succeeded_mask": "prefix_rmse_pp, prefix_max_abs_residual_pp, parameter_boundary_hit_fraction and all eight raw forecasts are finite; boundary fraction is in [0,1]; credibility is recomputed from the unchanged thresholds and forecast bounds.",
+      "failed_mask": "parameters_json is exactly {}, credible_variant is false, all three diagnostics and all eight raw forecasts are structural NaN.",
+      "forbidden": "Infinity, numeric strings, NaN outside the failed mask, finite values inside the failed mask, key/hash/status drift and an entirely nonfinite metric column are integrity violations."
+    },
+    "decision_and_prediction_outputs": "Every nullable numeric output must use its frozen issuance, rejection, availability or fit-status mask; required positions are finite and structural positions are NaN.",
+    "cross_table_alignment": "partition and cluster keys, score identity, model identity, issuance state and eligibility state must align before a nullable numeric value is accepted.",
+    "forbidden_implementations": [
+      "blanket isfinite over columns with registered structural NaN",
+      "replace NaN with zero or another sentinel",
+      "accept NaN merely because a column is nullable without checking its exact mask",
+      "allow positive or negative infinity",
+      "derive expected missingness from heldout truth"
+    ],
+    "fit_commitment_atomicity": {
+      "write_order": "Fit outputs are validated in memory, canonically serialized and written, freshly read back, then the whole bundle passes schema, cardinality, key, hash and numeric contracts before fit_commitment.json may be created.",
+      "ledger_order": "The completed label_free_fit_committed exposure event is appended only after the unique fit_commitment.json exists and verifies.",
+      "failure_rule": "Partial files remain as evidence, but no formal fit commitment and no completed fit phase may exist after any validation, serialization, write, read-back, hash or phase-append failure.",
+      "terminal_manifest_rule": "Terminal manifests distinguish partial artifacts from registered commitments."
+    }
+  },
+  "lifecycle_order": [
+    "static environment, source, history, collision and path preflight without seed consumption",
+    "capability-minimal fresh generation",
+    "whole-bundle formal validation and commitment",
+    "capability-bound center, risk and calibration partition fitting",
+    "prediction commitment",
+    "heldout truth opening and deterministic scoring",
+    "exactly one scored or terminal registry",
+    "independent post-run hash and history audit"
+  ],
+  "terminal_rules": {
+    "scored_success": "Every unchanged primary endpoint and required family, safety, negative-control, firewall and audit gate passes.",
+    "scored_failure": "A valid committed and scored attempt fails one or more unchanged success gates; publish all scores unchanged.",
+    "terminal_inconclusive_not_success": "A preregistered scientific availability or fitting condition terminates before prediction; publish only the frozen terminal registry.",
+    "integrity_void": "Any config, source, environment, history, path, seed, ID, content, capability, hash, truth-order or commitment violation voids the attempt.",
+    "unclassified_terminal_not_success": "A genuinely unregistered pre-prediction exception uses UNKNOWN_PRE_PREDICTION_EXCEPTION and cannot be converted to success.",
+    "registered_v024_integrity_codes": [
+      "INTEGRITY_CONFIG_OR_SOURCE_HASH_MISMATCH",
+      "INTEGRITY_ENVIRONMENT_MISMATCH",
+      "INTEGRITY_ARTIFACT_HASH_MISMATCH",
+      "INTEGRITY_PARTITION_SEED_ID_OR_CONTENT_COLLISION",
+      "INTEGRITY_FORBIDDEN_PREDECESSOR_REUSE",
+      "INTEGRITY_FORBIDDEN_TRUTH_ACCESS",
+      "INTEGRITY_INFORMATION_LEAK",
+      "INTEGRITY_MISSING_COMMITMENT",
+      "INTEGRITY_WHOLE_BUNDLE_CONTRACT_MISMATCH",
+      "INTEGRITY_PARTITION_CONTRACT_MISMATCH",
+      "INTEGRITY_PARTITION_CAPABILITY_MISMATCH",
+      "INTEGRITY_NUMERIC_OUTPUT_CONTRACT_MISMATCH",
+      "INTEGRITY_MEMBER_FIT_NUMERIC_CONTRACT_MISMATCH",
+      "INTEGRITY_PATH_ISOLATION_FAILURE",
+      "INTEGRITY_PREDECESSOR_HISTORY_DRIFT"
+    ],
+    "known_partition_error_may_use_unknown_default": false,
+    "prediction_and_terminal_registries_mutually_exclusive": true,
+    "terminal_registry_exact_files": [
+      "terminal_attempt_record.json",
+      "terminal_artifact_manifest.json",
+      "terminal_exposure_log_snapshot.jsonl"
+    ]
+  },
+  "pre_result_test_gate": {
+    "required_positive_tests": [
+      "all five whole tables pass exact formal validation at 71400/47600/5950/511700/4093600 rows",
+      "deterministic exact-cardinality files pass physical canonical write, fresh read, whole validation and partition derive/consume without generator, RNG or truth capability",
+      "fit commitment is created exactly once only after physical read-back and whole-bundle validation, and the completed phase event is later",
+      "the real runner partition path validates center_development at 7200 prefix rows",
+      "all seven partitions match exact cardinalities and reconstruct the whole bundle",
+      "capability hashes and key proofs are deterministic",
+      "every registered nullable numeric column passes its exact schema and cross-table missingness mask",
+      "truth-open spy observes no truth call before a validated partition view exists",
+      "prediction commitment precedes heldout scoring",
+      "scored and terminal registries are mutually exclusive"
+    ],
+    "required_negative_tests": [
+      "missing, extra or reordered columns",
+      "one missing or extra row in each whole table and partition",
+      "wrong or unknown partition and cross-partition reused ID",
+      "duplicate, missing, extra or reordered key",
+      "wrong protocol, config, attempt or source hash",
+      "wrong prefix or forecast grid or unit",
+      "missing or nonfinite forbidden values and wrong conditional nulls",
+      "infinity, required-position NaN, structural-position finite value and cross-table mask drift",
+      "85 or 87 variants and missing or extra forecast horizon",
+      "forged capability, wrong exact type and post-issuance mutation",
+      "truth open before label-free capability",
+      "V2, V2.1 or V2.2 seed, ID, content hash or artifact path collision",
+      "existing attempt or formal-root collision"
+    ],
+    "generator_or_seed_use_in_tests_forbidden": true,
+    "sealed_truth_use_in_tests_forbidden": true
+  },
+  "freeze_requirements": {
+    "environment_lock": "requirements/v024-formal.txt",
+    "implementation_audit": "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_4.md",
+    "freeze_record": "reports/synthetic_long_horizon_identifiability_freeze_record_v2_4.json",
+    "source_tree_byte_semantic_and_file_sha_required": true,
+    "direct_child_topology_required": true,
+    "clean_worktree_required": true,
+    "no_scientific_or_source_change_after_freeze": true
+  },
+  "claim_boundary": "Any V2.4 result is limited to the frozen six-core-family synthetic 25-year protocol. It is not evidence of real LFP cells, Hithium products, storage stations or 15-25 year real-world predictive accuracy."
+}
