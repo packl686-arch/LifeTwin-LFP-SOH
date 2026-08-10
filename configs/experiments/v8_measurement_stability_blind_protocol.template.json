@@ -1,0 +1,131 @@
+{
+  "schema_version": "lifetwin.fastcharge_v8_measurement_stability_blind_protocol.template.v1",
+  "experiment_id": "fastcharge_v8_measurement_stability_blind_confirmation",
+  "status": "blocked_template_pending_independent_measurement_characterization_and_new_physical_cells",
+  "prepared_by": "Jincheng Liu",
+  "lineage": {
+    "parent_candidate": "fastcharge_v7_p100_reissue_innovation_blind_candidate",
+    "parent_robustness_result": "showcase/evidence_v7_robustness/decision.json",
+    "parent_decision": "v7_withdrawn_after_prefix_noise_robustness_failure",
+    "new_hypothesis": "an_outcome_free_measurement_stability_gate_can_prevent_noise_driven_false_activation_without_retuning_the_v7_accuracy_thresholds",
+    "same_41_cell_outcomes_permitted_for_v8_selection": false,
+    "exposed_81_cell_public_evaluation_permitted": false
+  },
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "remains_active_until_every_v8_blind_gate_passes": true
+  },
+  "stage_a_measurement_characterization": {
+    "outcomes_required": false,
+    "minimum_physical_cell_count": 20,
+    "minimum_independent_measurement_repeats_per_cell_landmark": 3,
+    "required_landmarks": [60, 100],
+    "required_grouping_fields": [
+      "tester_id",
+      "temperature_chamber_id",
+      "measurement_date",
+      "physical_cell_id",
+      "landmark_cycle"
+    ],
+    "registered_noise_model_candidates": [
+      "zero_mean_gaussian_by_tester_and_temperature",
+      "student_t_by_tester_and_temperature"
+    ],
+    "selection_metric": "repeat_measurement_leave_one_cell_out_log_score",
+    "required_drift_checks": [
+      "daily_reference_channel",
+      "within_landmark_repeat_order_slope",
+      "tester_to_tester_offset"
+    ],
+    "failure_action": "retain_v5_and_stop_v8_before_any_future_outcome_access",
+    "freeze_before_stage_b": [
+      "noise_distribution_family",
+      "all_noise_parameters",
+      "tester_and_temperature_mapping",
+      "drift_quality_flags",
+      "input_file_hashes"
+    ]
+  },
+  "stage_b_outcome_free_stability_issuance": {
+    "minimum_new_physical_cell_count": 60,
+    "minimum_manufacturing_batch_count": 3,
+    "required_prefixes": [60, 100],
+    "future_outcomes_available": false,
+    "stored_v5_centers_required": [
+      "p60_center_cycles_101_through_300",
+      "p100_center_cycles_101_through_300"
+    ],
+    "base_update_rule": "unchanged_v7_p100_reissue_innovation_formula",
+    "monte_carlo_measurement_draw_count": 1024,
+    "monte_carlo_seed_derivation": "sha256(protocol_hash|cell_id|draw_index)_first_64_bits",
+    "nonzero_update_requires_all": {
+      "unperturbed_v7_gate_activated": true,
+      "minimum_measurement_resampled_activation_probability": 0.95,
+      "minimum_measurement_resampled_correction_sign_probability": 0.95,
+      "maximum_p95_endpoint_effective_correction_deviation_pp": 0.05,
+      "measurement_drift_quality_flag": "pass",
+      "complete_tester_temperature_noise_mapping": true
+    },
+    "stable_correction": "pointwise_median_of_measurement_resampled_effective_corrections",
+    "failed_cell_quality_action": "exact_zero_update_to_frozen_v5_center",
+    "minimum_stable_activation_count_before_outcome_opening": 6,
+    "insufficient_stable_activation_action": "stop_as_underpowered_and_retain_v5_without_opening_future_outcomes",
+    "commit_before_outcome_opening": [
+      "v5_centers",
+      "v8_predictions",
+      "per_cell_quality_flags",
+      "per_cell_activation_probabilities",
+      "per_cell_activation_flags",
+      "protocol_and_runtime_hashes",
+      "complete_file_manifest"
+    ]
+  },
+  "stage_c_single_open_blind_scoring": {
+    "selection_unit": "physical_cell",
+    "score_support": "cycles_101_through_300",
+    "required_primary_endpoints": {
+      "minimum_stable_activation_count": 6,
+      "minimum_stable_activation_coverage": 0.1,
+      "minimum_active_improvement_precision": 0.7,
+      "mean_all_cell_delta_mae_must_be_below_pp": 0.0,
+      "maximum_active_p90_delta_mae_pp": 0.05,
+      "maximum_active_delta_mae_pp": 0.1
+    },
+    "required_batch_endpoints": {
+      "minimum_scored_batch_count": 3,
+      "minimum_activated_batch_count": 2,
+      "maximum_any_batch_mean_all_cell_delta_mae_pp": 0.0
+    },
+    "all_primary_and_batch_endpoints_required": true,
+    "failure_action": "retain_v5_and_publish_the_blind_negative_result_without_same_batch_retuning",
+    "pass_action": "nominate_v8_for_a_separate_domain_confirmation_not_production_activation"
+  },
+  "stopping_rules": {
+    "future_outcomes_may_be_opened_once": true,
+    "same_batch_threshold_or_noise_model_retuning_permitted": false,
+    "same_batch_repeat_scoring_after_failure_permitted": false,
+    "missing_measurement_characterization_action": "do_not_run_v8",
+    "fewer_than_three_new_batches_action": "pilot_only_no_nomination",
+    "production_activation_permitted": false
+  },
+  "required_business_metrics": [
+    "repeat_rpt_test_hours",
+    "repeat_rpt_energy_throughput_kwh",
+    "rejected_cell_fraction",
+    "stable_activation_yield",
+    "physical_cells_per_successful_stable_activation",
+    "false_activation_count_after_outcome_opening",
+    "worst_active_delta_mae_pp"
+  ],
+  "claim_boundaries": {
+    "before_execution": "experiment_template_only_not_a_model_result_or_frozen_candidate",
+    "after_single_pass": "fastcharge_cycle_aging_measurement_stability_confirmation_only",
+    "always_prohibited_without_separate_evidence": [
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "storage_station_warranty_claim",
+      "unconditional_cross_domain_coverage"
+    ]
+  }
+}

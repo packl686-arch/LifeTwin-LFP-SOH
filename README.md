@@ -15,6 +15,9 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 - [V6 训练内 challenger 证据包](showcase/evidence_v6/README.md)
 - [V7 重发感知创新状态报告](reports/fastcharge_v7_reissue_innovation_development_2026-08-10.md)
 - [V7 训练内嵌套与批次压力证据](showcase/evidence_v7/README.md)
+- [V7 冻结门控前缀稳健性审计](reports/fastcharge_v7_prefix_robustness_audit_2026-08-10.md)
+- [V7 稳健性负结果证据](showcase/evidence_v7_robustness/README.md)
+- [V8 测量稳定性盲测协议模板](configs/experiments/v8_measurement_stability_blind_protocol.template.json)
 - [海辰私有数据盲测执行手册](docs/hithium_private_blind_execution_cn.md)
 - [飞书 AI 工作流设计](docs/feishu_ai_workflow_cn.md)
 
@@ -24,7 +27,9 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 
 后续 V6 训练内实验进一步验证了“全量残差更新”仍不够稳定；V6.1 因而改成选择性门控。嵌套留一电芯审计中，P100 门控触发 `10/41` 个电芯并改善其中 `8/10`，全体 P100 MAE 从 `0.24360 pp` 降至 `0.22397 pp`。由于门控由同一批 41 个训练电芯启发，它只被冻结为下一批 outcome-blind 候选，**没有启用、没有再次查看 81 个已暴露评估电芯，当前 champion 仍是 V5**。
 
-最新 V7 进一步扣除当前 V5 重发轨迹已经吸收的趋势，只投影“未吸收创新量”。P100 外层留一电芯审计激活 `9/41` 个电芯并实现 `9/9` 改善，全体 P100 MAE 从 `0.24360 pp` 降至 `0.20628 pp`；两个 MATR 批次双向留出也均通过。P40 虽通过逐电芯门槛，却因批次迁移失败而被淘汰。V7 仍是同一训练队列上的 outcome-informed 开发，因此只冻结 P100 规则等待新电芯盲测，**V5 继续作为当前 champion**。
+V7 进一步扣除当前 V5 重发轨迹已经吸收的趋势，只投影“未吸收创新量”。P100 外层留一电芯审计激活 `9/41` 个电芯并实现 `9/9` 改善，全体 P100 MAE 从 `0.24360 pp` 降至 `0.20628 pp`；两个 MATR 批次双向留出也均通过。P40 虽通过逐电芯门槛，却因批次迁移失败而被淘汰。
+
+但冻结后的前缀扰动审计否决了 V7-P100 的当前盲测资格：在 `0.02 pp` IID 噪声下，门控决策一致率只有 `84.20%`，原未激活电芯误触发率为 `14.55%`；在 `0.05 pp` 下激活精度降至 `58.58%`，重复内最差 active delta 的 P95 为 `+0.1414 pp`。因此项目没有用训练内 `9/9` 结果继续包装升级，而是撤回该候选，要求后续先提供重复测量或独立设备噪声台账。**V5 继续作为当前 champion，V7 从未启用。**
 
 > 边界：仓库不包含海辰内部测量，也不公开 MATR、SNL 等上游原始数据。上述数字属于结果已暴露的公开循环老化开发证据，不是海辰产品验证、日历老化确认或 15 至 25 年准确率证明。
 

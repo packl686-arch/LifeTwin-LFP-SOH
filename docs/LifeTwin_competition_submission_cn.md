@@ -92,9 +92,13 @@ flowchart LR
 
 三种预先冻结的 Matern GP 均未达到“至少 70% 电芯改善”的门槛。训练内唯一合格的 P40 轻量 offset 在公开评估只改善 66.7% 电芯，因此也不激活。系统按规则**保留当前前缀 V5 中心与 hybrid conformal 区间，不启用 GP 在线残差分支**。完整 H2 因此是明确的“未通过”，而不是“尚未评估”；当前仍不存在正式跨域覆盖保证。
 
-后续 V7 训练内研究没有再次查看上述 81 个评估电芯，而是只使用 41 个训练电芯的 cross-fit 预测，开发“重发感知创新状态”。严格外层留一电芯审计中，P100 仅激活 9/41 个电芯并实现 9/9 改善，全体 P100 MAE 从 0.24360 pp 降至 0.20628 pp，相对下降约 15.32%；MATR Batch 1/2 双向留出压力测试也均通过。P40 虽通过逐电芯门槛，却因批次迁移失败被淘汰；P60 同样淘汰。V7 P100 规则只冻结用于下一批 outcome-blind 测试，**当前 champion 仍是 V5**。
+后续 V7 训练内研究没有再次查看上述 81 个评估电芯，而是只使用 41 个训练电芯的 cross-fit 预测，开发“重发感知创新状态”。严格外层留一电芯审计中，P100 仅激活 9/41 个电芯并实现 9/9 改善，全体 P100 MAE 从 0.24360 pp 降至 0.20628 pp，相对下降约 15.32%；MATR Batch 1/2 双向留出压力测试也均通过。P40 虽通过逐电芯门槛，却因批次迁移失败被淘汰；P60 同样淘汰。项目随后冻结 V7 规则并进入独立的输入稳健性资格审计，**当前 champion 始终是 V5**。
 
 ![LifeTwin V7 重发感知创新状态证据](assets/v7_reissue_innovation_results.png)
+
+冻结后的压力审计给出了更关键的负结果：`sigma=0.02 pp` IID 前缀噪声下，V7 决策一致率只有 84.20%，原未激活电芯误触发率达到 14.55%；`sigma=0.05 pp` 下激活精度降至 58.58%，重复内最差 active delta 的 P95 达到 `+0.1414 pp`。三项预注册资格场景失败，因此项目撤回 V7-P100 盲测候选，V7 从未启用。相比只展示 `9/9`，这项否决更接近企业真实决策：没有重复 RPT 或设备噪声台账，残差斜率不足以支持长期轨迹修正。
+
+![LifeTwin V7 冻结门控稳健性否决](assets/v7_prefix_robustness_audit.png)
 
 这些结果属于**结果已暴露的公开数据回顾性开发证据**，用于证明方法可行性和软件闭环，不是独立确认，不代表海辰产品精度，也不能外推为 15 至 25 年实证准确率。
 
@@ -338,7 +342,9 @@ V5 控制台交互回放支持度门控、公开开发指标与飞书工作流�
 - V5 支持门控与区间评分：`showcase/evidence_v5/support_uncertainty_score_summary.json`
 - V7 重发感知创新状态报告：`reports/fastcharge_v7_reissue_innovation_development_2026-08-10.md`
 - V7 嵌套与批次压力证据：`showcase/evidence_v7/`
-- V7 P100 结果盲测协议：`configs/experiments/v7_p100_reissue_innovation_blind_candidate.json`
+- V7 原始 P100 盲测提名记录：`configs/experiments/v7_p100_reissue_innovation_blind_candidate.json`
+- V7 前缀稳健性否决报告：`reports/fastcharge_v7_prefix_robustness_audit_2026-08-10.md`
+- V7 稳健性机器可读负结果：`showcase/evidence_v7_robustness/`
 - 海辰私有盲测手册：`docs/hithium_private_blind_execution_cn.md`
 - 海辰数据字典：`docs/hithium_private_data_dictionary_cn.md`
 - 数据资格矩阵：`configs/validation/dataset_evidence_matrix_2026_08.json`
