@@ -1,0 +1,5 @@
+model_id,distribution,degrees_of_freedom,leave_one_cell_out_log_score,valid_fold_count,expected_fold_count,passed_all_folds
+zero_mean_gaussian,gaussian,,628.30322820529,24,24,True
+zero_mean_student_t_df10,student_t,10,627.73717800112627,24,24,True
+zero_mean_student_t_df3,student_t,3,613.93910759920982,24,24,True
+zero_mean_student_t_df5,student_t,5,625.0575491016358,24,24,True

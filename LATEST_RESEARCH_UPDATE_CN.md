@@ -163,3 +163,17 @@ V7 针对 V6.1 的“重复修正”风险做了机制改进：到达新 landmar
 - [V7 前缀稳健性完整报告](reports/fastcharge_v7_prefix_robustness_audit_2026-08-10.md)
 - [V7 稳健性预注册协议](configs/experiments/v7_frozen_gate_prefix_robustness_audit.json)
 - [V7 稳健性机器可读负结果](showcase/evidence_v7_robustness/README.md)
+
+## V8 测量稳定性门控与软件演练（2026-08-10）
+
+V8 没有继续使用 41 个已暴露开发结局调准确率阈值，而是把 V7 的失败转化为独立测量问题。Stage A 只读取循环 60/100 的重复测量、日参考和测试设备桥接记录；对组内中心化导致的 `1 - 1/n` 方差收缩进行校正后，用物理电芯留一对数分数在 Gaussian 与固定自由度 Student-t 噪声族之间选择，并检查重复顺序漂移、日漂移、设备偏差和分组样本量。输入只允许十个登记字段，未来容量或 SOH 字段会被拒绝。
+
+Stage B 对每个 P100 签发执行 1024 次哈希确定的测量噪声重采样。只有原 V7 门控激活、重采样激活概率和修正方向概率均至少 95%、终点修正偏差 P95 不超过 0.05 pp、测量质量与设备映射都通过时，才使用重采样有效修正的逐点中位数；否则预测逐元素精确回退当前 V5。单电芯预测、决策和清单均哈希承诺，队列编译器还要求至少 60 个新电芯、3 个制造批次、6 个稳定激活、10% 激活覆盖率和至少 2 个激活批次，未满足时禁止打开未来结局。
+
+当前只完成 24 个生成身份、192 行记录的确定性软件演练。合成噪声选择 Gaussian，两组尺度为 0.002874 pp 与 0.003081 pp；稳定路径的激活与方向概率均为 1.0，终点偏差 P95 为 0.00794 pp，缺失设备映射精确回退 V5。这些数字不来自真实电池，也不是准确率、独立验证或生产就绪证据。V5 仍是 champion，真实 Stage A/B/C 均待企业重复测量和新盲测队列。
+
+- [V8 盲测总协议](configs/experiments/v8_measurement_stability_blind_protocol.template.json)
+- [V8 真实执行配置模板](configs/experiments/v8_measurement_stability_execution.template.json)
+- [V8 执行手册](docs/v8_measurement_stability_execution_cn.md)
+- [V8 软件演练报告](reports/fastcharge_v8_measurement_stability_dry_run_2026-08-10.md)
+- [V8 合成机器可读证据](showcase/evidence_v8_dry_run/README.md)

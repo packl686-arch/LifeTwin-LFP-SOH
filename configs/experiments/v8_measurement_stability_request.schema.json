@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lifetwin.fastcharge_v8.measurement_stability.request.v1",
+  "title": "LifeTwin V8 outcome-free single-cell stability issuance request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "issuance_id",
+    "cell_id",
+    "manufacturing_batch_id",
+    "tester_id",
+    "temperature_chamber_id",
+    "history_cycles",
+    "history_observed_retention_pct",
+    "history_previous_v5_center_pct",
+    "future_cycles",
+    "previous_v5_center_pct",
+    "current_v5_center_pct"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "lifetwin.fastcharge_v8.measurement_stability.request.v1"
+    },
+    "issuance_id": {"type": "string", "minLength": 1},
+    "cell_id": {"type": "string", "minLength": 1},
+    "manufacturing_batch_id": {"type": "string", "minLength": 1},
+    "tester_id": {"type": "string", "minLength": 1},
+    "temperature_chamber_id": {"type": "string", "minLength": 1},
+    "history_cycles": {
+      "description": "Exactly the integer cycle coordinates 61 through 100.",
+      "type": "array",
+      "minItems": 40,
+      "maxItems": 40,
+      "items": {"type": "number"}
+    },
+    "history_observed_retention_pct": {
+      "description": "Observable retention measurements at cycles 61 through 100.",
+      "type": "array",
+      "minItems": 40,
+      "maxItems": 40,
+      "items": {"type": "number"}
+    },
+    "history_previous_v5_center_pct": {
+      "description": "Stored P60 V5 centers at cycles 61 through 100.",
+      "type": "array",
+      "minItems": 40,
+      "maxItems": 40,
+      "items": {"type": "number"}
+    },
+    "future_cycles": {
+      "description": "Exactly the integer cycle coordinates 101 through 300; these are coordinates, not outcomes.",
+      "type": "array",
+      "minItems": 200,
+      "maxItems": 200,
+      "items": {"type": "number"}
+    },
+    "previous_v5_center_pct": {
+      "description": "Stored P60 V5 centers at cycles 101 through 300.",
+      "type": "array",
+      "minItems": 200,
+      "maxItems": 200,
+      "items": {"type": "number"}
+    },
+    "current_v5_center_pct": {
+      "description": "Current P100 V5 centers at cycles 101 through 300.",
+      "type": "array",
+      "minItems": 200,
+      "maxItems": 200,
+      "items": {"type": "number"}
+    }
+  }
+}

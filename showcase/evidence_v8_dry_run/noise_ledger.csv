@@ -1,0 +1,3 @@
+tester_id,temperature_chamber_id,model_id,distribution,degrees_of_freedom,scale_pp,physical_cell_count,residual_count
+TESTER_A,CHAMBER_1,zero_mean_gaussian,gaussian,,0.0028740592736216275,12,72
+TESTER_B,CHAMBER_2,zero_mean_gaussian,gaussian,,0.0030808342111017157,12,72
