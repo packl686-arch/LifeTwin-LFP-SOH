@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -11,18 +10,20 @@ import pytest
 from lifetwin.experiments.calendar_long_horizon_v015_fit import (
     FROZEN_VARIANT_KEYS,
 )
-from lifetwin.experiments.calendar_long_horizon_v015_io import canonicalize_frame
+from lifetwin.experiments.calendar_long_horizon_v015_io import (
+    canonical_csv_bytes,
+    canonicalize_frame,
+)
 from lifetwin.experiments.calendar_long_horizon_v015_model import (
     FORECAST_DAYS,
     PREFIX_DAYS,
 )
-from lifetwin.experiments.calendar_long_horizon_v018_contract import (
-    load_v023_contract_view,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    load_v024_contract_view,
 )
 from lifetwin.experiments import calendar_long_horizon_v018_partition as v018_partition
 from lifetwin.experiments import calendar_long_horizon_v019_partition as v019_partition
-from lifetwin.experiments import calendar_long_horizon_v019_runner as v019_runner
-from lifetwin.experiments.calendar_long_horizon_v018_protocol import V023_PROTOCOL_ID
+from lifetwin.experiments.calendar_long_horizon_v019_protocol import V024_PROTOCOL_ID
 from lifetwin.experiments.calendar_long_horizon_v019_numeric_contract import (
     DIAGNOSTIC_COLUMNS,
     FORECAST_COLUMNS,
@@ -47,7 +48,7 @@ def _member_frames(
             succeeded = variant_index != 0
             records.append(
                 {
-                    "protocol_id": V023_PROTOCOL_ID,
+                    "protocol_id": V024_PROTOCOL_ID,
                     "partition": partition,
                     "cluster_id": cluster_id,
                     "model_id": model_id,
@@ -64,7 +65,7 @@ def _member_frames(
             for day in FORECAST_DAYS:
                 forecasts.append(
                     {
-                        "protocol_id": V023_PROTOCOL_ID,
+                        "protocol_id": V024_PROTOCOL_ID,
                         "partition": partition,
                         "cluster_id": cluster_id,
                         "model_id": model_id,
@@ -99,7 +100,7 @@ def test_candidate_contract_survives_real_formal_canonicalization() -> None:
         partitions=("center_development",) * len(cluster_ids),
         cluster_ids=cluster_ids,
     )
-    contract = load_v023_contract_view().artifacts
+    contract = load_v024_contract_view().artifacts
     diagnostic_schema = replace(
         contract.csv_schema("member_fit_diagnostics.csv"),
         required_rows=len(diagnostics),
@@ -275,7 +276,7 @@ def _exact_cardinality_frames() -> dict[str, pd.DataFrame]:
     )
     diagnostic_hashes = content_hashes[diagnostic_cluster_index]
     protocol_category = lambda count: pd.Categorical.from_codes(  # noqa: E731
-        np.zeros(count, dtype=np.int8), categories=[V023_PROTOCOL_ID]
+        np.zeros(count, dtype=np.int8), categories=[V024_PROTOCOL_ID]
     )
     diagnostics = pd.DataFrame(
         {
@@ -353,7 +354,7 @@ def _exact_cardinality_frames() -> dict[str, pd.DataFrame]:
         "partition": pd.Categorical(partition_array),
         "cluster_id": pd.Categorical(cluster_array),
     }
-    contract = load_v023_contract_view().artifacts
+    contract = load_v024_contract_view().artifacts
     operating_schema = contract.csv_schema("operating_pack.csv")
     for column in operating_schema.columns[3:]:
         if column.endswith("temperature_c"):
@@ -406,58 +407,29 @@ def _exact_cardinality_frames() -> dict[str, pd.DataFrame]:
     return frames
 
 
-def test_exact_cardinality_whole_contract_runs_through_fit_structure_stage(
+def test_exact_cardinality_physical_whole_and_partition_roundtrip(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     frames = _exact_cardinality_frames()
+    contract = load_v024_contract_view().artifacts
     for filename in v019_partition.INPUT_FILENAMES:
-        (tmp_path / filename).touch()
-    monkeypatch.setattr(
-        v019_partition,
-        "read_canonical_csv",
-        lambda path, contract, *, formal: frames[Path(path).name],
-    )
-    monkeypatch.setattr(v019_runner._v018, "_append_phase", lambda **kwargs: None)
-    monkeypatch.setattr(v019_runner._v018, "_append_failure", lambda **kwargs: None)
-    monkeypatch.setattr(
-        v019_runner._v018,
-        "load_fresh_generation_bundle_v023",
-        lambda **kwargs: object(),
-    )
-    monkeypatch.setattr(
-        v019_runner._v018,
-        "fit_verified_generation_bundle_v023",
-        lambda bundle: object(),
-    )
-    monkeypatch.setattr(
-        v019_runner._v018,
-        "commit_verified_fit_result_v023",
-        lambda **kwargs: "d" * 64,
-    )
-    fixture_identity = "development_fixture_not_a_formal_attempt"
-    monkeypatch.setattr(
-        v019_runner._v018,
-        "validate_formal_exposure_log",
-        lambda *args, **kwargs: {fixture_identity: object()},
-    )
-    monkeypatch.setattr(
-        v019_runner._v018,
-        "verify_phase_artifact_commitment",
-        lambda *args, **kwargs: None,
-    )
-    contract = load_v023_contract_view().artifacts
-    whole, digest = v019_runner._fit_structure_stage(
-        paths=SimpleNamespace(
-            label_free_root=tmp_path,
-            ledger_path=tmp_path / "development-ledger-not-written.jsonl",
-        ),
-        identity=SimpleNamespace(attempt_id=fixture_identity),
-        view=SimpleNamespace(artifacts=contract),
-        truth_hash="0" * 64,
-    )
+        raw = canonical_csv_bytes(
+            frames[filename],
+            contract.csv_schema(filename),
+            contract,
+            formal=True,
+        )
+        (tmp_path / filename).write_bytes(raw)
+    whole = v019_partition.validate_whole_bundle_from_root(tmp_path, contract)
     assert type(whole) is v019_partition.WholeBundleValidated
-    assert digest == "d" * 64
-    assert dict(whole.source_sizes) == {
-        filename: 0 for filename in v019_partition.INPUT_FILENAMES
-    }
+    assert all(size > 0 for size in whole.source_sizes.values())
+    for partition, expected in v019_partition.PARTITION_COUNTS.items():
+        view = v019_partition.derive_partition_view(
+            whole,
+            partition=partition,
+            contract=contract,
+        )
+        consumed = v019_partition.consume_partition_frames(view, contract=contract)
+        assert {name: len(frame) for name, frame in consumed.items()} == {
+            name: expected[name] for name in v019_partition.INPUT_FILENAMES
+        }

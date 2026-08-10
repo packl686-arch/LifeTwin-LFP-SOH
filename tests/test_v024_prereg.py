@@ -49,7 +49,7 @@ def test_v024_prereg_identity_and_seed_registry_without_rng_consumption() -> Non
     assert _rng_state_equal(before, after)
     assert design["schema_version"] == "lifetwin_synthetic_long_horizon_v2_4/1.0.0"
     assert design["protocol_id"] == "synthetic_long_horizon_identifiability_v2_4"
-    assert design["status"] == "preregistered_post_root_cause_pre_formalization"
+    assert design["status"] == "implementation_frozen"
     assert design["attempt_registry"]["only_attempt_id"] == ("v024-formal-20260810-a1")
     expected = list(range(202608100401, 202608100414))
     observed = list(design["fresh_generation"]["seed_roots"].values())

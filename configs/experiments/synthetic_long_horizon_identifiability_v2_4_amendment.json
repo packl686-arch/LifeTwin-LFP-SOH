@@ -1,7 +1,7 @@
 {
   "schema_version": "lifetwin_synthetic_long_horizon_v2_4/1.0.0",
   "protocol_id": "synthetic_long_horizon_identifiability_v2_4",
-  "status": "preregistered_post_root_cause_pre_formalization",
+  "status": "implementation_frozen",
   "title": "V2.4 member-fit state-mask and atomic commitment amendment",
   "design_date": "2026-08-10",
   "design_witnesses": [

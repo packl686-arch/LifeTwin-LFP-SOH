@@ -21,7 +21,8 @@ from lifetwin.experiments.calendar_long_horizon_v015_fit import (
     FROZEN_VARIANT_KEY_SET,
 )
 from lifetwin.experiments.calendar_long_horizon_v015_model import FORECAST_DAYS
-from lifetwin.experiments.calendar_long_horizon_v018_numeric_contract import (
+from lifetwin.experiments.calendar_long_horizon_v019_output_numeric_contract import (
+    V024NumericContractError,
     validate_decision_bundle_numeric_contract,
     validate_feature_bundle_numeric_contract,
     validate_pipeline_numeric_contract,
@@ -403,6 +404,7 @@ __all__ = [
     "FORECAST_COLUMNS",
     "FORECAST_KEY",
     "V024MemberFitNumericContractError",
+    "V024NumericContractError",
     "validate_decision_bundle_numeric_contract",
     "validate_feature_bundle_numeric_contract",
     "validate_member_fit_numeric_contract",
