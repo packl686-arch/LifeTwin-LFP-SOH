@@ -297,6 +297,10 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
   终止；没有生成预测，没有评分，不属于成功或已评分失败，历史终态不追溯改写。
 - V2.2：仅有未预注册、未授权执行的候选设计；2026-08-16 前保持 No-Go，优先完成参赛
   方案、演示与答辩。
+- 合成长时域 V2.2（2026-08-10 当前状态）：上述 No-Go 是执行授权前的历史判断；后续明确
+  授权的新协议唯一正式尝试自然结束为 `terminal_pre_prediction / void / proven_integrity`，
+  原因码为 `INTEGRITY_PARTITION_CONTRACT_MISMATCH`。流程形成 fit commitment，但无
+  prediction commitment、无评分，`opened_truth_files=[]`，不能报告精度或成功结论。
 - Ubuntu/Windows fresh-clone CI：`v0.14.1` 发布链路均为 914 项测试通过、0 项跳过；
   工程复现通过不增加模型精度或独立验证证据。
 - 独立长期 LFP 队列验证：待完成。
@@ -326,9 +330,15 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - **2026-08-08—09｜V2.1 正式终态**：唯一正式尝试在预测前终止；只打开中心开发真值，
   未形成 prediction commitment，score 为空。根因收口为 7,200 行合法分区子集误用了
   71,400 行全量包契约；不重跑、不续跑，V2.2 在赛事提交前保持 No-Go。
+- **2026-08-10｜V2.2 正式终态**：经后续明确授权，新协议以新数据、新 seed 和唯一 attempt
+  隔离执行；在 [`risk_bundle.csv` 非有限输出被冻结契约拒绝](reports/synthetic_long_horizon_identifiability_v2_2_formal_closeout_20260810.md)
+  后登记为 `terminal_pre_prediction / void / proven_integrity`。已形成 fit commitment，但无
+  prediction commitment、无评分、未打开真值；更上游数值成因尚未完成定位。
 
 提交人：Jincheng Liu
 
 公开工程版本：`0.14.1`（标签冻结于 2026-08-07）
 
 研究状态更新：2026-08-09
+
+研究状态补充：2026-08-10
