@@ -1,7 +1,7 @@
 {
   "schema_version": "lifetwin_synthetic_long_horizon_v2_3/1.0.0",
   "protocol_id": "synthetic_long_horizon_identifiability_v2_3",
-  "status": "preregistered_preimplementation",
+  "status": "implementation_frozen",
   "title": "V2.3 schema-aware numeric contract amendment",
   "design_date": "2026-08-10",
   "design_witnesses": [
@@ -238,6 +238,7 @@
       "INTEGRITY_WHOLE_BUNDLE_CONTRACT_MISMATCH",
       "INTEGRITY_PARTITION_CONTRACT_MISMATCH",
       "INTEGRITY_PARTITION_CAPABILITY_MISMATCH",
+      "INTEGRITY_NUMERIC_OUTPUT_CONTRACT_MISMATCH",
       "INTEGRITY_PATH_ISOLATION_FAILURE",
       "INTEGRITY_PREDECESSOR_HISTORY_DRIFT"
     ],
