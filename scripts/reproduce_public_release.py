@@ -139,6 +139,7 @@ PACKAGE_IMPORTS = {
     "jsonschema": "jsonschema",
     "numpy": "numpy",
     "pandas": "pandas",
+    "pyarrow": "pyarrow",
     "scipy": "scipy",
     "scikit-learn": "sklearn",
     "matplotlib": "matplotlib",
@@ -514,6 +515,7 @@ def _preflight(project_root: Path, mode: str) -> dict[str, object]:
         "jsonschema",
         "numpy",
         "pandas",
+        "pyarrow",
         "scipy",
         "scikit-learn",
     }

@@ -1,7 +1,8 @@
-# Exact direct dependencies used to regenerate the v0.13.0 public evidence.
+# Exact direct dependencies used to verify the v0.14.1 public release.
 duckdb==1.5.4
 numpy==2.5.1
 pandas==3.0.3
+pyarrow==25.0.0
 scipy==1.18.0
 scikit-learn==1.9.0
 jsonschema==4.25.1
