@@ -1,0 +1,114 @@
+{
+  "candidate_count_including_fallback": 11,
+  "claim_boundary": [
+    "Training-only challenger development",
+    "Not an independent confirmation result",
+    "No Hithium, calendar-aging, 15-25 year, or production claim"
+  ],
+  "decision": "retain_frozen_v5_champion",
+  "evidence_role": "training_only_method_development_for_future_outcome_blind_validation",
+  "experiment_id": "fastcharge_v6_bounded_state_update_development",
+  "exposed_81_cell_evaluation_used": false,
+  "full_training_nomination_by_current_prefix": {
+    "100": "theil_all_a0p5",
+    "40": "theil_all_a0p1",
+    "60": "theil_all_a0p1"
+  },
+  "implementation": {
+    "module_path": "src/lifetwin/experiments/fastcharge_v6_bounded_state.py",
+    "module_sha256": "918e6357148da3107a13b2a838d745e4f599918272d2e389de93951583662646",
+    "runner_path": "scripts/run_fastcharge_v6_bounded_state_development.py",
+    "runner_sha256": "675ea1208fecd69c0e7733e7991ab18e13897a5fa18bea485b43d225621e7da8"
+  },
+  "nested_leave_one_cell_out": {
+    "transitions": [
+      {
+        "current_prefix_cycle": 40,
+        "fraction_cells_improved": 0.3902439024390244,
+        "mean_base_trajectory_mae_pp": 0.35218217163047016,
+        "mean_delta_mae_pp": 0.00941405936922379,
+        "mean_updated_trajectory_mae_pp": 0.36159623099969396,
+        "p90_cell_delta_mae_pp": 0.03677464041358136,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 20,
+        "selected_candidate_counts": {
+          "no_update": 6,
+          "theil_all_a0p1": 35
+        }
+      },
+      {
+        "current_prefix_cycle": 60,
+        "fraction_cells_improved": 0.5121951219512195,
+        "mean_base_trajectory_mae_pp": 0.3054782360712743,
+        "mean_delta_mae_pp": -0.00036055295888169436,
+        "mean_updated_trajectory_mae_pp": 0.3051176831123926,
+        "p90_cell_delta_mae_pp": 0.04941185122868437,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 40,
+        "selected_candidate_counts": {
+          "theil_all_a0p1": 36,
+          "theil_all_a0p25": 5
+        }
+      },
+      {
+        "current_prefix_cycle": 100,
+        "fraction_cells_improved": 0.5365853658536586,
+        "mean_base_trajectory_mae_pp": 0.24359906485841418,
+        "mean_delta_mae_pp": -0.03266447409315806,
+        "mean_updated_trajectory_mae_pp": 0.21093459076525609,
+        "p90_cell_delta_mae_pp": 0.04284862192413741,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 60,
+        "selected_candidate_counts": {
+          "theil_all_a0p5": 41
+        }
+      }
+    ]
+  },
+  "physical_cell_count": 41,
+  "promotion_gate": {
+    "overall": {
+      "fraction_cell_transitions_improved": 0.4796747967479675,
+      "mean_delta_mae_pp": -0.007870322560938652,
+      "p90_cell_transition_delta_mae_pp": 0.04472805450476198,
+      "physical_cell_transition_count": 123
+    },
+    "passed": false,
+    "transitions": [
+      {
+        "current_prefix_cycle": 40,
+        "fraction_cells_improved": 0.3902439024390244,
+        "mean_delta_mae_pp": 0.00941405936922379,
+        "p90_cell_delta_mae_pp": 0.03677464041358136,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 20
+      },
+      {
+        "current_prefix_cycle": 60,
+        "fraction_cells_improved": 0.5121951219512195,
+        "mean_delta_mae_pp": -0.00036055295888169436,
+        "p90_cell_delta_mae_pp": 0.04941185122868437,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 40
+      },
+      {
+        "current_prefix_cycle": 100,
+        "fraction_cells_improved": 0.5365853658536586,
+        "mean_delta_mae_pp": -0.03266447409315806,
+        "p90_cell_delta_mae_pp": 0.04284862192413741,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 60
+      }
+    ]
+  },
+  "protocol_sha256": "aa22f266d1dde1b72ff1de634b07be7e12562f2c196704a33f32b1d2b3832f26",
+  "runtime_versions": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0",
+    "scipy": "1.18.0"
+  },
+  "schema_version": "lifetwin.fastcharge_v6_bounded_state.result.v1",
+  "training_input_sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4"
+}

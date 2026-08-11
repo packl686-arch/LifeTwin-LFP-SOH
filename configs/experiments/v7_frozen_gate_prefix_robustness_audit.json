@@ -1,0 +1,177 @@
+{
+  "schema_version": "lifetwin.fastcharge_v7_frozen_gate_prefix_robustness.config.v1",
+  "experiment_id": "fastcharge_v7_frozen_gate_prefix_robustness_audit",
+  "status": "preregistered_post_nomination_robustness_audit_without_retuning",
+  "created_timestamp_utc": "2026-08-10T10:00:00Z",
+  "prepared_by": "Jincheng Liu",
+  "purpose": "Test whether the already-frozen V7 P100 activation and correction remain stable under prefix measurement noise and missing observations before spending a new-cell blind-test budget.",
+  "evidence_role": "same_41_training_cells_frozen_rule_robustness_diagnostic_not_accuracy_confirmation",
+  "source_candidate": {
+    "path": "configs/experiments/v7_p100_reissue_innovation_blind_candidate.json",
+    "sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0",
+    "modification_permitted": false
+  },
+  "input": {
+    "path": "artifacts/fastcharge-v5-support-uncertainty/crossfit_predictions.csv",
+    "sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+    "physical_cell_count": 41,
+    "outcome_status": "already_exposed_training_crossfit_outcomes",
+    "exposed_public_81_cell_evaluation_permitted": false
+  },
+  "firewall": {
+    "perturbation_targets": [
+      "p60_issuance_residual_history_cycles_61_through_100"
+    ],
+    "held_future_outcomes_available_to_activation": false,
+    "v5_forecast_centers_perturbed": false,
+    "scope_note": "This isolates the V7 innovation layer. It is not an end-to-end V5 sensor-noise test.",
+    "threshold_retuning_after_results_permitted": false,
+    "candidate_rule_retuning_after_results_permitted": false
+  },
+  "randomization": {
+    "base_seed": 721907,
+    "seed_derivation": "sha256(base_seed|scenario_id|replicate_index|cell_id)_first_64_bits",
+    "row_order_invariant": true
+  },
+  "scenarios": [
+    {
+      "scenario_id": "reference_unperturbed",
+      "kind": "none",
+      "replicates": 1,
+      "role": "integrity",
+      "thresholds": {
+        "minimum_decision_agreement": 1.0,
+        "maximum_p95_effective_correction_deviation_pp": 1e-12
+      }
+    },
+    {
+      "scenario_id": "constant_offset_p0p20_pp",
+      "kind": "constant_offset",
+      "offset_pp": 0.2,
+      "replicates": 1,
+      "role": "integrity",
+      "rationale": "A constant residual offset must not alter a slope-only gate.",
+      "thresholds": {
+        "minimum_decision_agreement": 1.0,
+        "maximum_p95_effective_correction_deviation_pp": 1e-10
+      }
+    },
+    {
+      "scenario_id": "iid_noise_sigma_0p02_pp",
+      "kind": "iid_gaussian",
+      "sigma_pp": 0.02,
+      "replicates": 128,
+      "role": "qualification",
+      "thresholds": {
+        "minimum_decision_agreement": 0.97,
+        "minimum_baseline_active_retention": 0.9,
+        "maximum_false_activation_rate": 0.02,
+        "minimum_activation_precision": 0.7,
+        "maximum_mean_all_cell_delta_mae_pp": 0.0,
+        "maximum_p95_replicate_active_max_delta_mae_pp": 0.1
+      }
+    },
+    {
+      "scenario_id": "iid_noise_sigma_0p05_pp",
+      "kind": "iid_gaussian",
+      "sigma_pp": 0.05,
+      "replicates": 128,
+      "role": "qualification",
+      "thresholds": {
+        "minimum_decision_agreement": 0.9,
+        "minimum_baseline_active_retention": 0.8,
+        "maximum_false_activation_rate": 0.05,
+        "minimum_activation_precision": 0.7,
+        "maximum_mean_all_cell_delta_mae_pp": 0.0,
+        "maximum_p95_replicate_active_max_delta_mae_pp": 0.1
+      }
+    },
+    {
+      "scenario_id": "random_missing_10pct",
+      "kind": "random_missing",
+      "missing_fraction": 0.1,
+      "replicates": 128,
+      "role": "qualification",
+      "thresholds": {
+        "minimum_decision_agreement": 0.9,
+        "minimum_baseline_active_retention": 0.8,
+        "maximum_false_activation_rate": 0.05,
+        "minimum_activation_precision": 0.7,
+        "maximum_mean_all_cell_delta_mae_pp": 0.0,
+        "maximum_p95_replicate_active_max_delta_mae_pp": 0.1
+      }
+    },
+    {
+      "scenario_id": "noise_0p05_pp_plus_missing_10pct",
+      "kind": "noise_plus_random_missing",
+      "sigma_pp": 0.05,
+      "missing_fraction": 0.1,
+      "replicates": 128,
+      "role": "qualification",
+      "thresholds": {
+        "minimum_decision_agreement": 0.85,
+        "minimum_baseline_active_retention": 0.75,
+        "maximum_false_activation_rate": 0.08,
+        "minimum_activation_precision": 0.7,
+        "maximum_mean_all_cell_delta_mae_pp": 0.0,
+        "maximum_p95_replicate_active_max_delta_mae_pp": 0.1
+      }
+    },
+    {
+      "scenario_id": "single_spike_0p20_pp",
+      "kind": "single_spike",
+      "amplitude_pp": 0.2,
+      "replicates": 128,
+      "role": "diagnostic"
+    },
+    {
+      "scenario_id": "linear_drift_span_0p10_pp",
+      "kind": "linear_drift",
+      "span_pp": 0.1,
+      "replicates": 128,
+      "role": "diagnostic",
+      "rationale": "A slope-only innovation state cannot distinguish cell degradation from instrument drift; this scenario quantifies the dependency rather than claiming robustness."
+    },
+    {
+      "scenario_id": "recent_block_missing_5",
+      "kind": "recent_block_missing",
+      "missing_count": 5,
+      "replicates": 1,
+      "role": "diagnostic"
+    }
+  ],
+  "summary_metrics": [
+    "decision_agreement",
+    "baseline_active_retention",
+    "false_activation_rate",
+    "activation_precision",
+    "mean_all_cell_delta_mae_pp",
+    "p95_replicate_active_max_delta_mae_pp",
+    "p95_effective_correction_deviation_pp"
+  ],
+  "decision_rule": {
+    "required_roles": [
+      "integrity",
+      "qualification"
+    ],
+    "all_required_scenarios_must_pass": true,
+    "pass_action": "retain_frozen_v7_p100_candidate_for_new_cell_outcome_blind_test_without_activation",
+    "failure_action": "withdraw_v7_p100_candidate_or_preregister_a_new_upstream_quality_gate_before_any_blind_test",
+    "diagnostic_scenarios_can_never_rescue_a_failed_required_scenario": true
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "frozen_rule_prefix_perturbation_robustness_on_the_same_training_cells",
+      "measurement_quality_requirements_for_future_blind_execution"
+    ],
+    "prohibited": [
+      "independent_accuracy_confirmation",
+      "end_to_end_v5_sensor_robustness",
+      "public_81_cell_reuse",
+      "hithium_product_validation",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "production_activation"
+    ]
+  }
+}

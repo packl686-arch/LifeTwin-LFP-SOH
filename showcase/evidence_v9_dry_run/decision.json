@@ -1,0 +1,101 @@
+{
+  "artifacts": {
+    "draw_metrics_sha256": "cab44888664ae6e16e7fb34c1815cc5da5d5ffb43098a54573ff8fc55e709b2e",
+    "replicate_ledger_sha256": "b574fff6f0569e605716dcb9a7075d2def76534a3812c0cef1ae42fdf4c1a8c4",
+    "stable_correction_sha256": "c76ee43821c21e3dc80be2d861bee676dcadb478cabc895c381a0086add6cab1"
+  },
+  "baseline_endpoint_correction_pp": -0.3854116885077035,
+  "baseline_gate_diagnostics": {
+    "absolute_history_spearman": 1.0,
+    "bounded_unassimilated_slope_pp_per_cycle": -0.0038541168850770354,
+    "history_recent_theil_slope_pp_per_cycle": -0.006026856746160547,
+    "history_slope_sign_agreement": true,
+    "history_theil_slope_pp_per_cycle": -0.00626063297898278,
+    "projected_unassimilated_change_pp": 0.15416467540308143,
+    "raw_unassimilated_slope_pp_per_cycle": -0.0038541168850770354,
+    "reissue_shift_theil_slope_pp_per_cycle": -0.0024065160939057443,
+    "unassimilated_history_slope_sign_agreement": true
+  },
+  "baseline_v7_activated": true,
+  "claim_boundaries": {
+    "allowed": [
+      "end_to_end_v5_refit_software_dry_run",
+      "correlated_perturbation_software_dry_run",
+      "outcome_free_ledger_and_fallback_contract_test"
+    ],
+    "prohibited": [
+      "model_accuracy_improvement",
+      "real_measurement_repeatability",
+      "independent_confirmation",
+      "production_readiness",
+      "calendar_or_fifteen_to_twenty_five_year_accuracy"
+    ]
+  },
+  "config_sha256": "7e2f921eff8f2daf86e5b3de6b6b36d7070f9e19179316f7dfee6226c46623b3",
+  "decision": "synthetic_end_to_end_software_dry_run_passed_without_model_evidence",
+  "draw_count": 24,
+  "experiment_id": "fastcharge_v9_end_to_end_correlated_stability_synthetic_dry_run",
+  "failed_action": "none",
+  "frozen_v5_selection_sha256": "a6e7bd4d60cb70ba938b29473184f7506f3ee9f1a939d5bda0c5ba92845a0d9c",
+  "frozen_v7_rule_sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0",
+  "future_outcomes_read": false,
+  "implementation": {
+    "module_path": "src/lifetwin/experiments/fastcharge_v9_end_to_end_stability.py",
+    "module_sha256": "7bbf1a597868bc6ac88f3e69b99e3e403b600cc766090c6b9337a88fcd290300",
+    "runner_path": "scripts/run_fastcharge_v9_end_to_end_synthetic_dry_run.py",
+    "runner_sha256": "a3bcd17ff07087c5ed8937b87a49fdbf34fb8d4a257228bed2f13d7bc3cdff46"
+  },
+  "model_accuracy_evidence_created": false,
+  "p05_p100_reference_jaccard": 0.8461538461538461,
+  "p05_p60_reference_jaccard": 0.8461538461538461,
+  "p95_issued_endpoint_abs_deviation_pp": 0.016600276225673838,
+  "p95_issued_trajectory_mae_deviation_pp": 0.01261070337115747,
+  "p95_p100_endpoint_abs_deviation_pp": 0.013934281800487724,
+  "p95_p100_trajectory_mae_deviation_pp": 0.010788748342147159,
+  "p95_p60_endpoint_abs_deviation_pp": 0.01900656237522469,
+  "parent_protocol_sha256": "68df7d546fa71a3f066404c277b011095a925f05d769cc04d7ed645c4459ca0c",
+  "protocol_sha256": "68df7d546fa71a3f066404c277b011095a925f05d769cc04d7ed645c4459ca0c",
+  "quality_activated": true,
+  "real_model_evidence_created": false,
+  "reasons": [],
+  "refit_activation_probability": 1.0,
+  "refit_correction_sign_probability": 1.0,
+  "runtime_versions": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0"
+  },
+  "schema_version": "lifetwin.fastcharge_v9.end_to_end_stability_decision.v1",
+  "status": "software_only_synthetic_end_to_end_refit_dry_run_not_a_model_result",
+  "stress_negative_control": {
+    "construction": "software_only_reference_reselection_and_center_drift_stress",
+    "exact_zero_correction": true,
+    "quality_activated": false,
+    "reasons": [
+      "p05_p60_reference_jaccard_below_threshold",
+      "p05_p100_reference_jaccard_below_threshold",
+      "p95_p60_endpoint_abs_deviation_pp_above_threshold",
+      "p95_p100_endpoint_abs_deviation_pp_above_threshold",
+      "p95_p100_trajectory_mae_deviation_pp_above_threshold",
+      "p95_issued_endpoint_abs_deviation_pp_above_threshold",
+      "p95_issued_trajectory_mae_deviation_pp_above_threshold"
+    ]
+  },
+  "synthetic_fixture": {
+    "correlated_components": [
+      "iid",
+      "common_bias",
+      "ar1",
+      "linear_drift",
+      "rare_spike"
+    ],
+    "historical_v5_refit_each_draw": true,
+    "reference_reselection_each_draw": true,
+    "replicate_ledger_rows": 12000,
+    "target_future_rows_generated": 0,
+    "target_prefix_last_cycle": 100,
+    "training_cell_count": 16
+  },
+  "v5_champion_changed": false
+}

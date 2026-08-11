@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="LifeTwin V5 储能电池 SOH 证据与工作流演示控制台">
+  <title>LifeTwin V5 · 证据控制台</title>
+  <style>
+    :root {
+      --ink: #17211f;
+      --muted: #64716e;
+      --page: #f4f6f3;
+      --surface: #ffffff;
+      --line: #d7ddda;
+      --line-dark: #aeb9b5;
+      --teal: #087b72;
+      --teal-soft: #e1f1ed;
+      --blue: #2f6f91;
+      --blue-soft: #e8f1f6;
+      --orange: #c76716;
+      --orange-soft: #fff0df;
+      --red: #b63b34;
+      --red-soft: #f9e9e7;
+      --green: #347a48;
+      --green-soft: #e5f1e7;
+      --charcoal: #24302d;
+      --shadow: 0 1px 2px rgba(21, 33, 30, 0.08);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { min-width: 320px; background: var(--page); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--page);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--teal); text-underline-offset: 3px; }
+    .topbar {
+      min-height: 64px;
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      color: #fff;
+      background: var(--charcoal);
+      border-bottom: 4px solid var(--orange);
+    }
+    .brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+    .brand strong { font-size: 22px; font-weight: 780; }
+    .brand span { color: #c5cecb; font-size: 12px; white-space: nowrap; }
+    .release-state {
+      padding: 6px 9px;
+      border: 1px solid #8e9b97;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .boundary {
+      min-height: 42px;
+      padding: 8px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      background: #fff8ef;
+      border-bottom: 1px solid #e6c7a8;
+      color: #6f452b;
+      font-size: 12px;
+    }
+    .boundary strong { color: #8d3f13; white-space: nowrap; }
+    .boundary span { white-space: nowrap; }
+    .shell { max-width: 1540px; margin: 0 auto; padding: 14px 18px 24px; }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+    .tab {
+      min-height: 48px;
+      padding: 8px 14px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      text-align: left;
+      cursor: pointer;
+    }
+    .tab:last-child { border-right: 0; }
+    .tab strong { display: block; color: var(--ink); font-size: 14px; }
+    .tab span { display: block; margin-top: 2px; font-size: 11px; }
+    .tab[aria-selected="true"] { background: #f7fbfa; box-shadow: inset 0 -4px 0 var(--teal); }
+    .tab:focus-visible, .control:focus-visible, .action:focus-visible, a:focus-visible {
+      outline: 3px solid #f2a760;
+      outline-offset: 2px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr) 330px;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .panel {
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+    .panel-head { padding: 13px 15px 11px; border-bottom: 1px solid var(--line); }
+    .panel-head h1, .panel-head h2 { margin: 0; font-size: 16px; line-height: 1.35; }
+    .panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .inputs { padding: 13px 15px 15px; }
+    .field { margin-bottom: 17px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+    .field-label strong { font-size: 12px; }
+    .field-label output { color: var(--teal); font-family: Consolas, monospace; font-size: 12px; }
+    .segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line-dark); border-radius: 4px; overflow: hidden; }
+    .segment {
+      min-height: 36px;
+      padding: 6px 4px;
+      border: 0;
+      border-right: 1px solid var(--line-dark);
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .segment:last-child { border-right: 0; }
+    .segment[aria-pressed="true"] { color: #fff; background: var(--teal); font-weight: 700; }
+    input[type="range"] { width: 100%; height: 24px; margin: 0; accent-color: var(--teal); }
+    .scale { display: flex; justify-content: space-between; color: #84908c; font-size: 10px; }
+    .switchline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+      padding: 8px 0;
+      border-top: 1px solid #edf0ee;
+    }
+    .switchline strong { font-size: 12px; }
+    .switchline input { width: 18px; height: 18px; accent-color: var(--teal); }
+    .main-panel { padding: 14px 16px 12px; }
+    .chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; min-height: 46px; }
+    .chart-head h1 { margin: 0; font-size: 18px; }
+    .chart-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .evidence-grade { padding: 6px 8px; border: 1px solid #d0a071; border-radius: 4px; color: #7f451a; background: var(--orange-soft); font-size: 11px; white-space: nowrap; }
+    .chart-wrap { width: 100%; aspect-ratio: 850 / 390; min-height: 310px; margin-top: 5px; }
+    #performance-chart { display: block; width: 100%; height: 100%; overflow: visible; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 14px; padding-top: 4px; color: var(--muted); font-size: 11px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .legend-line { width: 21px; height: 3px; background: var(--teal); }
+    .legend-line.blue { background: var(--blue); }
+    .legend-marker { width: 9px; height: 9px; background: var(--orange); border-radius: 50%; }
+    .decision { display: flex; flex-direction: column; }
+    .decision-banner { padding: 15px; border-bottom: 1px solid var(--line); }
+    .eyebrow { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+    .decision-title { margin-top: 6px; color: var(--green); font-size: 21px; font-weight: 760; }
+    .decision-detail { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+    .status-cell { min-height: 70px; padding: 10px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .status-cell:nth-child(2n) { border-right: 0; }
+    .status-cell:nth-last-child(-n+2) { border-bottom: 0; }
+    .status-cell span { display: block; color: var(--muted); font-size: 10px; }
+    .status-cell strong { display: block; margin-top: 5px; font-size: 13px; line-height: 1.35; }
+    .reason-list { flex: 1; padding: 12px 15px; }
+    .reason-list h2 { margin: 0 0 7px; font-size: 12px; }
+    .reason-list ul { margin: 0; padding: 0; list-style: none; }
+    .reason-list li { position: relative; padding: 7px 0 7px 15px; border-bottom: 1px solid #edf0ee; color: #4d5956; font-size: 11px; line-height: 1.45; }
+    .reason-list li:last-child { border-bottom: 0; }
+    .reason-list li::before { content: ""; position: absolute; left: 0; top: 13px; width: 7px; height: 7px; background: var(--reason-color, var(--green)); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-top: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+    .metric { min-height: 80px; padding: 12px 13px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric span { color: var(--muted); font-size: 10px; }
+    .metric strong { display: block; margin-top: 8px; font-size: 18px; }
+    .metric small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .audit {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      border-left: 4px solid var(--orange);
+      box-shadow: var(--shadow);
+      color: #52605c;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .audit code { font-family: Consolas, monospace; color: #33423e; font-size: 10px; }
+    .audit time { white-space: nowrap; color: var(--muted); }
+    .evidence-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.55fr); gap: 12px; }
+    .figure-panel { padding: 14px; }
+    .figure-panel img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+    .fact-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .fact-table th, .fact-table td { padding: 10px 11px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .fact-table th { width: 43%; color: var(--muted); font-weight: 500; }
+    .fact-table tr:last-child th, .fact-table tr:last-child td { border-bottom: 0; }
+    .boundary-list { margin: 0; padding: 12px 15px 15px 30px; color: #4f5d59; font-size: 12px; line-height: 1.65; }
+    .workflow-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; }
+    .workflow-panel { padding: 15px; }
+    .workflow { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 0; overflow-x: auto; padding: 18px 0 6px; }
+    .workflow-step { position: relative; min-height: 148px; padding: 20px 14px 14px; border-top: 3px solid var(--line-dark); background: #fafbfa; }
+    .workflow-step::before { content: ""; position: absolute; top: -8px; left: 14px; width: 13px; height: 13px; border-radius: 50%; background: var(--line-dark); }
+    .workflow-step.active { border-color: var(--teal); background: #f1f8f6; }
+    .workflow-step.active::before { background: var(--teal); }
+    .workflow-step.complete { border-color: var(--green); background: #f4f8f4; }
+    .workflow-step.complete::before { background: var(--green); }
+    .workflow-step strong { display: block; margin-bottom: 7px; font-size: 13px; }
+    .workflow-step span { color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .workflow-step code { display: block; margin-top: 10px; color: #3b4a46; font-family: Consolas, monospace; font-size: 9px; overflow-wrap: anywhere; }
+    .actionbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .action {
+      min-height: 38px;
+      padding: 7px 12px;
+      border: 1px solid var(--teal);
+      border-radius: 4px;
+      color: #fff;
+      background: var(--teal);
+      cursor: pointer;
+      font-weight: 650;
+    }
+    .action.secondary { color: var(--teal); background: #fff; }
+    .action:disabled { cursor: not-allowed; opacity: 0.45; }
+    .registry { padding: 0 15px 14px; }
+    .registry-row { display: grid; grid-template-columns: 105px minmax(0, 1fr); gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+    .registry-row:last-child { border-bottom: 0; }
+    .registry-row span { color: var(--muted); }
+    .registry-row code { overflow-wrap: anywhere; font-family: Consolas, monospace; font-size: 10px; }
+    .event-log { margin: 0; padding: 0 15px 14px; list-style: none; }
+    .event-log li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 10px; line-height: 1.45; }
+    .event-log li:last-child { border-bottom: 0; }
+    .event-log time { color: var(--muted); font-family: Consolas, monospace; }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 14px;
+      padding: 12px 2px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+    .footer div:last-child { text-align: right; }
+    @media (max-width: 1120px) {
+      .workspace { grid-template-columns: 270px minmax(0, 1fr); }
+      .decision { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1.2fr; }
+      .decision-banner, .status-grid { border-bottom: 0; border-right: 1px solid var(--line); }
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .metric:nth-child(3) { border-right: 0; }
+      .metric:nth-child(n+4) { border-top: 1px solid var(--line); }
+      .workflow-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .topbar { align-items: flex-start; padding: 10px 14px; }
+      .brand { display: block; }
+      .brand span { display: block; margin-top: 2px; white-space: normal; }
+      .boundary { padding: 7px 14px; }
+      .shell { padding: 10px 10px 20px; }
+      .tab { padding: 8px 9px; }
+      .tab span { display: none; }
+      .workspace { grid-template-columns: 1fr; }
+      .decision { grid-column: auto; display: flex; }
+      .decision-banner, .status-grid { border-right: 0; border-bottom: 1px solid var(--line); }
+      .chart-wrap { min-height: 265px; aspect-ratio: 660 / 410; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric, .metric:nth-child(3) { border-right: 1px solid var(--line); border-top: 1px solid var(--line); }
+      .metric:nth-child(1), .metric:nth-child(2) { border-top: 0; }
+      .metric:nth-child(2n) { border-right: 0; }
+      .metric:last-child { grid-column: 1 / -1; border-right: 0; }
+      .audit { grid-template-columns: 1fr; }
+      .evidence-layout { grid-template-columns: 1fr; }
+      .workflow { grid-template-columns: repeat(5, minmax(150px, 1fr)); }
+      .footer { display: block; }
+      .footer div:last-child { margin-top: 7px; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>LifeTwin V5</strong>
+      <span>储能 LFP 健康轨迹与证据控制台</span>
+    </div>
+    <div class="release-state">公开开发回放 · 非生产系统</div>
+  </header>
+
+  <div class="boundary" role="note" aria-label="证据边界">
+    <strong>证据边界</strong>
+    <span>公开 FastCharge 回顾性开发</span>
+    <span>不含海辰内部数据</span>
+    <span>不构成 15-25 年准确率承诺</span>
+  </div>
+
+  <main class="shell">
+    <nav class="tabs" role="tablist" aria-label="控制台视图">
+      <button class="tab" id="tab-decision" role="tab" aria-selected="true" aria-controls="view-decision">
+        <strong>任务判定</strong>
+        <span>支持度、路由、区间与回退</span>
+      </button>
+      <button class="tab" id="tab-evidence" role="tab" aria-selected="false" aria-controls="view-evidence">
+        <strong>验证证据</strong>
+        <span>V5 指标、审计和宣称边界</span>
+      </button>
+      <button class="tab" id="tab-feishu" role="tab" aria-selected="false" aria-controls="view-feishu">
+        <strong>飞书闭环</strong>
+        <span>Aily、多维表格、审批与真值回流</span>
+      </button>
+    </nav>
+
+    <section id="view-decision" role="tabpanel" aria-labelledby="tab-decision">
+      <div class="workspace">
+        <aside class="panel">
+          <div class="panel-head">
+            <h2>预测时证据快照</h2>
+            <p>MATR 训练内门槛的交互回放</p>
+          </div>
+          <div class="inputs">
+            <div class="field">
+              <div class="field-label"><strong>已观测前缀</strong><output id="prefix-output">cycle 20</output></div>
+              <div class="segments" aria-label="前缀 cycle">
+                <button class="segment control" data-prefix="20" aria-pressed="true">20</button>
+                <button class="segment control" data-prefix="40" aria-pressed="false">40</button>
+                <button class="segment control" data-prefix="60" aria-pressed="false">60</button>
+                <button class="segment control" data-prefix="100" aria-pressed="false">100</button>
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label"><strong>参考距离</strong><output id="distance-output">2.10</output></div>
+              <input class="control" id="distance" type="range" min="0" max="7" step="0.05" value="2.10" aria-label="参考距离">
+              <div class="scale"><span>域内</span><span>门槛 4.69</span><span>域外</span></div>
+            </div>
+            <div class="field">
+              <div class="field-label"><strong>参考集合离散度</strong><output id="dispersion-output">0.35 pp</output></div>
+              <input class="control" id="dispersion" type="range" min="0" max="1.8" step="0.01" value="0.35" aria-label="参考集合离散度">
+              <div class="scale"><span>一致</span><span>门槛 0.97</span><span>分歧</span></div>
+            </div>
+            <div class="field">
+              <div class="field-label"><strong>候选/回退分歧</strong><output id="disagreement-output">0.55 pp</output></div>
+              <input class="control" id="disagreement" type="range" min="0" max="3" step="0.01" value="0.55" aria-label="候选与回退分歧">
+              <div class="scale"><span>接近</span><span>门槛 1.85</span><span>冲突</span></div>
+            </div>
+            <label class="switchline">
+              <strong>输入质量校验通过</strong>
+              <input class="control" id="quality" type="checkbox" checked>
+            </label>
+          </div>
+        </aside>
+
+        <section class="panel main-panel">
+          <div class="chart-head">
+            <div>
+              <h1>公开开发性能随证据积累变化</h1>
+              <p>81 个评估电芯，统一预测到 cycle 300</p>
+            </div>
+            <div class="evidence-grade">D1 · outcome-exposed development</div>
+          </div>
+          <div class="chart-wrap">
+            <svg id="performance-chart" viewBox="0 0 850 390" role="img" aria-label="V2 与 V5 按前缀的轨迹误差以及区间宽度"></svg>
+          </div>
+          <div class="chart-legend" aria-hidden="true">
+            <span class="legend-item"><i class="legend-line blue"></i>V2 稳定硬门控 MAE</span>
+            <span class="legend-item"><i class="legend-line"></i>V5 成对参考 MAE</span>
+            <span class="legend-item"><i class="legend-marker"></i>当前前缀</span>
+          </div>
+        </section>
+
+        <aside class="panel decision" aria-live="polite">
+          <div class="decision-banner">
+            <div class="eyebrow">operational_action</div>
+            <div class="decision-title" id="decision-title">签发候选轨迹</div>
+            <div class="decision-detail" id="decision-detail">支持信号均处于训练内 q99 门槛以内。</div>
+          </div>
+          <div class="status-grid">
+            <div class="status-cell"><span>中心模型</span><strong id="center-model">V5 pairwise</strong></div>
+            <div class="status-cell"><span>证据状态</span><strong id="evidence-status">supported</strong></div>
+            <div class="status-cell"><span>区间方法</span><strong id="interval-method">hybrid conformal</strong></div>
+            <div class="status-cell"><span>评分终点</span><strong>cycle 300</strong></div>
+          </div>
+          <div class="reason-list">
+            <h2>判定依据</h2>
+            <ul id="reason-list"></ul>
+          </div>
+        </aside>
+      </div>
+
+      <div class="metrics" aria-label="当前前缀公开开发指标">
+        <div class="metric"><span>V5 点预测 MAE</span><strong id="metric-mae">0.311 pp</strong><small>无支持门控中心</small></div>
+        <div class="metric"><span>门控中心 MAE</span><strong id="metric-gated-mae">0.312 pp</strong><small>公开评估诊断</small></div>
+        <div class="metric"><span>90% 经验覆盖</span><strong id="metric-coverage">95.1%</strong><small>非跨域保证</small></div>
+        <div class="metric"><span>平均区间宽度</span><strong id="metric-width">1.965 pp</strong><small>V2 为 3.421 pp</small></div>
+        <div class="metric"><span>单区间 WIS</span><strong id="metric-wis">0.174</strong><small>越低越好</small></div>
+      </div>
+
+      <div class="audit">
+        <div><strong>审计承诺：</strong>模型选择只使用 41 个训练电芯；验证电芯同时从 pair 的目标侧和参考侧移除。<br><code>prediction_sha256 51002c8c825e…d6f29b46</code></div>
+        <time datetime="2026-08-09">2026-08-09</time>
+      </div>
+    </section>
+
+    <section id="view-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
+      <div class="evidence-layout">
+        <section class="panel figure-panel">
+          <img src="../assets/v5_fastcharge_development_results.png" alt="LifeTwin V5 FastCharge 点预测、区间效率和证据边界汇总图">
+        </section>
+        <div>
+          <section class="panel">
+            <div class="panel-head"><h2>可核验结果</h2><p>小型派生产物已随仓库发布</p></div>
+            <table class="fact-table">
+              <tr><th>训练电芯</th><td>41，物理电芯五折</td></tr>
+              <tr><th>评估电芯</th><td>81，两个作者 split</td></tr>
+              <tr><th>选中模型</th><td>ExtraTrees pairwise，12 参考</td></tr>
+              <tr><th>总体 MAE</th><td><strong>0.2082 pp</strong></td></tr>
+              <tr><th>相对 V2</th><td><strong>-27.3%</strong></td></tr>
+              <tr><th>配对 bootstrap</th><td>95% CI [-0.1503, -0.0175] pp</td></tr>
+              <tr><th>90% 区间</th><td>93.10% 覆盖，1.4155 pp 宽度</td></tr>
+            </table>
+          </section>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head"><h2>禁止越界宣称</h2></div>
+            <ul class="boundary-list">
+              <li>不是独立确认或跨域验证。</li>
+              <li>不是海辰产品或电站精度。</li>
+              <li>不验证日历老化。</li>
+              <li>不证明 15 至 25 年准确率。</li>
+              <li>完整 GP 在线 landmark 门槛已执行但未通过，GP 分支保持关闭。</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <div class="evidence-layout" style="margin-top:12px">
+        <section class="panel figure-panel">
+          <img src="../assets/v5_dynamic_landmark_audit.png" alt="LifeTwin V5 动态 landmark 重签发与在线残差门槛审计图">
+        </section>
+        <section class="panel">
+          <div class="panel-head"><h2>动态更新的真实结论</h2><p>重新计算有效，不代表每个时点都应叠加残差模型</p></div>
+          <table class="fact-table">
+            <tr><th>较长前缀重签发</th><td>MAE 0.2644 → <strong>0.1738 pp</strong></td></tr>
+            <tr><th>聚类 bootstrap</th><td>95% CI [-0.1195, -0.0659] pp</td></tr>
+            <tr><th>改善 cell-transition</th><td>64.2%，P60 更新最不稳定</td></tr>
+            <tr><th>最佳 GP 改善电芯</th><td>最高 43.9%，低于 70% 门槛</td></tr>
+            <tr><th>最终动作</th><td><strong>保留 V5 中心，不启用 GP 修正</strong></td></tr>
+          </table>
+        </section>
+      </div>
+      <div class="audit">
+        <div><strong>公开证据包：</strong><a href="../../showcase/evidence_v5/README.md">showcase/evidence_v5</a> · <a href="../../reports/fastcharge_v5_pairwise_development_2026-08-09.md">模型报告</a> · <a href="../../reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md">动态审计</a></div>
+        <code>score_sha256 607ff8a7ccdc…9f28f3b</code>
+      </div>
+    </section>
+
+    <section id="view-feishu" role="tabpanel" aria-labelledby="tab-feishu" hidden>
+      <div class="workflow-layout">
+        <section class="panel workflow-panel">
+          <div class="chart-head">
+            <div><h1>LifeTwin Evidence Agent</h1><p>Aily 只编排工具，不生成或改写 SOH 数值</p></div>
+            <div class="evidence-grade">部署蓝图 · 待企业租户凭证</div>
+          </div>
+          <div class="workflow" aria-label="飞书工作流状态">
+            <div class="workflow-step active" data-step="0"><strong>数据校验</strong><span>字段、单位、批次、未来标签隔离</span><code>validate_lifetwin_input</code></div>
+            <div class="workflow-step" data-step="1"><strong>模型执行</strong><span>调用冻结模型服务并校验输出哈希</span><code>run_lifetwin_prediction</code></div>
+            <div class="workflow-step" data-step="2"><strong>证据登记</strong><span>多维表格写入任务、路由和禁止宣称</span><code>register_lifetwin_result</code></div>
+            <div class="workflow-step" data-step="3"><strong>人工审批</strong><span>警告与覆盖必须记录责任人和理由</span><code>approval_and_truth</code></div>
+            <div class="workflow-step" data-step="4"><strong>真值回流</strong><span>验证预测哈希后评分，决定是否晋级</span><code>score_lifetwin_prediction</code></div>
+          </div>
+          <div class="actionbar">
+            <button class="action control" id="workflow-next">推进模拟流程</button>
+            <button class="action secondary control" id="workflow-reset">重置</button>
+            <span id="workflow-state" aria-live="polite">当前：data_qualification</span>
+          </div>
+        </section>
+        <aside>
+          <section class="panel">
+            <div class="panel-head"><h2>多维表格登记摘要</h2></div>
+            <div class="registry">
+              <div class="registry-row"><span>task_id</span><code>LT-DEMO-20260809-001</code></div>
+              <div class="registry-row"><span>model_version</span><code>v5_pairwise_support_uq</code></div>
+              <div class="registry-row"><span>evidence_scope</span><code>outcome_exposed_public_development</code></div>
+              <div class="registry-row"><span>raw_data_in_feishu</span><code>false</code></div>
+              <div class="registry-row"><span>prediction_hash</span><code>d179398100fe…d610a7e</code></div>
+            </div>
+          </section>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head"><h2>事件记录</h2></div>
+            <ol class="event-log" id="event-log">
+              <li><time>00:00</time><span>任务草案建立，等待数据校验。</span></li>
+            </ol>
+          </section>
+        </aside>
+      </div>
+      <div class="audit">
+        <div><strong>故障策略：</strong>工具超时即停止并记账；哈希不一致即拒绝；语言模型不可用时保留结构化结果，不影响数值模型。</div>
+        <a href="../feishu_ai_workflow_cn.md">工作流说明</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>MATR FastCharge: Severson et al., Nature Energy (2019). Public outcomes have been exposed during development.</div>
+      <div><a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">GitHub</a> · <a href="../LifeTwin_competition_submission_cn.md">参赛方案</a></div>
+    </footer>
+  </main>
+
+  <script>
+    const metrics = {
+      20: { v2: 0.383290, point: 0.311399, gated: 0.312012, coverage: 0.951146, width: 1.965040, v2Width: 3.421205, wis: 0.174199 },
+      40: { v2: 0.300656, point: 0.201683, gated: 0.215159, coverage: 0.957882, width: 1.450961, v2Width: 3.005183, wis: 0.126359 },
+      60: { v2: 0.270343, point: 0.208940, gated: 0.247823, coverage: 0.884362, width: 1.243875, v2Width: 2.893925, wis: 0.135671 },
+      100: { v2: 0.191644, point: 0.110892, gated: 0.110892, coverage: 0.930556, width: 1.002002, v2Width: 2.092004, wis: 0.077458 }
+    };
+    const thresholds = { distance: 4.693308, dispersion: 0.973053, disagreement: 1.854273 };
+    let prefix = 20;
+
+    const escapeText = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;"
+    })[character]);
+
+    function setTab(tabId) {
+      document.querySelectorAll('[role="tab"]').forEach((tab) => {
+        const selected = tab.id === tabId;
+        tab.setAttribute("aria-selected", String(selected));
+        document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+      });
+    }
+
+    document.querySelectorAll('[role="tab"]').forEach((tab) => {
+      tab.addEventListener("click", () => setTab(tab.id));
+    });
+
+    function pathFor(values, x, y) {
+      return values.map((value, index) => `${index ? "L" : "M"}${x(index).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+    }
+
+    function renderChart() {
+      const prefixes = [20, 40, 60, 100];
+      const width = 850;
+      const height = 390;
+      const left = 62;
+      const right = 28;
+      const top = 34;
+      const plotBottom = 255;
+      const x = (index) => left + index * ((width - left - right) / (prefixes.length - 1));
+      const y = (value) => plotBottom - value / 0.42 * (plotBottom - top);
+      const selectedIndex = prefixes.indexOf(prefix);
+      const v2Values = prefixes.map((item) => metrics[item].v2);
+      const v5Values = prefixes.map((item) => metrics[item].point);
+      const current = metrics[prefix];
+      const barBaseline = 650;
+      const barCandidate = 735;
+      const barScale = 42;
+      const grid = [0, 0.1, 0.2, 0.3, 0.4].map((tick) => `
+        <line x1="${left}" y1="${y(tick)}" x2="${width - right}" y2="${y(tick)}" stroke="#e2e7e4" stroke-width="1"/>
+        <text x="${left - 12}" y="${y(tick) + 4}" text-anchor="end" fill="#66736f" font-size="11">${tick.toFixed(1)}</text>
+      `).join("");
+      const xLabels = prefixes.map((item, index) => `
+        <text x="${x(index)}" y="${plotBottom + 25}" text-anchor="middle" fill="#4f5d59" font-size="12">P${item}</text>
+      `).join("");
+      const points = (values, color) => values.map((value, index) => `
+        <circle cx="${x(index)}" cy="${y(value)}" r="4.5" fill="${color}" stroke="#fff" stroke-width="2"/>
+      `).join("");
+      const markerX = x(selectedIndex);
+      document.getElementById("performance-chart").innerHTML = `
+        <title>V2 与 V5 按前缀的公开开发轨迹 MAE；下方比较当前前缀区间宽度</title>
+        ${grid}
+        <line x1="${left}" y1="${plotBottom}" x2="${width - right}" y2="${plotBottom}" stroke="#899691" stroke-width="1.2"/>
+        <line x1="${markerX}" y1="${top}" x2="${markerX}" y2="${plotBottom}" stroke="#c76716" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <path d="${pathFor(v2Values, x, y)}" fill="none" stroke="#2f6f91" stroke-width="3"/>
+        <path d="${pathFor(v5Values, x, y)}" fill="none" stroke="#087b72" stroke-width="3"/>
+        ${points(v2Values, "#2f6f91")}
+        ${points(v5Values, "#087b72")}
+        <circle cx="${markerX}" cy="${y(current.point)}" r="8" fill="none" stroke="#c76716" stroke-width="3"/>
+        ${xLabels}
+        <text x="${left}" y="18" fill="#4f5d59" font-size="12">轨迹 MAE（pp，越低越好）</text>
+        <text x="${left}" y="313" fill="#4f5d59" font-size="12">当前 P${prefix} 的 90% 区间平均宽度</text>
+        <text x="${left}" y="341" fill="#64716e" font-size="11">V2</text>
+        <rect x="${left + 36}" y="329" width="${current.v2Width * barScale}" height="17" fill="#2f6f91" rx="2"/>
+        <text x="${left + 43 + current.v2Width * barScale}" y="342" fill="#26312f" font-size="11">${current.v2Width.toFixed(3)} pp</text>
+        <text x="${left}" y="370" fill="#64716e" font-size="11">V5</text>
+        <rect x="${left + 36}" y="358" width="${current.width * barScale}" height="17" fill="#087b72" rx="2"/>
+        <text x="${left + 43 + current.width * barScale}" y="371" fill="#26312f" font-size="11">${current.width.toFixed(3)} pp</text>
+        <text x="${barBaseline}" y="342" fill="#2f6f91" font-size="12" font-weight="700">V2 = 100%</text>
+        <text x="${barCandidate}" y="371" fill="#087b72" font-size="12" font-weight="700">V5 = ${(current.width / current.v2Width * 100).toFixed(1)}%</text>
+      `;
+    }
+
+    function updateDecision() {
+      const distance = Number(document.getElementById("distance").value);
+      const dispersion = Number(document.getElementById("dispersion").value);
+      const disagreement = Number(document.getElementById("disagreement").value);
+      const quality = document.getElementById("quality").checked;
+      document.getElementById("distance-output").value = distance.toFixed(2);
+      document.getElementById("dispersion-output").value = `${dispersion.toFixed(2)} pp`;
+      document.getElementById("disagreement-output").value = `${disagreement.toFixed(2)} pp`;
+      const breaches = [];
+      if (distance > thresholds.distance) breaches.push(`参考距离 ${distance.toFixed(2)} > 4.69`);
+      if (dispersion > thresholds.dispersion) breaches.push(`参考离散度 ${dispersion.toFixed(2)} > 0.97 pp`);
+      if (disagreement > thresholds.disagreement) breaches.push(`候选/回退分歧 ${disagreement.toFixed(2)} > 1.85 pp`);
+      let title;
+      let detail;
+      let model;
+      let status;
+      let interval;
+      let color;
+      let reasonColor;
+      let reasons;
+      if (!quality) {
+        title = "拒绝签发";
+        detail = "输入质量失败，数值模型不运行。";
+        model = "none";
+        status = "refused";
+        interval = "not issued";
+        color = "var(--red)";
+        reasonColor = "var(--red)";
+        reasons = ["数据资格校验未通过", "创建补数或字段修复任务", "Aily 不得改写为谨慎可用"];
+      } else if (breaches.length) {
+        title = "回退稳定模型";
+        detail = "union_q99 支持门控触发，不使用候选修正。";
+        model = "fixed neighbor fallback";
+        status = "limited_support";
+        interval = "widened diagnostic";
+        color = "var(--orange)";
+        reasonColor = "var(--orange)";
+        reasons = [...breaches, "保留回退原因和输入哈希", "不宣称 V5 候选适用于当前输入"];
+      } else {
+        title = "签发候选轨迹";
+        detail = "支持信号均处于训练内 q99 门槛以内。";
+        model = "V5 pairwise";
+        status = "supported";
+        interval = "hybrid conformal";
+        color = "var(--green)";
+        reasonColor = "var(--green)";
+        reasons = ["参考距离未超训练内 q99", "多参考离散度未超门槛", "候选与回退分歧可接受", "区间仍是公开开发诊断"];
+      }
+      const titleElement = document.getElementById("decision-title");
+      titleElement.textContent = title;
+      titleElement.style.color = color;
+      document.getElementById("decision-detail").textContent = detail;
+      document.getElementById("center-model").textContent = model;
+      document.getElementById("evidence-status").textContent = status;
+      document.getElementById("interval-method").textContent = interval;
+      const list = document.getElementById("reason-list");
+      list.innerHTML = reasons.map((reason) => `<li>${escapeText(reason)}</li>`).join("");
+      list.style.setProperty("--reason-color", reasonColor);
+      document.querySelectorAll(".reason-list li").forEach((item) => {
+        item.style.setProperty("color", "#4d5956");
+      });
+    }
+
+    function updateMetrics() {
+      const current = metrics[prefix];
+      document.getElementById("prefix-output").value = `cycle ${prefix}`;
+      document.getElementById("metric-mae").textContent = `${current.point.toFixed(3)} pp`;
+      document.getElementById("metric-gated-mae").textContent = `${current.gated.toFixed(3)} pp`;
+      document.getElementById("metric-coverage").textContent = `${(current.coverage * 100).toFixed(1)}%`;
+      document.getElementById("metric-width").textContent = `${current.width.toFixed(3)} pp`;
+      document.getElementById("metric-width").nextElementSibling.textContent = `V2 为 ${current.v2Width.toFixed(3)} pp`;
+      document.getElementById("metric-wis").textContent = current.wis.toFixed(3);
+      renderChart();
+    }
+
+    document.querySelectorAll("[data-prefix]").forEach((button) => {
+      button.addEventListener("click", () => {
+        prefix = Number(button.dataset.prefix);
+        document.querySelectorAll("[data-prefix]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+        updateMetrics();
+      });
+    });
+
+    ["distance", "dispersion", "disagreement", "quality"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", updateDecision);
+      document.getElementById(id).addEventListener("change", updateDecision);
+    });
+
+    const workflowStates = ["data_qualification", "predicting", "predicted", "warning_review", "truth_pending"];
+    const workflowEvents = [
+      "输入字段和数据清单哈希通过校验。",
+      "冻结模型服务返回轨迹、区间和预测哈希。",
+      "多维表格完成证据登记，进入警告复核。",
+      "人工审批保留证据边界，进入影子模式。",
+      "等待授权未来真值；未打开任何锁定结果。"
+    ];
+    let workflowIndex = 0;
+
+    function renderWorkflow() {
+      document.querySelectorAll(".workflow-step").forEach((step, index) => {
+        step.classList.toggle("complete", index < workflowIndex);
+        step.classList.toggle("active", index === workflowIndex);
+      });
+      document.getElementById("workflow-state").textContent = `当前：${workflowStates[workflowIndex]}`;
+      document.getElementById("workflow-next").disabled = workflowIndex >= workflowStates.length - 1;
+    }
+
+    document.getElementById("workflow-next").addEventListener("click", () => {
+      if (workflowIndex >= workflowStates.length - 1) return;
+      const log = document.getElementById("event-log");
+      const item = document.createElement("li");
+      const elapsed = `00:0${workflowIndex + 1}`;
+      item.innerHTML = `<time>${elapsed}</time><span>${escapeText(workflowEvents[workflowIndex])}</span>`;
+      log.appendChild(item);
+      workflowIndex += 1;
+      renderWorkflow();
+    });
+
+    document.getElementById("workflow-reset").addEventListener("click", () => {
+      workflowIndex = 0;
+      document.getElementById("event-log").innerHTML = '<li><time>00:00</time><span>任务草案建立，等待数据校验。</span></li>';
+      renderWorkflow();
+    });
+
+    updateMetrics();
+    updateDecision();
+    renderWorkflow();
+  </script>
+</body>
+</html>

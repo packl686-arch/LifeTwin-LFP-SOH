@@ -1,0 +1,38 @@
+{
+  "schema_version": "lifetwin.private_schedule_scenarios.v1",
+  "protocol_id": "private_schedule_scenarios_2026_08_06",
+  "status": "frozen_before_hithium_data_access",
+  "scenarios": [
+    {
+      "scenario_id": "reference_plan",
+      "scenario_role": "reference",
+      "temperature_delta_c": 0.0,
+      "planned_min_soc_pct": 10.0,
+      "planned_max_soc_pct": 90.0,
+      "charge_c_rate_multiplier": 1.0,
+      "discharge_c_rate_multiplier": 1.0,
+      "duty_rate_multiplier": 1.0
+    },
+    {
+      "scenario_id": "cool_low_utilization",
+      "scenario_role": "stress",
+      "temperature_delta_c": -5.0,
+      "planned_min_soc_pct": 10.0,
+      "planned_max_soc_pct": 80.0,
+      "charge_c_rate_multiplier": 0.75,
+      "discharge_c_rate_multiplier": 0.75,
+      "duty_rate_multiplier": 0.75
+    },
+    {
+      "scenario_id": "hot_high_utilization",
+      "scenario_role": "stress",
+      "temperature_delta_c": 8.0,
+      "planned_min_soc_pct": 5.0,
+      "planned_max_soc_pct": 100.0,
+      "charge_c_rate_multiplier": 1.5,
+      "discharge_c_rate_multiplier": 1.5,
+      "duty_rate_multiplier": 1.25
+    }
+  ],
+  "claim_boundary": "Generic outcome-free stress scenarios frozen before Hithium data access. They are not Hithium operating recommendations, warranty limits, product specifications, or evidence of 15-25 year accuracy. Domain-out scenarios must be refused rather than force-predicted."
+}

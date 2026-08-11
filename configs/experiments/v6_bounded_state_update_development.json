@@ -1,0 +1,113 @@
+{
+  "schema_version": "lifetwin.fastcharge_v6_bounded_state.config.v1",
+  "experiment_id": "fastcharge_v6_bounded_state_update_development",
+  "status": "training_only_challenger_development_not_preregistered_confirmation",
+  "created_timestamp_utc": "2026-08-10T06:56:33Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "training_only_method_development_for_future_outcome_blind_validation",
+  "purpose": "Test whether a robust local residual-trend state can safely improve the frozen V5 center without reusing the 81 exposed public evaluation cells.",
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "modification_permitted": false,
+    "fallback_action": "retain_frozen_v5_center_and_hybrid_conformal_interval"
+  },
+  "inputs": {
+    "training_crossfit_predictions": {
+      "path": "artifacts/fastcharge-v5-support-uncertainty/crossfit_predictions.csv",
+      "sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+      "physical_cell_count": 41,
+      "selection_role": "only_outcome_source_for_challenger_development"
+    },
+    "exposed_public_evaluation_predictions": {
+      "path": "artifacts/fastcharge-v5-pairwise-development/selected_predictions.parquet",
+      "permitted_use": "none",
+      "reason": "the_81_cell_outcomes_have_already_been_exposed_to_the_project"
+    }
+  },
+  "data_firewall": {
+    "candidate_development_uses_training_cells_only": true,
+    "selection_group": "physical_cell_id",
+    "outer_audit": "leave_one_physical_cell_out_on_already_crossfit_v5_predictions",
+    "target_residual_history": "only_previous_issuance_residuals_after_previous_prefix_and_at_or_before_current_prefix",
+    "future_target_outcomes_available_to_update": false,
+    "exposed_public_evaluation_outcomes_permitted": false,
+    "random_row_split_permitted": false,
+    "claim_as_independent_confirmation_permitted": false
+  },
+  "landmarks": {
+    "registered_prefix_cycles": [20, 40, 60, 100],
+    "registered_transitions": [[20, 40], [40, 60], [60, 100]],
+    "score_end_cycle": 300,
+    "common_future_support": "cycles_strictly_after_current_prefix_through_cycle_300"
+  },
+  "candidate_rules": {
+    "fallback": "no_update",
+    "robust_local_trend": {
+      "estimator": "theil_sen_slope",
+      "history_windows": ["all", "last_10"],
+      "projection_scales": [0.1, 0.25, 0.5],
+      "maximum_absolute_slope_pp_per_cycle": 0.02
+    },
+    "bounded_alpha_beta": {
+      "state": ["residual_level_pp", "residual_slope_pp_per_cycle"],
+      "profiles": [
+        {
+          "profile_id": "slow",
+          "level_gain": 0.2,
+          "slope_gain": 0.01,
+          "innovation_clip_pp": 0.25
+        },
+        {
+          "profile_id": "balanced",
+          "level_gain": 0.3,
+          "slope_gain": 0.02,
+          "innovation_clip_pp": 0.25
+        }
+      ],
+      "projection_scales": [0.25, 0.5],
+      "maximum_absolute_slope_pp_per_cycle": 0.02
+    },
+    "absolute_correction_cap_pp": 1.0,
+    "future_prediction_clip_pct": [0.0, 110.0]
+  },
+  "selection": {
+    "unit": "physical_cell_equal_trajectory_mae",
+    "performed_separately_by_transition": true,
+    "primary_order": ["mean_updated_trajectory_mae_pp", "candidate_id"],
+    "eligibility": {
+      "mean_delta_mae_must_be_below_pp": 0.0,
+      "minimum_fraction_cells_improved": 0.5,
+      "maximum_p90_cell_delta_mae_pp": 0.05
+    },
+    "interpretation": "relaxed_training_nomination_only_not_an_activation_gate",
+    "no_eligible_candidate_action": "select_no_update"
+  },
+  "promotion_gate": {
+    "evidence_source": "nested_leave_one_physical_cell_out_selector",
+    "mean_delta_mae_must_be_below_pp": 0.0,
+    "minimum_fraction_cell_transitions_improved": 0.7,
+    "maximum_p90_cell_transition_delta_mae_pp": 0.05,
+    "maximum_transition_mean_delta_mae_pp": 0.0,
+    "failure_action": "do_not_activate_challenger_and_retain_v5"
+  },
+  "stopping_rules": {
+    "candidate_rounds_on_exposed_public_evaluation": 0,
+    "next_permitted_confirmation": "new_outcome_blind_public_batch_or_hithium_private_truth_vault",
+    "failed_promotion_action": "record_negative_result_without_retuning_on_the_81_exposed_cells"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "training_only_challenger_development",
+      "software_and_future_label_firewall_validation",
+      "candidate_nomination_for_future_blind_test"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "public_81_cell_improvement_claim",
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "production_deployment_claim"
+    ]
+  }
+}

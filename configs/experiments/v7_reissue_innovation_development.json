@@ -1,0 +1,139 @@
+{
+  "schema_version": "lifetwin.fastcharge_v7_reissue_innovation.config.v1",
+  "experiment_id": "fastcharge_v7_reissue_innovation_development",
+  "status": "third_round_outcome_informed_training_only_development_not_confirmation",
+  "created_timestamp_utc": "2026-08-10T08:30:00Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "training_only_method_development_with_cell_and_batch_holdout_stress_tests",
+  "purpose": "Test whether subtracting the trajectory change already absorbed by a newly issued V5 forecast yields a safer residual-state update than projecting the previous residual slope twice.",
+  "development_lineage": {
+    "parent_experiment_id": "fastcharge_v6_1_gated_state_update_development",
+    "parent_local_decision_sha256": "6123335053ceea9bb884901a6fb94b2c7967eb61113558247aedd31ccfd0d490",
+    "parent_result": "p100_only_training_nomination_with_two_harmed_activations",
+    "new_hypothesis": "the_previous_residual_slope_contains_a_component_already_absorbed_by_the_current_v5_reissue",
+    "disclosure": "candidate_ranges_and_gates_are_outcome_informed_by_the_same_41_training_cells_and_require_new_blind_confirmation"
+  },
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "modification_permitted": false,
+    "activation_before_new_blind_confirmation_permitted": false,
+    "fallback_action": "retain_frozen_v5_center_and_hybrid_conformal_interval"
+  },
+  "inputs": {
+    "training_crossfit_predictions": {
+      "path": "artifacts/fastcharge-v5-support-uncertainty/crossfit_predictions.csv",
+      "sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+      "physical_cell_count": 41,
+      "selection_role": "only_outcome_source_for_v7_development"
+    },
+    "exposed_public_evaluation_predictions": {
+      "path": "artifacts/fastcharge-v5-pairwise-development/selected_predictions.parquet",
+      "permitted_use": "none"
+    }
+  },
+  "data_firewall": {
+    "candidate_development_uses_training_cells_only": true,
+    "selection_group": "physical_cell_id",
+    "outer_audit": "leave_one_physical_cell_out_gate_selection",
+    "secondary_shift_audit": "leave_one_matr_batch_out_gate_selection",
+    "outer_held_out_future_outcomes_available_to_gate_selection": false,
+    "gate_inputs_at_inference": [
+      "previous_issuance_residual_history_through_current_prefix",
+      "previous_issuance_future_center",
+      "current_issuance_future_center",
+      "future_cycle_coordinates"
+    ],
+    "future_target_outcomes_available_to_correction_or_activation": false,
+    "exposed_public_evaluation_outcomes_permitted": false,
+    "random_row_split_permitted": false
+  },
+  "landmarks": {
+    "registered_prefix_cycles": [20, 40, 60, 100],
+    "registered_transitions": [[20, 40], [40, 60], [60, 100]],
+    "score_end_cycle": 300,
+    "common_future_support": "cycles_strictly_after_current_prefix_through_cycle_300"
+  },
+  "innovation_state": {
+    "history_residual_slope_estimator": "theil_sen_all_available_transition_history",
+    "recent_history_slope_estimator": "theil_sen_last_10_for_gate_only",
+    "reissue_shift_slope_estimator": "theil_sen_on_current_center_minus_previous_center_over_common_future_support",
+    "unassimilated_slope_formula": "history_residual_slope_minus_reissue_shift_slope",
+    "projection_scales": [0.1, 0.25, 0.5],
+    "maximum_absolute_unassimilated_slope_pp_per_cycle": 0.02,
+    "absolute_correction_cap_pp": 1.0,
+    "future_prediction_clip_pct": [0.0, 110.0]
+  },
+  "activation_gate_candidates": {
+    "fallback": "no_update",
+    "minimum_projected_unassimilated_change_pp": [0.01, 0.02, 0.04],
+    "minimum_absolute_history_spearman": [0.0, 0.5],
+    "require_history_all_recent_slope_sign_agreement": true,
+    "require_unassimilated_history_slope_sign_agreement": true,
+    "candidate_count_including_fallback": 19
+  },
+  "activation_selection": {
+    "performed_separately_by_transition": true,
+    "unit": "physical_cell_equal_trajectory_mae",
+    "primary_order": [
+      "active_maximum_delta_mae_pp",
+      "active_p90_delta_mae_pp",
+      "mean_gated_delta_mae_pp",
+      "activation_coverage_descending",
+      "gate_id"
+    ],
+    "interpretation": "risk_first_selection_prevents_a_large_scale_from_winning_only_on_average_gain",
+    "eligibility": {
+      "minimum_activation_coverage": 0.15,
+      "minimum_activation_precision": 0.7,
+      "mean_gated_delta_mae_must_be_below_pp": 0.0,
+      "maximum_active_p90_delta_mae_pp": 0.025,
+      "maximum_active_delta_mae_pp": 0.05
+    },
+    "no_eligible_gate_action": "select_no_update"
+  },
+  "future_blind_nomination_gate": {
+    "cell_holdout": {
+      "minimum_activation_count": 6,
+      "minimum_activation_coverage": 0.15,
+      "minimum_activation_precision": 0.7,
+      "mean_gated_delta_mae_must_be_below_pp": 0.0,
+      "maximum_active_p90_delta_mae_pp": 0.05,
+      "maximum_active_delta_mae_pp": 0.1,
+      "minimum_modal_gate_selection_fraction": 0.8
+    },
+    "batch_holdout": {
+      "batch_id_regex": "^MATR_B(?P<batch>[0-9]+)C",
+      "minimum_held_out_batch_count": 2,
+      "require_nonfallback_selection_for_every_held_out_batch": true,
+      "minimum_activation_count_in_every_held_out_batch": 1,
+      "minimum_activation_precision_in_every_held_out_batch": 0.7,
+      "maximum_mean_gated_delta_mae_pp_in_every_held_out_batch": 0.0,
+      "maximum_active_delta_mae_pp_in_every_held_out_batch": 0.1
+    },
+    "pass_action": "freeze_transition_for_new_outcome_blind_test_without_activation",
+    "failure_action": "retain_v5_without_nominating_that_transition"
+  },
+  "stopping_rules": {
+    "exposed_public_evaluation_runs_permitted": 0,
+    "production_activation_permitted": false,
+    "same_41_cell_threshold_retuning_after_this_protocol": false,
+    "next_required_step": "hash_commit_predictions_and_activation_flags_on_new_outcome_blind_cells_before_opening_future_truth"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "outcome_informed_training_only_v7_development",
+      "nested_physical_cell_holdout_audit",
+      "within_training_cohort_batch_shift_stress_test",
+      "future_blind_candidate_nomination"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "public_81_cell_improvement_claim",
+      "current_model_activation_claim",
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "production_deployment_claim"
+    ]
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "schema_version": "lifetwin.fastcharge_v8_measurement_stability.synthetic_dry_run.config.v1",
+  "experiment_id": "fastcharge_v8_measurement_stability_synthetic_dry_run",
+  "status": "software_only_synthetic_dry_run_not_a_model_result",
+  "prepared_by": "Jincheng Liu",
+  "parent_protocol": {
+    "path": "configs/experiments/v8_measurement_stability_blind_protocol.template.json",
+    "sha256": "e3e373164e6afd2ac4d318a0ce703796ce4eac37880f427116324e750d7e163d"
+  },
+  "frozen_v7_rule": {
+    "path": "configs/experiments/v7_p100_reissue_innovation_blind_candidate.json",
+    "sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0"
+  },
+  "measurement_contract": {
+    "required_columns": [
+      "record_role",
+      "physical_cell_id",
+      "landmark_cycle",
+      "repeat_index",
+      "retention_pct",
+      "tester_id",
+      "temperature_chamber_id",
+      "measurement_date",
+      "reference_channel_id",
+      "bridge_id"
+    ],
+    "allowed_record_roles": [
+      "cell_repeat",
+      "daily_reference",
+      "tester_bridge"
+    ],
+    "required_landmarks": [60, 100],
+    "minimum_physical_cell_count": 20,
+    "minimum_repeats_per_cell_landmark": 3,
+    "minimum_cells_per_noise_group": 5,
+    "minimum_residuals_per_noise_group": 20,
+    "noise_group_fields": [
+      "tester_id",
+      "temperature_chamber_id"
+    ]
+  },
+  "noise_model_selection": {
+    "selection_unit": "physical_cell_id",
+    "selection_metric": "leave_one_physical_cell_out_log_score",
+    "candidate_families": [
+      {
+        "model_id": "zero_mean_gaussian",
+        "distribution": "gaussian"
+      },
+      {
+        "model_id": "zero_mean_student_t_df3",
+        "distribution": "student_t",
+        "degrees_of_freedom": 3.0
+      },
+      {
+        "model_id": "zero_mean_student_t_df5",
+        "distribution": "student_t",
+        "degrees_of_freedom": 5.0
+      },
+      {
+        "model_id": "zero_mean_student_t_df10",
+        "distribution": "student_t",
+        "degrees_of_freedom": 10.0
+      }
+    ],
+    "minimum_scale_pp": 1e-06,
+    "tie_tolerance_log_score": 1e-09,
+    "tie_break_order": [
+      "zero_mean_gaussian",
+      "zero_mean_student_t_df10",
+      "zero_mean_student_t_df5",
+      "zero_mean_student_t_df3"
+    ]
+  },
+  "drift_quality_gates": {
+    "maximum_median_absolute_repeat_order_slope_pp_per_repeat": 0.01,
+    "maximum_absolute_daily_reference_shift_pp": 0.05,
+    "minimum_daily_reference_tester_date_groups": 4,
+    "minimum_daily_reference_repeats_per_group": 3,
+    "maximum_tester_bridge_range_pp": 0.05,
+    "minimum_bridge_id_count": 3,
+    "minimum_testers_per_bridge": 2,
+    "all_gates_required": true
+  },
+  "stability_gate": {
+    "draw_count": 128,
+    "seed_derivation": "sha256(protocol_hash|cell_id|draw_index)_first_64_bits",
+    "minimum_measurement_resampled_activation_probability": 0.95,
+    "minimum_measurement_resampled_correction_sign_probability": 0.95,
+    "maximum_p95_endpoint_effective_correction_deviation_pp": 0.05,
+    "stable_correction": "pointwise_median_of_measurement_resampled_effective_corrections",
+    "failed_action": "exact_zero_update_to_v5_center"
+  },
+  "synthetic_fixture": {
+    "seed": 81503,
+    "physical_cell_count": 24,
+    "tester_ids": ["TESTER_A", "TESTER_B"],
+    "temperature_chamber_by_tester": {
+      "TESTER_A": "CHAMBER_1",
+      "TESTER_B": "CHAMBER_2"
+    },
+    "cell_repeat_sigma_pp": 0.003,
+    "daily_reference_date_count": 4,
+    "daily_reference_repeats": 3,
+    "tester_bridge_id_count": 4,
+    "tester_bridge_repeats": 3,
+    "tester_b_bridge_offset_pp": 0.005
+  },
+  "data_firewall": {
+    "future_capacity_or_soh_columns_permitted": false,
+    "real_cell_data_used": false,
+    "same_41_cell_outcomes_used": false,
+    "exposed_81_cell_evaluation_used": false,
+    "hithium_data_used": false
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "measurement_contract_software_dry_run",
+      "noise_ledger_selection_software_dry_run",
+      "outcome_free_stability_gate_software_dry_run"
+    ],
+    "prohibited": [
+      "model_accuracy_improvement",
+      "real_measurement_repeatability",
+      "independent_confirmation",
+      "production_readiness",
+      "calendar_or_fifteen_to_twenty_five_year_accuracy"
+    ]
+  }
+}

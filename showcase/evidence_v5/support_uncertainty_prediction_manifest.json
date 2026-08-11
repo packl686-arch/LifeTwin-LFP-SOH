@@ -1,0 +1,11 @@
+{
+  "schema_version": "lifetwin.fastcharge_v5_support_prediction.v1",
+  "evidence_role": "outcome_exposed_public_development_not_independent_confirmation",
+  "selection_semantic_sha256": "78f8c913e8b38b4821f2dfafd7f0d5ef6be2aeecdd4fe6e7a754c95e7f0c7222",
+  "development_semantic_sha256": "836e62eb351762e0d5d8f9bd535988c68dc4addc28e3e66ced33a3c217a70505",
+  "training_cycle_sha256": "4a7ae36ac155f016fb8a0c7c6589c2e7e0cde78e5e292a77ec55ddca9c98b846",
+  "target_prefix_sha256": "ca041d4306cc909e3649f8a031f02c7b451275e9985937ce2b6bea406df800af",
+  "prediction_sha256": "d179398100fe45fda01fbd89d07ca3d92e1b73db685e4eac9874b0a1ed610a7e",
+  "prediction_row_count": 79380,
+  "target_suffix_used": false
+}

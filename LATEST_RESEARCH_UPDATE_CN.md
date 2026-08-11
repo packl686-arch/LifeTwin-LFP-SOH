@@ -4,7 +4,7 @@
 
 ## 一句话结论
 
-项目已经形成一条可审计的技术路线：只向预测器提供目标电芯的早期数据，利用训练电芯学习“相似轨迹迁移 + 风险门控”，并在证据不足时回退到训练集验证过的安全模型。最新公开 LFP 大样本实验中，安全硬门控模型将 cycle-300 轨迹 MAE 从持续值基线的 0.725 个百分点降至 0.286 个百分点，降幅 60.5%。
+项目已经形成一条可审计的技术路线：只向预测器提供目标电芯的早期数据，利用训练电芯学习“参考条件化残差 + 支持门控”，并在证据不足时回退到稳定模型。最新 V5 公开 LFP 开发实验中，成对参考残差模型将 cycle-300 轨迹 MAE 从 V2 稳定硬门控的 0.286 个百分点降至 0.208 个百分点，降幅 27.3%；支持门控后的 90% 共形区间覆盖率为 93.10%，平均宽度相对 V2 缩窄 50.4%。
 
 这是一项公开数据上的回顾性研发结果，不代表海辰产品精度，也不能直接证明 15-25 年寿命预测能力。
 
@@ -22,16 +22,20 @@
 
 | 方法 | 主测试集 MAE | 次测试集 MAE | 总体 MAE |
 |---|---:|---:|---:|
+| V5 参考条件化残差 | **0.222** | **0.194** | **0.208** |
+| V5 支持门控中心 | 0.222 | 0.221 | 0.221 |
 | 安全硬门控 | **0.341** | 0.231 | **0.286** |
 | 相似电芯增量迁移 | 0.361 | 0.231 | 0.297 |
 | 安全先验连续混合 | 0.416 | **0.201** | 0.310 |
 | 持续值基线 | 0.939 | 0.506 | 0.725 |
 
-单位均为容量保持率百分点。冻结的 V2 主模型通过全部预设开发门槛；但实测最优的是安全硬门控，而不是连续混合模型。这个负责任的区分很重要：项目保留失败和非最优结果，不用事后改写主指标。
+单位均为容量保持率百分点。V5 模型只用 41 个训练电芯做物理电芯五折选择；81 个评估电芯的未来后缀未参与选择。V5 无门控中心的点精度最好，而支持门控中心略有退化；后者的价值在于更明确的回退和更紧的区间，不被包装成点精度提升。项目保留失败和非最优结果，不用事后改写主指标。
 
 ## 可复核材料
 
 - [FastCharge V2 完整技术报告](reports/fastcharge_lfp_safe_prior_v2_2026-08-04.md)
+- [FastCharge V5 完整技术报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
+- [FastCharge V5 小型公开证据包](showcase/evidence_v5/README.md)
 - [FastCharge V1 失败分析](reports/fastcharge_lfp_trajectory_portability_v1_2026-08-04.md)
 - [NASA V3 小样本方法开发报告](reports/nasa_evidence_weighted_moe_v3_development_2026-08-03.md)
 - [FastCharge V2 冻结配置](configs/experiments/fastcharge_lfp_safe_prior_v2.json)
@@ -90,3 +94,120 @@ NASA V3 的四个第三方 CSV 与上述 38 个 MAT 元数据接入是两个不�
 - [数据 intake 模板](configs/validation/independent_lfp_dataset_intake.template.json)
 - [intake 编译器](scripts/compile_independent_lfp_intake.py)
 - [对抗测试](tests/test_independent_lfp_intake.py)
+
+## 企业私有盲测候选修订（2026-08-06）
+
+面向海辰内部循环数据的接口已拆成开发、批次独立校准和一次性锁定测试，并密封预测、拒绝决策、运行配置、未来计划与完成清单。当前主模型仍是冻结V3双时钟模型。
+
+完整V4曾尝试按未来温度、SOC窗口、放电倍率和分段EFC/天直接修正长期衰减系数。结果暴露后的开发诊断不支持该机制，因此它只保留为负对照，不晋升。新候选V4.1仅使用预测时已声明的未来日期与EFC坐标；其他计划字段只判断是否超出训练支持域，不直接推动容量曲线。V4.1仍不是海辰验证结果，必须通过不变的批次独立校准门槛后，才有资格进入一次锁定测试。
+
+- [V4.1机器可读修订协议](configs/experiments/private_enterprise_schedule_v4_1_amendment.json)
+- [V4.1修订记录](reports/private_schedule_v4_1_amendment_2026-08-06.md)
+- [海辰私有盲测执行手册](docs/hithium_private_blind_execution_cn.md)
+
+V4.2作为最后一个有限候选已经在接触海辰数据前冻结：工况修正权重最高为25%，且修正幅度不超过训练集内部LOCO诊断半区间的25%；离训练支持域越远，权重越接近零。它不是默认模式，也没有真实数据性能结论。合成全流程演练中，V4.1和V4.2都未满足预设改善门槛，系统按规则回退V3，并在不打开锁定真值的情况下密封了锁定预测。这一结果证明失败路径能正常工作，而不是证明V3具有企业精度。
+
+- [V4.2预注册协议](configs/experiments/private_enterprise_schedule_v4_2_preregistered.json)
+- [V4.2技术记录](reports/private_schedule_v4_2_preregistration_2026-08-06.md)
+- [数据集证据矩阵](configs/validation/dataset_evidence_matrix_2026_08.json)
+- [第二轮正确性审计](reports/private_enterprise_correctness_reaudit_2026-08-06.md)
+
+## 文献驱动的 V5 研发与首轮结果（2026-08-09）
+
+在系统阅读早期寿命、完整轨迹、参考电芯迁移、Gaussian Process、physics-informed、mixture-of-experts、knee、跨域迁移和不确定性论文后，下一条高价值路线被收敛为 V5-RCGP：保留冻结 V3/安全硬门控作为中心，只让“成对参考残差”和“GP 在线残差”在训练内部证据充分时修正它；没有 partial-charge、relaxation、ICA/DVA 或阻抗等诊断证据时，不启用带电化学名称的机理门控。
+
+V5 不自动加入已经冻结的海辰锁定测试。首轮 H1 成对参考实验已经执行：41 个训练电芯内部选择 `12 个参考 + ExtraTrees 成对残差 + 加权均值`，训练内相对固定近邻改善 24.8%；在 81 个公开评估电芯上相对 V2 改善 27.3%，物理电芯 bootstrap 区间未跨零。支持门控和共形区间的子门槛也已执行，覆盖率为 93.10%、平均宽度 1.4155 pp、单区间 WIS 0.1284。
+
+动态 landmark 与在线 residual audit 已按冻结协议执行。较长前缀重新运行 V5 在 81 个公开评估电芯上把 transition-equal MAE 从 0.2644 pp 降至 0.1738 pp，物理电芯聚类 bootstrap 95% 区间为 [-0.1195, -0.0659] pp；但 P40→P60 的改善很弱，三个 transition 合计只改善 64.2% 的 cell-transition。三种固定 Matern GP 均未达到 70% 电芯改善门槛；训练内唯一合格的 P40 轻量 offset 在公开评估只改善 66.7% 电芯，因此也不激活。完整 H2 明确为未通过，而不再是“尚未评估”；当前 V5 中心与 hybrid conformal 区间保持不变。Transformer/CNN 仍因训练电芯规模不足而不进入。
+
+- [论文证据矩阵与完整 V5 实验设计](docs/literature_model_review_and_v5_experiment_plan_2026_08_cn.md)
+- [V5 机器可读开发协议](configs/experiments/v5_rcgp_literature_informed_development.json)
+- [V5 协议防回退测试](tests/test_v5_rcgp_development_plan.py)
+- [V5 实验报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
+- [V5 动态 landmark 与在线残差审计](reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md)
+- [V5 公开证据](showcase/evidence_v5/README.md)
+
+## V6 有界残差状态与选择性门控（2026-08-10）
+
+V6 保持冻结 V5 不动，只在 41 个训练电芯的 cross-fit predictions 上开发有界残差趋势更新，并明确禁止再次使用 81 个已暴露评估电芯。无门控 V6 在 P100 将嵌套留一电芯 MAE 从 0.24360 pp 降至 0.21093 pp，但仅改善 53.66% 电芯；P40 还出现 +0.00941 pp 退化，所以完整晋级门槛失败，V5 继续作为 champion。
+
+V6.1 随后把候选改成 abstaining specialist：只有全历史与最近 10 点残差斜率同号，且 P60→P100 历史段的投影变化至少为 0.04 pp 时，才允许使用 25% 斜率修正，否则精确回退 V5。严格外层留一电芯门控审计中，P100 激活 10/41 个电芯、改善 8/10，全体 P100 MAE 降至 0.22397 pp；active p90 和最大退化分别为 0.03202 pp 与 0.04747 pp。P40 不激活，P60 门控失败。
+
+这仍是 outcome-informed 训练开发，不是独立确认。P100 规则已冻结为下一批至少 40 个新电芯的 outcome-blind 候选；预测与 activation flag 必须在打开 cycles 101-300 真值前完成哈希承诺，同批数据不允许改阈值重跑。当前 V6.1 未激活，也不支持海辰产品、日历老化或 15 至 25 年准确率宣称。
+
+- [V6/V6.1 完整报告](reports/fastcharge_v6_bounded_state_development_2026-08-10.md)
+- [V6 机器可读证据](showcase/evidence_v6/README.md)
+- [P100 下一批盲测冻结规则](configs/experiments/v6_1_p100_gated_state_blind_candidate.json)
+
+## V7 重发感知创新状态（2026-08-10）
+
+V7 针对 V6.1 的“重复修正”风险做了机制改进：到达新 landmark 后，先计算当前 V5 重发中心相对上一次中心已经吸收的轨迹斜率，再从历史残差斜率中扣除这一部分，只对未吸收创新量做有界投影。激活还要求历史全段与最近 10 点斜率同号、创新量与历史方向同号；证据不足时修正严格为零。
+
+在 41 个训练电芯的外层留一电芯审计中，P100 激活 9/41 个电芯并实现 9/9 改善，全体 P100 MAE 从 0.24360 pp 降至 0.20628 pp，相对下降约 15.32%；active p90 与最差 delta 均为负。对相同 9 个激活电芯和相同投影尺度的匹配消融中，V6 式原始历史斜率改善 8/9，而 V7 改善 9/9，说明扣除已吸收变化主要改善了尾部安全性。
+
+项目新增了 MATR Batch 1/2 双向留出压力门槛。P40 虽通过逐电芯门槛，却在批次迁移测试中失败；P60 同样失败，因此二者均被淘汰。只有 P100 在两次批次留出中均保持 100% 激活精度并通过。该压力测试仍来自同一训练队列，不是外部确认。V7 P100 规则随后按原计划冻结，进入单独的输入稳健性资格审计；V5 始终是当前 champion，81 个已暴露公开评估电芯未被再次使用。
+
+- [V7 完整报告](reports/fastcharge_v7_reissue_innovation_development_2026-08-10.md)
+- [V7 开发协议](configs/experiments/v7_reissue_innovation_development.json)
+- [V7 P100 盲测冻结规则](configs/experiments/v7_p100_reissue_innovation_blind_candidate.json)
+- [V7 机器可读证据](showcase/evidence_v7/README.md)
+
+## V7 冻结门控稳健性否决（2026-08-10）
+
+在消耗新电芯盲测预算前，项目保持 V7 P100 规则、尺度与阈值完全不变，只扰动 P60 签发在 cycles 61-100 已观测到的残差历史。无扰动与 `+0.20 pp` 常数偏移均精确复现，随机缺失 10% 历史点也通过；但连续小噪声暴露了激活边界脆弱性。
+
+在 `sigma=0.02 pp` IID 噪声下，决策一致率为 84.20%，原激活保留率为 79.77%，原未激活电芯误触发率为 14.55%。在 `sigma=0.05 pp` 下，决策一致率降至 71.95%，激活精度只有 58.58%，重复内最差 active delta 的 P95 达到 `+0.1414 pp`。全体平均 delta 仍为负，是因为少数大收益电芯掩盖了大量错误激活，不能作为安全晋级依据。跨度 `0.10 pp` 的线性漂移诊断更使误触发率达到 90.89%，说明当前斜率状态无法单独区分真实退化与设备漂移。
+
+三项预注册资格场景失败，因此当前形式的 V7-P100 候选被撤回，不进入新电芯盲测，V7 也从未激活。下一轮若继续该路线，必须先用重复 RPT 或设备校准台账冻结测量误差，并预注册概率稳定性门控；否则资源转向 V5 跨批次独立确认。两次完整运行的五个产物逐字节一致。该审计仍复用同一 41 个训练电芯，不是独立准确率确认。
+
+- [V7 前缀稳健性完整报告](reports/fastcharge_v7_prefix_robustness_audit_2026-08-10.md)
+- [V7 稳健性预注册协议](configs/experiments/v7_frozen_gate_prefix_robustness_audit.json)
+- [V7 稳健性机器可读负结果](showcase/evidence_v7_robustness/README.md)
+
+## V8 测量稳定性门控与软件演练（2026-08-10）
+
+V8 没有继续使用 41 个已暴露开发结局调准确率阈值，而是把 V7 的失败转化为独立测量问题。Stage A 只读取循环 60/100 的重复测量、日参考和测试设备桥接记录；对组内中心化导致的 `1 - 1/n` 方差收缩进行校正后，用物理电芯留一对数分数在 Gaussian 与固定自由度 Student-t 噪声族之间选择，并检查重复顺序漂移、日漂移、设备偏差和分组样本量。输入只允许十个登记字段，未来容量或 SOH 字段会被拒绝。
+
+Stage B 对每个 P100 签发执行 1024 次哈希确定的测量噪声重采样。只有原 V7 门控激活、重采样激活概率和修正方向概率均至少 95%、终点修正偏差 P95 不超过 0.05 pp、测量质量与设备映射都通过时，才使用重采样有效修正的逐点中位数；否则预测逐元素精确回退当前 V5。单电芯预测、决策和清单均哈希承诺，队列编译器还要求至少 60 个新电芯、3 个制造批次、6 个稳定激活、10% 激活覆盖率和至少 2 个激活批次，未满足时禁止打开未来结局。
+
+当前只完成 24 个生成身份、192 行记录的确定性软件演练。合成噪声选择 Gaussian，两组尺度为 0.002874 pp 与 0.003081 pp；稳定路径的激活与方向概率均为 1.0，终点偏差 P95 为 0.00794 pp，缺失设备映射精确回退 V5。这些数字不来自真实电池，也不是准确率、独立验证或生产就绪证据。V5 仍是 champion，真实 Stage A/B/C 均待企业重复测量和新盲测队列。
+
+- [V8 盲测总协议](configs/experiments/v8_measurement_stability_blind_protocol.template.json)
+- [V8 真实执行配置模板](configs/experiments/v8_measurement_stability_execution.template.json)
+- [V8 执行手册](docs/v8_measurement_stability_execution_cn.md)
+- [V8 软件演练报告](reports/fastcharge_v8_measurement_stability_dry_run_2026-08-10.md)
+- [V8 合成机器可读证据](showcase/evidence_v8_dry_run/README.md)
+
+## V9 端到端相关扰动稳定性资格实验（2026-08-11）
+
+V9 针对 V8 的两个剩余缺口继续推进：V8 固定了已签发的 P60/P100 V5 中心，也只把零均值重复性噪声传播到末端门控。V9 则让每个扰动 draw 同时穿过历史参考库和目标前缀，重新构造 pairwise 训练矩阵、重新拟合冻结的 48-tree V5、重新选择 12 个参考电芯、重新生成 P60/P100 中心，再运行未经修改的 V7 门控。误差模型显式拆成 IID、设备/温箱共同偏置、AR(1)、漂移和低概率尖峰。
+
+真实协议固定 1024 draw，并增加近邻集合 Jaccard、V5 中心偏差和最终签发轨迹偏差门槛。评估 ledger 只有可见周期 61-100、模型中心、参考身份与哈希，目标周期 101-300 真值没有接口；任一门槛失败都逐元素精确返回 0 修正。V9 通过也只代表输入与管线稳定，仍必须沿用 V8 的新队列一次性准确率评分，不能直接晋升模型。
+
+已完成的 24-draw 合成软件演练实际执行了 48 次 V5 重拟合。一个只生成到周期 100 的目标前缀产生 12,000 行 outcome-free ledger；重拟合激活和修正方向概率均为 1.0，P60/P100 近邻 Jaccard P05 均为 0.8462，最终签发轨迹偏差 P95 为 0.01261 pp。人工压力负对照破坏近邻集合与中心稳定性后，七项门槛失败并精确回退 0 修正。该结果没有使用真实电池、海辰数据或目标未来结果，不构成准确率提升；V5 继续作为 champion。
+
+- [V9 盲测资格协议](configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json)
+- [V9 真实执行配置模板](configs/experiments/v9_end_to_end_correlated_stability_execution.template.json)
+- [V9 实验设计与执行说明](docs/v9_end_to_end_correlated_stability_experiment_cn.md)
+- [V9 软件演练报告](reports/fastcharge_v9_end_to_end_correlated_stability_dry_run_2026-08-11.md)
+- [V9 合成机器可读证据](showcase/evidence_v9_dry_run/README.md)
+
+## V10 真实重复性分量与 1,024 次端到端压力传播（2026-08-11）
+
+V10 使用本地 SNL LFP RPT bundle 中同一 visit 的重复容量测量，校正组内中心化方差收缩，并以留一物理电芯对数分数选择 Gaussian 或固定自由度 Student-t 误差族。该数据只能识别 visit 内重复性和测量顺序效应，不能识别共同偏置、跨 visit AR(1)、长期漂移、设备桥接偏差或温箱偏差。
+
+私有重复性审计没有通过冻结门槛；把该误差分量传播到 1,024 次完整 V5 重拟合、参考电芯重选与 P60/P100 重签发后，V7 仍未取得资格，最终动态修正精确回退为零。V7 因而退役，V5 保持 champion。SNL 行级数据、拟合参数和数值诊断不进入公开仓库，公开层只记录 fail-closed 决策。
+
+- [V10 公开决策边界](showcase/evidence_v10_private_boundary/README.md)
+- [V10 重复性配置](configs/experiments/v10_snl_rpt_repeatability_development.json)
+- [V10 1,024-draw 配置](configs/experiments/v10_snl_informed_end_to_end_stability.json)
+
+## V11 Delta-Q 多模态挑战者（2026-08-11）
+
+V11 只读取 cycle 10 到 100 的六个 `Delta Q(V)` 特征，不读取 cycle life 或未来容量。两个固定候选分别把曲线特征加入成对残差模型，以及同时加入残差模型和近邻几何。模型选择严格限于 41 个训练电芯，验证电芯从 pair 两侧和 robust scaler 同时移除，81 个公开评估电芯没有再次使用。
+
+残差-only 候选 MAE 为 `0.24385 pp`，略差于冻结 V5 的 `0.24360 pp`。残差+几何候选为 `0.24183 pp`，只改善 `0.73%`；改善电芯比例仅 `46.34%`，bootstrap delta 95% 区间为 `[-0.01845, 0.01062] pp`，且一个制造批次留出方向退化 `0.00659 pp`。两个候选均未通过冻结门槛，不进入新盲测队列。
+
+- [V10/V11 收口报告](reports/fastcharge_v10_v11_model_boundary_2026-08-11.md)
+- [V11 机器可读证据](showcase/evidence_v11/README.md)
+- [V11 冻结开发配置](configs/experiments/v11_delta_q_pairwise_development.json)

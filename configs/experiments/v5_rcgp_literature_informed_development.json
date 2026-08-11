@@ -1,0 +1,374 @@
+{
+  "schema_version": "lifetwin.v5_rcgp.development_plan.v1",
+  "experiment_id": "v5_reference_conditioned_gaussian_process_development_2026_08",
+  "status": "literature_informed_development_plan_not_preregistered_for_confirmatory_use",
+  "author": "Jincheng Liu",
+  "plan_date": "2026-08-08",
+  "candidate_id": "v5_rcgp_reference_conditioned_gp_residual",
+  "scientific_question": "Can learned target-reference residuals and Gaussian-process online updates improve trajectory accuracy and calibrated uncertainty over the frozen safe baseline without increasing tail risk or hiding unsupported extrapolation?",
+  "evidence_boundary": {
+    "current_public_results_are_outcome_exposed_development": true,
+    "hithium_measurements_accessed": false,
+    "eligible_for_existing_hithium_locked_test": false,
+    "new_outcome_free_preregistration_required_before_any_future_locked_test": true,
+    "fifteen_to_twenty_five_year_accuracy_claim_permitted": false,
+    "realized_future_schedule_primary_evidence_eligible": false,
+    "rights_unclear_data_new_model_training_permitted": false
+  },
+  "literature_hypotheses": [
+    {
+      "hypothesis_id": "H1_pairwise_reference",
+      "source": "10.1038/s42256-024-00972-x",
+      "claim": "Learning target-reference future differences from target-reference prefix differences can outperform fixed nearest-neighbor delta transfer."
+    },
+    {
+      "hypothesis_id": "H2_gp_residual_update",
+      "sources": [
+        "10.1016/j.jpowsour.2017.05.004",
+        "10.1016/j.est.2019.03.022",
+        "10.1016/j.apenergy.2025.125703"
+      ],
+      "claim": "A GP residual transition model with the frozen baseline as its mean can improve uncertainty scoring and online landmark updates in small-data regimes."
+    },
+    {
+      "hypothesis_id": "H3_observable_mechanism_gate",
+      "sources": [
+        "10.1038/s41467-026-69369-1",
+        "10.1038/s41467-025-57968-3"
+      ],
+      "claim": "Mechanism routing is eligible only when diagnostic signals distinguish degradation modes; capacity-only clusters cannot be named as electrochemical mechanisms."
+    },
+    {
+      "hypothesis_id": "H4_declared_future_conditions",
+      "source": "10.1016/j.ensm.2022.05.007",
+      "claim": "Future operating conditions may improve trajectory prediction only when they are declared at prediction time; realized future conditions remain oracle diagnostics."
+    },
+    {
+      "hypothesis_id": "H5_active_experiment_selection",
+      "source": "10.1038/s41586-025-09951-7",
+      "claim": "A diversity-and-uncertainty acquisition policy can reduce the number of complete-life experiments needed for a fixed predictive performance target without querying the locked test."
+    },
+    {
+      "hypothesis_id": "H6_early_calendar_signal_with_ood_uncertainty",
+      "source": "10.1016/j.xcrp.2026.103250",
+      "claim": "Early calendar voltage-decay features may predict lifetime within a supported chemistry and condition range, but domain shift must widen uncertainty or trigger abstention."
+    }
+  ],
+  "execution_phases": [
+    {
+      "phase_id": "E0_batteryml_style_baseline_replay",
+      "evidence_role": "outcome_exposed_public_development",
+      "dataset_ids": [
+        "MATR_FASTCHARGE_TABLE9_TRAJECTORY_V1"
+      ],
+      "permitted_actions": [
+        "baseline_reproduction",
+        "nested_grouped_cross_validation",
+        "hypothesis_generation"
+      ],
+      "prohibited_actions": [
+        "independent_confirmation_claim",
+        "calendar_aging_claim",
+        "hithium_product_claim"
+      ]
+    },
+    {
+      "phase_id": "E1_rcgp_component_ablation",
+      "evidence_role": "outcome_exposed_public_development",
+      "dataset_ids": [
+        "MATR_FASTCHARGE_TABLE9_TRAJECTORY_V1"
+      ],
+      "permitted_actions": [
+        "pairwise_model_development",
+        "gp_residual_development",
+        "support_gate_development"
+      ]
+    },
+    {
+      "phase_id": "E2_cross_domain_frozen_evaluation",
+      "evidence_role": "future_only_after_rights_and_provenance_audit",
+      "candidate_dataset_ids": [
+        "HUST_LFP_CYCLE",
+        "SNL_LFP_CYCLE",
+        "LAM_JOULE_CALENDAR_SUMMARY",
+        "HITHIUM_PRIVATE_FUTURE_BATCH"
+      ],
+      "entry_requirements": [
+        "explicit_reuse_scope",
+        "source_revision_and_hashes",
+        "physical_cell_identifiers",
+        "chemistry_and_format",
+        "capacity_and_rpt_definition",
+        "outcome_exposure_record",
+        "outcome_free_protocol_freeze"
+      ]
+    },
+    {
+      "phase_id": "E3_mechanism_feature_challenge",
+      "evidence_role": "optional_after_diagnostic_feature_availability",
+      "minimum_mechanism_evidence_level": "L1_partial_curve_relaxation_or_resistance",
+      "capacity_only_mechanism_names_permitted": false
+    },
+    {
+      "phase_id": "E4_active_experiment_selection_replay",
+      "evidence_role": "outcome_exposed_public_development_simulation",
+      "candidate_policies": [
+        "random_order_100_repetitions",
+        "deterministic_space_filling",
+        "gp_variance",
+        "expert_disagreement",
+        "diversity_plus_uncertainty"
+      ],
+      "locked_test_query_permitted": false
+    },
+    {
+      "phase_id": "E5_early_calendar_feature_challenge",
+      "evidence_role": "future_after_lfp_calendar_rights_and_schema_audit",
+      "candidate_features": [
+        "early_voltage_decay",
+        "capacity_change",
+        "resistance_change",
+        "temperature",
+        "storage_soc",
+        "measurement_protocol"
+      ],
+      "required_challenges": [
+        "leave_condition_out",
+        "leave_batch_out",
+        "cross_chemistry_negative_control",
+        "coverage_width_and_abstention"
+      ]
+    }
+  ],
+  "data_firewall": {
+    "grouping_units": [
+      "physical_cell_id",
+      "manufacturing_batch",
+      "protocol_or_condition_cluster"
+    ],
+    "target_suffix_available_during_prediction": false,
+    "target_suffix_available_during_hyperparameter_selection": false,
+    "same_cell_rows_across_train_and_test_permitted": false,
+    "random_row_split_permitted": false,
+    "realized_future_schedule_available_during_prediction": false,
+    "outcome_exposed_external_splits_reusable_for_claim_upgrade": false,
+    "locked_test_available_to_active_acquisition": false
+  },
+  "prefix_and_horizon_design": {
+    "cycle_prefixes": [
+      20,
+      40,
+      60,
+      100
+    ],
+    "cycle_horizons": [
+      50,
+      100,
+      200
+    ],
+    "calendar_landmarks_months_when_available": [
+      3,
+      6,
+      12,
+      24
+    ],
+    "calendar_horizons_months_when_observed": [
+      12,
+      24,
+      60,
+      120
+    ],
+    "unobserved_fifteen_to_twenty_five_year_horizons_role": "scenario_projection_only_not_accuracy_validation",
+    "equal_weighting": "physical_cell_then_landmark_then_dataset_or_condition"
+  },
+  "baseline_models": [
+    "target_prefix_persistence",
+    "target_prefix_robust_recent_linear",
+    "target_prefix_constrained_sqrt_linear",
+    "nearest_neighbor_delta_transfer",
+    "safe_hard_local_risk_selector",
+    "ridge_regression",
+    "pcr",
+    "plsr",
+    "random_forest_or_extra_trees",
+    "hist_gradient_boosting",
+    "gaussian_process_without_pairwise_branch"
+  ],
+  "candidate_components": {
+    "frozen_center": {
+      "cycle_dataset": "safe_hard_local_risk_selector",
+      "private_dual_clock_dataset": "v3_dual_clock_kernel_shrinkage",
+      "candidate_branches_must_be_exact_zero_when_unsupported": true
+    },
+    "pairwise_reference_residual": {
+      "phase_one_models": [
+        "ridge",
+        "huber_or_robust_ridge",
+        "extra_trees",
+        "hist_gradient_boosting"
+      ],
+      "deep_siamese_or_cnn_in_phase_one": false,
+      "training_target": "difference_in_future_retention_change_between_target_and_reference_at_matched_coordinates",
+      "reference_pool": "training_cells_only",
+      "minimum_reference_count": 8,
+      "primary_reference_aggregation": "weighted_median",
+      "reference_set_sensitivity_repetitions": 32,
+      "reference_selection_outcome_features_permitted": false
+    },
+    "gp_residual_transition": {
+      "mean_function": "zero_residual_around_frozen_center",
+      "candidate_kernels": [
+        "matern_3_over_2",
+        "rational_quadratic",
+        "additive_calendar_plus_cycle",
+        "multi_task_or_random_effect_only_if_cluster_sufficient"
+      ],
+      "maximum_exact_gp_training_points": 5000,
+      "predeclared_large_n_approximation": "fixed_random_fourier_features_plus_bayesian_ridge",
+      "future_inputs": [
+        "delta_elapsed_days",
+        "delta_efc",
+        "declared_plan_conditions_if_available"
+      ],
+      "realized_future_conditions_permitted": false
+    },
+    "mechanism_gate": {
+      "enabled_by_default": false,
+      "capacity_only_mechanism_names_permitted": false,
+      "evidence_levels": {
+        "L0": "capacity_or_soh_only_statistical_routes_no_mechanism_names",
+        "L1": "resistance_or_partial_charge_or_relaxation_observable_routes",
+        "L2": "ica_dva_half_cell_fit_or_degradation_mode_labels"
+      },
+      "required_controls": [
+        "no_gate",
+        "random_gate",
+        "single_expert",
+        "capacity_only_gate"
+      ]
+    },
+    "uncertainty_and_abstention": {
+      "sources": [
+        "gp_posterior_variance",
+        "reference_ensemble_dispersion",
+        "strict_group_loco_residual"
+      ],
+      "calibration": "route_and_landmark_conditioned_conformal_when_sample_sufficient",
+      "formal_cross_domain_coverage_claim": false,
+      "refusal_triggers": [
+        "input_quality_failure",
+        "insufficient_reference_support",
+        "condition_distance_above_frozen_threshold",
+        "branch_disagreement_above_frozen_threshold",
+        "interval_width_above_frozen_threshold"
+      ]
+    },
+    "active_experiment_selection": {
+      "enabled_for_locked_test": false,
+      "initial_anchor_policy": "deterministic_design_and_condition_space_coverage",
+      "primary_candidate_policy": "diversity_plus_gp_variance_or_expert_disagreement",
+      "random_baseline_repetitions": 100,
+      "budget_axes": [
+        "complete_life_cell_count",
+        "calendar_test_time",
+        "efc",
+        "energy",
+        "estimated_cost"
+      ],
+      "acquisition_pool_and_locked_test_disjoint": true
+    }
+  },
+  "model_selection": {
+    "outer_split": "grouped_by_physical_cell_with_leave_batch_or_protocol_out_challenge",
+    "inner_split": "grouped_nested_cross_validation_on_training_only",
+    "minimum_outer_test_cells_for_non_pilot": 20,
+    "minimum_train_cells_per_mechanism_expert": 20,
+    "minimum_test_cells_per_mechanism_route": 5,
+    "deep_model_minimum_training_cells": 300,
+    "deep_model_seed_count": 10,
+    "single_best_seed_reporting_permitted": false,
+    "deep_model_additional_requirements": [
+      "unified_raw_curve_schema",
+      "explicit_data_rights",
+      "independent_domain_test"
+    ],
+    "simplicity_tie_margin_pp": 0.02
+  },
+  "primary_metrics": [
+    "trajectory_mae_pp_or_condition_equal_iae_pp",
+    "fixed_horizon_mae_pp",
+    "cell_level_p90_mae_pp",
+    "worst_condition_mae_pp",
+    "weighted_interval_score",
+    "empirical_interval_coverage",
+    "mean_interval_width_pp",
+    "issued_fraction"
+  ],
+  "gates": {
+    "H1_pairwise_reference": {
+      "comparator": "nearest_neighbor_delta_transfer_or_frozen_safe_baseline",
+      "minimum_relative_trajectory_mae_improvement": 0.05,
+      "paired_cell_bootstrap_confidence": 0.95,
+      "paired_cell_bootstrap_delta_mae_upper_bound_must_be_below_pp": 0.0,
+      "maximum_each_author_split_regression_pp": 0.03,
+      "maximum_cell_p90_regression_pp": 0.05
+    },
+    "H2_gp_uncertainty": {
+      "minimum_overall_90_interval_coverage": 0.87,
+      "minimum_each_registered_route_coverage": 0.8,
+      "maximum_weighted_interval_score_ratio_vs_existing": 1.0,
+      "maximum_mean_interval_width_ratio_vs_existing": 1.1,
+      "minimum_fraction_cells_with_improved_online_update": 0.7
+    },
+    "H3_mechanism_gate": {
+      "must_beat_all_controls_on_batch_held_out_data": true,
+      "capacity_only_mechanism_interpretation_permitted": false,
+      "fallback_when_evidence_below_L1": "disable_mechanism_gate"
+    },
+    "H4_future_conditions": {
+      "primary_candidates": [
+        "constant_prefix_average_duty",
+        "prediction_time_declared_plan"
+      ],
+      "oracle_diagnostic": "realized_future_schedule",
+      "oracle_primary_evidence_eligible": false,
+      "failure_action": "retain_frozen_constant_duty_baseline"
+    },
+    "H5_active_experiment_selection": {
+      "comparator": "random_order_100_repetitions_at_equal_budget",
+      "evaluation_data": "batch_held_out_outer_fold_never_used_for_acquisition",
+      "must_improve_accuracy_or_interval_score_at_equal_complete_life_cell_count": true,
+      "locked_test_query_permitted": false,
+      "failure_action": "retain_deterministic_space_filling_or_randomized_test_plan"
+    }
+  },
+  "stopping_rules": {
+    "maximum_failed_outer_cv_rounds_before_branch_termination": 2,
+    "same_exposed_cohort_architecture_search_after_termination_permitted": false,
+    "failure_action": "delete_or_disable_failed_branch_and_retain_simpler_frozen_model",
+    "locked_test_failure_action": "retain_frozen_model_and_wait_for_new_future_batch"
+  },
+  "required_ablations": [
+    "frozen_center_only",
+    "fixed_nearest_neighbor_delta",
+    "pairwise_only",
+    "gp_only",
+    "pairwise_plus_gp",
+    "pairwise_plus_gp_without_support_gate",
+    "single_reference",
+    "multi_reference_mean",
+    "multi_reference_weighted_median",
+    "gp_exact_vs_predeclared_approximation",
+    "mechanism_gate_controls_when_eligible"
+  ],
+  "reporting_rules": [
+    "report_all_failed_candidates_and_negative_controls",
+    "report_cell_level_bootstrap_not_row_level_bootstrap",
+    "report_mean_sd_median_and_worst_seed_for_deep_models",
+    "report_coverage_and_width_together",
+    "separate_current_soh_estimation_from_future_trajectory_prediction",
+    "separate_knee_prediction_from_online_knee_detection",
+    "label_all_matr_results_as_outcome_exposed_development",
+    "prohibit_hithium_or_fifteen_to_twenty_five_year_accuracy_claims_without_future_locked_evidence"
+  ]
+}

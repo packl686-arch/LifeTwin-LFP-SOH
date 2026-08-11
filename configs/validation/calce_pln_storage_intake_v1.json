@@ -1,0 +1,140 @@
+{
+  "schema_version": "lifetwin.independent_lfp_dataset_intake.v1",
+  "intake_id": "calce_pln_storage_intake_v1_2026_08_04",
+  "created_at_utc": "2026-08-04T10:20:41Z",
+  "prepared_by": "Jincheng Liu",
+  "candidate_id": "lifetwin_safe_hard_transfer_candidate_v1",
+  "dataset": {
+    "dataset_id": "calce_pln_storage_2014_2015",
+    "title": "CALCE PLN Storage Life Test",
+    "doi_or_persistent_url": "https://calce.umd.edu/battery-data",
+    "repository_url": "https://web.calce.umd.edu/batteries/data/",
+    "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+    "access_mode": "public_download",
+    "paper_license": {
+      "status": "not_published",
+      "identifier": null,
+      "url": null,
+      "scope_note": "No dataset-specific paper or paper license was identified during this intake."
+    },
+    "data_license": {
+      "status": "unclear",
+      "identifier": null,
+      "url": null,
+      "scope_note": "The official CALCE page states open access and requests citation for publication use, but it does not identify a machine-readable data license or confirm competition, derivative-table, redistribution, or commercial-model rights."
+    },
+    "artifacts": [
+      {
+        "logical_name": "PLN_Number_SOC_Temp_StoragePeriod.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/PLN_Number_SOC_Temp_StoragePeriod.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 14682,
+        "sha256": "5efdd7387807b3dae19508a0aae9ec782d1fe614fd2293789afa738f350b03e0",
+        "retrieved_at_utc": "2026-08-04T09:54:55Z"
+      },
+      {
+        "logical_name": "Capacity Characterization_Initialization.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/Capacity%20Characterization_Initialization.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 57730650,
+        "sha256": "13fc914990e56ee78a14a7ebde9c303e04fbe7fc85cd13a96404c791fb16154b",
+        "retrieved_at_utc": "2026-08-04T09:50:43Z"
+      },
+      {
+        "logical_name": "Capacity_-40C.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/Capacity_-40C.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 44007454,
+        "sha256": "1ef1fb0c94d9299b218496d019075a835f8289209bf2ed6f3ddac5a68c5cc4d8",
+        "retrieved_at_utc": "2026-08-04T09:50:54Z"
+      },
+      {
+        "logical_name": "Capacity_-5C.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/Capacity_-5C.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 45022611,
+        "sha256": "f939aefc6b88bd6fe3c28a2759df0d92b55c0c97cef1903d6edb9b19e8f7968b",
+        "retrieved_at_utc": "2026-08-04T09:51:01Z"
+      },
+      {
+        "logical_name": "Capacity_25C.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/Capacity_25C.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 58955737,
+        "sha256": "f77d6c73f2a89034059b381c3e9ae3efa2caff2b6ea3608f68cc6244debfb628",
+        "retrieved_at_utc": "2026-08-04T09:51:01Z"
+      },
+      {
+        "logical_name": "Capacity_50C.zip",
+        "source_url": "https://web.calce.umd.edu/batteries/data/pln/Capacity_50C.zip",
+        "repository_version": "unversioned-live-archive-retrieved-2026-08-04",
+        "byte_size": 58330065,
+        "sha256": "f9173ce23c3f2e08bdcebf03cf6e61fe53d01f93ef49c90b59d985274bf6f1ae",
+        "retrieved_at_utc": "2026-08-04T09:51:03Z"
+      }
+    ],
+    "cathode_chemistry": "LiCoO2",
+    "anode_chemistry": "graphite",
+    "aging_mode": "controlled_calendar",
+    "time_unit": "day",
+    "physical_cell_id_field": "PLN",
+    "condition_id_fields": [
+      "storage_soc_pct",
+      "temperature_c",
+      "nominal_recheck_period"
+    ],
+    "outcome_fields": [
+      "discharge_capacity_ah"
+    ]
+  },
+  "structure_audit": {
+    "metadata_only_audit": false,
+    "outcome_values_inspected": true,
+    "machine_readable_observations_verified": false,
+    "physical_cell_ids_verified": true,
+    "calendar_aging_separable_verified": true,
+    "maximum_observed_duration_days": 254,
+    "observed_physical_cell_count": 144,
+    "observed_independent_scoring_cluster_count": 117,
+    "minimum_observed_positive_prefix_observations": 0,
+    "minimum_observed_future_observations": 0,
+    "minimum_observed_future_to_landmark_time_ratio": 0,
+    "partition_identifiers_available": true,
+    "candidate_landmarks_derived_without_outcome_values": false
+  },
+  "outcome_exposure": {
+    "classification": "development_only",
+    "classification_reason": "The source is LiCoO2 rather than LFP and is shorter than 730 days. During intake, initialization discharge-capacity values in the crosswalk were displayed before a dataset-specific freeze. Follow-up capacity trajectories were not inspected.",
+    "target_outcome_exposure_log": [
+      {
+        "timestamp_utc": "2026-08-04T10:00:00Z",
+        "actor": "Codex audit for Jincheng Liu",
+        "material_accessed": "Official source metadata, ZIP member names and hashes, workbook Info sheets, crosswalk condition columns, and crosswalk initialization discharge-capacity values; no follow-up capacity-series values",
+        "target_values_exposed": true
+      }
+    ]
+  },
+  "data_rights_confirmation": {
+    "basis": "none",
+    "permission_record_sha256": null,
+    "permission_record_publicly_redistributable": false,
+    "noncommercial_research_confirmed": false,
+    "competition_evaluation_confirmed": false,
+    "local_feature_extraction_confirmed": false,
+    "model_training_and_evaluation_confirmed": false,
+    "aggregate_metrics_and_figures_confirmed": false,
+    "derived_tables_without_raw_measurements_confirmed": false,
+    "raw_data_redistribution_confirmed": false,
+    "commercial_model_development_confirmed": false
+  },
+  "requested_use": {
+    "noncommercial_research": true,
+    "competition_evaluation": true,
+    "local_feature_extraction": true,
+    "model_training_and_evaluation": true,
+    "aggregate_metrics_and_figures": true,
+    "derived_tables_without_raw_measurements": true,
+    "raw_data_redistribution": false,
+    "commercial_model_development": false
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "lifetwin.private_cycle_adapter.config.v1",
+  "adapter_id": "hithium_private_lfp_cycle_adapter_v1",
+  "private_only": true,
+  "dataset_id": "HITHIUM_PRIVATE_LFP_CYCLE_V1",
+  "chemistry": "LFP",
+  "partition_policy": {
+    "grouping_field": "batch_id",
+    "hash_seed": "replace-with-a-project-controlled-random-seed-before-freeze",
+    "minimum_group_count": 5,
+    "fractions": {
+      "development": 0.6,
+      "calibration": 0.2,
+      "locked_test": 0.2
+    }
+  },
+  "trajectory_policy": {
+    "landmark_visit_counts": [
+      3,
+      4
+    ],
+    "minimum_future_visits": 2,
+    "score_end_equivalent_full_cycles": 2500.0,
+    "capacity_reference_rule": "explicit_per_row_reference_capacity",
+    "quality_status_allowlist": [
+      "accepted"
+    ]
+  },
+  "model_contract": {
+    "primary_model_id": "v3_dual_clock_kernel_shrinkage",
+    "future_schedule_assumption": "constant_prefix_efc_per_day",
+    "explicit_forecast_elapsed_days_supported": true,
+    "target_suffix_permitted_in_prediction_process": false
+  },
+  "claim_boundary": "Private enterprise adapter template only. Replace and freeze the partition seed, complete a second-person review, isolate both truth vaults from the prediction process, and validate on batch-disjoint held-out cells before making any Hithium-specific claim."
+}

@@ -1,0 +1,1184 @@
+"""Private hierarchical cycle-prior development and deployment pipeline.
+
+The implementation separates reference-only model selection, target-prefix
+prediction, and later truth linkage.  It is intended for private training data;
+model capsules and result artifacts must not be published by default.
+"""
+
+from __future__ import annotations
+
+from itertools import product
+import json
+import math
+from typing import Mapping, Sequence
+
+import numpy as np
+import pandas as pd
+
+from lifetwin.data.snl import DATASET_ID, RPT_TRAJECTORY_COLUMNS
+from lifetwin.experiments.nasa_prefix_loco import (
+    canonical_frame_sha256,
+    canonical_json_sha256,
+)
+from lifetwin.experiments.snl_rpt_loco import (
+    REFERENCE_COLUMNS,
+    TARGET_PREFIX_COLUMNS,
+    TARGET_TRUTH_COLUMNS,
+    _exact_one_sided_sign_flip_p,
+    _trajectory_iae,
+)
+from lifetwin.models.hierarchical_cycle_prior import (
+    BasisKernelPrior,
+    PowerConditionPrior,
+    basis_prior_coefficients,
+    fit_basis_kernel_prior,
+    fit_power_condition_prior,
+    predict_basis_kernel_prior,
+    predict_power_condition_prior,
+)
+
+
+SCHEMA_VERSION = "lifetwin.private_cycle_prior_v2.config.v1"
+EXPERIMENT_ID = "private_cycle_prior_v2"
+MODEL_IDS = (
+    "target_prefix_persistence",
+    "v1_condition_ridge_delta",
+    "v2_power_condition_shrinkage",
+    "v2_two_basis_kernel_shrinkage",
+    "v2_cross_fitted_hierarchical_blend",
+)
+PRIMARY_MODEL_ID = "v2_cross_fitted_hierarchical_blend"
+PREDICTION_COLUMNS = (
+    "experiment_id",
+    "dataset_id",
+    "outer_condition_id",
+    "cell_id",
+    "landmark_visit_count",
+    "model_id",
+    "forecast_equivalent_full_cycles",
+    "predicted_capacity_retention_pct",
+)
+DECISION_COLUMNS = (
+    "experiment_id",
+    "dataset_id",
+    "outer_condition_id",
+    "cell_id",
+    "landmark_visit_count",
+    "power_hyperparameters_json",
+    "basis_hyperparameters_json",
+    "power_blend_weight",
+    "inner_power_condition_equal_iae_pp",
+    "inner_basis_condition_equal_iae_pp",
+    "inner_blend_condition_equal_iae_pp",
+    "nearest_condition_distance",
+    "condition_ood_threshold",
+    "prefix_residual_rms_pp",
+    "evidence_status",
+)
+SCORE_COLUMNS = (
+    "experiment_id",
+    "dataset_id",
+    "outer_condition_id",
+    "cell_id",
+    "landmark_visit_count",
+    "model_id",
+    "future_observation_count",
+    "trajectory_iae_pp",
+    "trajectory_mae_pp",
+    "trajectory_rmse_pp",
+    "endpoint_absolute_error_pp",
+)
+
+
+class PrivateCyclePriorV2Error(ValueError):
+    """Raised when the private V2 experiment contract is violated."""
+
+
+def default_private_cycle_prior_v2_config() -> dict[str, object]:
+    """Return the fixed development family without embedding private results."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "private_only": True,
+        "dataset_id": DATASET_ID,
+        "landmark_visit_counts": [3, 4],
+        "score_end_equivalent_full_cycles": 2500.0,
+        "forecast_grid_step_equivalent_full_cycles": 25.0,
+        "prediction_clip_pct": [0.0, 110.0],
+        "power_family": {
+            "exponents": [0.5, 0.6, 0.7, 0.8],
+            "ridge_alphas": [1.0, 10.0],
+            "prefix_rate_weights": [0.0, 0.1, 0.25],
+            "anchor_weight": 1.0,
+            "condition_equal_fit": False,
+        },
+        "basis_family": {
+            "basis_exponent_pairs": [[0.3, 1.0], [0.5, 1.0], [0.5, 1.5]],
+            "kernel_gammas": [0.3, 1.0, 3.0],
+            "coefficient_shrinkages": [1.0, 10.0, 100.0],
+            "anchor_weights": [0.25, 0.5, 0.75, 1.0],
+        },
+        "blend": {"power_weights": [0.0, 0.25, 0.5, 0.75, 1.0]},
+        "selection": {
+            "metric": "condition_equal_trajectory_iae_pp",
+            "worst_condition_penalty": 0.0,
+        },
+        "ood": {"cross_condition_quantile": 0.99, "threshold_multiplier": 1.5},
+        "uncertainty": {
+            "absolute_residual_quantile": 0.9,
+            "horizon_bins_efc": [0.0, 500.0, 1000.0, 1500.0, 2500.0],
+            "status": "private_development_diagnostic",
+        },
+    }
+
+
+def _finite_sequence(
+    values: object,
+    *,
+    name: str,
+    minimum_length: int = 1,
+) -> tuple[float, ...]:
+    if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+        raise PrivateCyclePriorV2Error(f"{name} must be an array")
+    converted = tuple(float(value) for value in values)
+    if len(converted) < minimum_length or not all(
+        math.isfinite(value) for value in converted
+    ):
+        raise PrivateCyclePriorV2Error(f"{name} is empty or non-finite")
+    return converted
+
+
+def validate_private_cycle_prior_v2_config(
+    config: Mapping[str, object],
+) -> dict[str, object]:
+    value = json.loads(
+        json.dumps(
+            dict(config),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+    )
+    if value.get("schema_version") != SCHEMA_VERSION:
+        raise PrivateCyclePriorV2Error("Private V2 config schema changed")
+    if value.get("experiment_id") != EXPERIMENT_ID:
+        raise PrivateCyclePriorV2Error("Private V2 experiment identity changed")
+    if value.get("private_only") is not True:
+        raise PrivateCyclePriorV2Error("Private V2 config must remain private-only")
+    landmarks = tuple(int(item) for item in value["landmark_visit_counts"])
+    if len(set(landmarks)) != len(landmarks) or min(landmarks) < 3:
+        raise PrivateCyclePriorV2Error("Private V2 landmarks are invalid")
+    power = value["power_family"]
+    basis = value["basis_family"]
+    blend = value["blend"]
+    exponents = _finite_sequence(power["exponents"], name="power exponents")
+    if not all(0.0 < item <= 2.0 for item in exponents):
+        raise PrivateCyclePriorV2Error("Power exponents are outside (0, 2]")
+    for name, values in (
+        ("ridge alphas", power["ridge_alphas"]),
+        ("kernel gammas", basis["kernel_gammas"]),
+        ("coefficient shrinkages", basis["coefficient_shrinkages"]),
+    ):
+        if not all(item > 0.0 for item in _finite_sequence(values, name=name)):
+            raise PrivateCyclePriorV2Error(f"{name} must be positive")
+    for name, values in (
+        ("prefix rate weights", power["prefix_rate_weights"]),
+        ("anchor weights", basis["anchor_weights"]),
+        ("blend weights", blend["power_weights"]),
+    ):
+        if not all(
+            0.0 <= item <= 1.0 for item in _finite_sequence(values, name=name)
+        ):
+            raise PrivateCyclePriorV2Error(f"{name} must lie in [0, 1]")
+    pairs = basis["basis_exponent_pairs"]
+    if not isinstance(pairs, Sequence) or not pairs:
+        raise PrivateCyclePriorV2Error("Basis exponent pairs are empty")
+    for pair in pairs:
+        converted = _finite_sequence(pair, name="basis exponent pair", minimum_length=2)
+        if len(converted) != 2 or not 0.0 < converted[0] < converted[1] <= 2.0:
+            raise PrivateCyclePriorV2Error("Basis exponent pair is invalid")
+    if float(value["score_end_equivalent_full_cycles"]) <= 0.0:
+        raise PrivateCyclePriorV2Error("Private V2 score end must be positive")
+    return value
+
+
+def _json_text(value: object) -> str:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+
+
+def _core(frame: pd.DataFrame) -> pd.DataFrame:
+    return frame.loc[:, RPT_TRAJECTORY_COLUMNS].copy()
+
+
+def _future(
+    cell: pd.DataFrame,
+    *,
+    landmark: int,
+    score_end: float,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    ordered = cell.sort_values("visit_index", kind="stable")
+    if len(ordered) <= landmark:
+        raise PrivateCyclePriorV2Error("Trajectory lacks a future suffix")
+    prefix = ordered.iloc[:landmark].copy()
+    future = ordered.loc[
+        (ordered["visit_index"] >= landmark)
+        & (ordered["equivalent_full_cycles"] <= score_end)
+    ].copy()
+    if future.empty:
+        raise PrivateCyclePriorV2Error("Trajectory has no future below score end")
+    return prefix, future
+
+
+def _prediction_iae(
+    prefix: pd.DataFrame,
+    future: pd.DataFrame,
+    predicted: np.ndarray,
+) -> float:
+    x0 = float(prefix.iloc[-1]["equivalent_full_cycles"])
+    return _trajectory_iae(
+        x0,
+        future["equivalent_full_cycles"].to_numpy(dtype=float),
+        future["capacity_retention_pct"].to_numpy(dtype=float),
+        predicted,
+    )
+
+
+def _selection_objective(
+    by_condition: Sequence[float],
+    config: Mapping[str, object],
+) -> float:
+    values = np.asarray(by_condition, dtype=float)
+    penalty = float(config["selection"]["worst_condition_penalty"])
+    return float(np.mean(values) + penalty * np.max(values))
+
+
+def _power_hyperparameters(config: Mapping[str, object]) -> list[dict[str, object]]:
+    family = config["power_family"]
+    return [
+        {
+            "exponent": float(exponent),
+            "alpha": float(alpha),
+            "prefix_rate_weight": float(weight),
+            "anchor_weight": float(family["anchor_weight"]),
+            "condition_equal": bool(family["condition_equal_fit"]),
+        }
+        for exponent, alpha, weight in product(
+            family["exponents"],
+            family["ridge_alphas"],
+            family["prefix_rate_weights"],
+        )
+    ]
+
+
+def _basis_hyperparameters(config: Mapping[str, object]) -> list[dict[str, object]]:
+    family = config["basis_family"]
+    return [
+        {
+            "basis_exponents": [float(first), float(second)],
+            "gamma": float(gamma),
+            "shrinkage": float(shrinkage),
+            "anchor_weight": float(anchor),
+        }
+        for (first, second), gamma, shrinkage, anchor in product(
+            family["basis_exponent_pairs"],
+            family["kernel_gammas"],
+            family["coefficient_shrinkages"],
+            family["anchor_weights"],
+        )
+    ]
+
+
+def _fit_power(
+    references: pd.DataFrame,
+    hyperparameters: Mapping[str, object],
+) -> PowerConditionPrior:
+    return fit_power_condition_prior(
+        references,
+        exponent=float(hyperparameters["exponent"]),
+        alpha=float(hyperparameters["alpha"]),
+        condition_equal=bool(hyperparameters["condition_equal"]),
+    )
+
+
+def _fit_basis(
+    references: pd.DataFrame,
+    hyperparameters: Mapping[str, object],
+) -> BasisKernelPrior:
+    first, second = (
+        float(value) for value in hyperparameters["basis_exponents"]
+    )
+    return fit_basis_kernel_prior(
+        references,
+        basis_exponents=(first, second),
+        gamma=float(hyperparameters["gamma"]),
+    )
+
+
+def _power_prediction(
+    prefix: pd.DataFrame,
+    forecast_efc: np.ndarray,
+    model: PowerConditionPrior,
+    hyperparameters: Mapping[str, object],
+) -> np.ndarray:
+    return predict_power_condition_prior(
+        prefix,
+        forecast_efc,
+        model,
+        prefix_rate_weight=float(hyperparameters["prefix_rate_weight"]),
+        anchor_weight=float(hyperparameters["anchor_weight"]),
+    )
+
+
+def _basis_prediction(
+    prefix: pd.DataFrame,
+    forecast_efc: np.ndarray,
+    model: BasisKernelPrior,
+    hyperparameters: Mapping[str, object],
+) -> np.ndarray:
+    return predict_basis_kernel_prior(
+        prefix,
+        forecast_efc,
+        model,
+        shrinkage=float(hyperparameters["shrinkage"]),
+        anchor_weight=float(hyperparameters["anchor_weight"]),
+    )
+
+
+def _select_power_hyperparameters(
+    references: pd.DataFrame,
+    *,
+    landmark: int,
+    config: Mapping[str, object],
+) -> tuple[dict[str, object], float]:
+    score_end = float(config["score_end_equivalent_full_cycles"])
+    candidates = _power_hyperparameters(config)
+    risks: dict[str, list[float]] = {_json_text(item): [] for item in candidates}
+    for held_condition in sorted(references["condition_id"].unique()):
+        training = references.loc[
+            references["condition_id"] != held_condition
+        ].copy()
+        targets = references.loc[
+            references["condition_id"] == held_condition
+        ].copy()
+        model_cache: dict[tuple[float, float, bool], PowerConditionPrior] = {}
+        for candidate in candidates:
+            key = (
+                float(candidate["exponent"]),
+                float(candidate["alpha"]),
+                bool(candidate["condition_equal"]),
+            )
+            if key not in model_cache:
+                model_cache[key] = _fit_power(training, candidate)
+            model = model_cache[key]
+            cell_risks = []
+            for _, cell in targets.groupby("cell_id", sort=True):
+                prefix, future = _future(
+                    cell, landmark=landmark, score_end=score_end
+                )
+                forecast = future["equivalent_full_cycles"].to_numpy(dtype=float)
+                predicted = _power_prediction(prefix, forecast, model, candidate)
+                cell_risks.append(_prediction_iae(prefix, future, predicted))
+            risks[_json_text(candidate)].append(float(np.mean(cell_risks)))
+    ranked = sorted(
+        (
+            _selection_objective(values, config),
+            _json_text(candidate),
+            candidate,
+        )
+        for candidate in candidates
+        for values in [risks[_json_text(candidate)]]
+    )
+    objective, _, selected = ranked[0]
+    return dict(selected), float(objective)
+
+
+def _select_basis_hyperparameters(
+    references: pd.DataFrame,
+    *,
+    landmark: int,
+    config: Mapping[str, object],
+) -> tuple[dict[str, object], float]:
+    score_end = float(config["score_end_equivalent_full_cycles"])
+    candidates = _basis_hyperparameters(config)
+    risks: dict[str, list[float]] = {_json_text(item): [] for item in candidates}
+    grouped: dict[tuple[float, float, float], list[dict[str, object]]] = {}
+    for candidate in candidates:
+        first, second = (
+            float(value) for value in candidate["basis_exponents"]
+        )
+        grouped.setdefault(
+            (first, second, float(candidate["gamma"])), []
+        ).append(candidate)
+    for held_condition in sorted(references["condition_id"].unique()):
+        training = references.loc[
+            references["condition_id"] != held_condition
+        ].copy()
+        targets = references.loc[
+            references["condition_id"] == held_condition
+        ].copy()
+        for group_candidates in grouped.values():
+            model = _fit_basis(training, group_candidates[0])
+            for candidate in group_candidates:
+                cell_risks = []
+                for _, cell in targets.groupby("cell_id", sort=True):
+                    prefix, future = _future(
+                        cell, landmark=landmark, score_end=score_end
+                    )
+                    forecast = future["equivalent_full_cycles"].to_numpy(dtype=float)
+                    predicted = _basis_prediction(
+                        prefix, forecast, model, candidate
+                    )
+                    cell_risks.append(_prediction_iae(prefix, future, predicted))
+                risks[_json_text(candidate)].append(float(np.mean(cell_risks)))
+    ranked = sorted(
+        (
+            _selection_objective(values, config),
+            _json_text(candidate),
+            candidate,
+        )
+        for candidate in candidates
+        for values in [risks[_json_text(candidate)]]
+    )
+    objective, _, selected = ranked[0]
+    return dict(selected), float(objective)
+
+
+def _selected_inner_predictions(
+    references: pd.DataFrame,
+    *,
+    landmark: int,
+    power_hyperparameters: Mapping[str, object],
+    basis_hyperparameters: Mapping[str, object],
+    config: Mapping[str, object],
+) -> list[dict[str, object]]:
+    score_end = float(config["score_end_equivalent_full_cycles"])
+    rows: list[dict[str, object]] = []
+    for held_condition in sorted(references["condition_id"].unique()):
+        training = references.loc[
+            references["condition_id"] != held_condition
+        ].copy()
+        targets = references.loc[
+            references["condition_id"] == held_condition
+        ].copy()
+        power_model = _fit_power(training, power_hyperparameters)
+        basis_model = _fit_basis(training, basis_hyperparameters)
+        for cell_id, cell in targets.groupby("cell_id", sort=True):
+            prefix, future = _future(cell, landmark=landmark, score_end=score_end)
+            forecast = future["equivalent_full_cycles"].to_numpy(dtype=float)
+            rows.append(
+                {
+                    "condition_id": str(held_condition),
+                    "cell_id": str(cell_id),
+                    "prefix": prefix,
+                    "future": future,
+                    "power": _power_prediction(
+                        prefix, forecast, power_model, power_hyperparameters
+                    ),
+                    "basis": _basis_prediction(
+                        prefix, forecast, basis_model, basis_hyperparameters
+                    ),
+                }
+            )
+    return rows
+
+
+def _select_blend_weight(
+    inner_predictions: Sequence[Mapping[str, object]],
+    config: Mapping[str, object],
+) -> tuple[float, float]:
+    candidates = [float(value) for value in config["blend"]["power_weights"]]
+    ranked: list[tuple[float, float]] = []
+    for weight in candidates:
+        by_condition: list[float] = []
+        conditions = sorted(
+            {str(record["condition_id"]) for record in inner_predictions}
+        )
+        for condition_id in conditions:
+            cell_risks = []
+            for record in inner_predictions:
+                if str(record["condition_id"]) != condition_id:
+                    continue
+                predicted = weight * np.asarray(record["power"], dtype=float) + (
+                    1.0 - weight
+                ) * np.asarray(record["basis"], dtype=float)
+                cell_risks.append(
+                    _prediction_iae(
+                        record["prefix"], record["future"], predicted
+                    )
+                )
+            by_condition.append(float(np.mean(cell_risks)))
+        ranked.append((_selection_objective(by_condition, config), weight))
+    objective, selected = min(ranked)
+    return float(selected), float(objective)
+
+
+def _ood_diagnostic(
+    prefix: pd.DataFrame,
+    model: BasisKernelPrior,
+    config: Mapping[str, object],
+) -> tuple[float, float]:
+    _, distances = basis_prior_coefficients(prefix, model)
+    nearest = float(np.min(distances))
+    support = np.asarray(model.support_condition_vectors, dtype=float)
+    nearest_cross = []
+    for index in range(len(support)):
+        other = np.delete(support, index, axis=0)
+        nearest_cross.append(
+            float(np.min(np.sqrt(np.sum(np.square(other - support[index]), axis=1))))
+        )
+    quantile = float(config["ood"]["cross_condition_quantile"])
+    threshold = float(
+        np.quantile(nearest_cross, quantile, method="higher")
+        * float(config["ood"]["threshold_multiplier"])
+    )
+    return nearest, threshold
+
+
+def _forecast_grid(
+    prefix: pd.DataFrame,
+    config: Mapping[str, object],
+) -> np.ndarray:
+    x0 = float(prefix.iloc[-1]["equivalent_full_cycles"])
+    end = float(config["score_end_equivalent_full_cycles"])
+    step = float(config["forecast_grid_step_equivalent_full_cycles"])
+    first = math.ceil((x0 + 1e-12) / step) * step
+    future = np.arange(first, end + step * 0.5, step, dtype=float)
+    return np.concatenate([[x0], future[future > x0]])
+
+
+def _prefix_residual_rms(
+    prefix: pd.DataFrame,
+    power_model: PowerConditionPrior,
+    power_hyperparameters: Mapping[str, object],
+    basis_model: BasisKernelPrior,
+    basis_hyperparameters: Mapping[str, object],
+    power_weight: float,
+) -> float:
+    exposure = prefix["equivalent_full_cycles"].to_numpy(dtype=float)
+    power = _power_prediction(
+        prefix, exposure, power_model, power_hyperparameters
+    )
+    basis = _basis_prediction(
+        prefix, exposure, basis_model, basis_hyperparameters
+    )
+    predicted = power_weight * power + (1.0 - power_weight) * basis
+    observed = prefix["capacity_retention_pct"].to_numpy(dtype=float)
+    return float(np.sqrt(np.mean(np.square(predicted - observed))))
+
+
+def predict_private_cycle_prior_v2(
+    references: pd.DataFrame,
+    prefixes: pd.DataFrame,
+    config: Mapping[str, object],
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, object]]:
+    """Select on reference conditions and predict target prefixes without truth."""
+    frozen = validate_private_cycle_prior_v2_config(config)
+    if tuple(references.columns) != REFERENCE_COLUMNS:
+        raise PrivateCyclePriorV2Error("Private V2 reference columns changed")
+    if tuple(prefixes.columns) != TARGET_PREFIX_COLUMNS:
+        raise PrivateCyclePriorV2Error("Private V2 prefix columns changed")
+    prediction_rows: list[dict[str, object]] = []
+    decision_rows: list[dict[str, object]] = []
+    lower, upper = (float(value) for value in frozen["prediction_clip_pct"])
+    for (outer, landmark), target_prefixes in prefixes.groupby(
+        ["outer_condition_id", "landmark_visit_count"], sort=True
+    ):
+        landmark_int = int(landmark)
+        reference = references.loc[
+            references["outer_condition_id"] == outer
+        ]
+        if reference.empty or outer in set(reference["condition_id"]):
+            raise PrivateCyclePriorV2Error("Private V2 outer fold leaked")
+        reference_core = _core(reference)
+        power_hyper, power_risk = _select_power_hyperparameters(
+            reference_core,
+            landmark=landmark_int,
+            config=frozen,
+        )
+        basis_hyper, basis_risk = _select_basis_hyperparameters(
+            reference_core,
+            landmark=landmark_int,
+            config=frozen,
+        )
+        inner_predictions = _selected_inner_predictions(
+            reference_core,
+            landmark=landmark_int,
+            power_hyperparameters=power_hyper,
+            basis_hyperparameters=basis_hyper,
+            config=frozen,
+        )
+        power_weight, blend_risk = _select_blend_weight(
+            inner_predictions, frozen
+        )
+        power_model = _fit_power(reference_core, power_hyper)
+        basis_model = _fit_basis(reference_core, basis_hyper)
+        v1_hyper = {
+            "exponent": 0.5,
+            "alpha": 1.0,
+            "prefix_rate_weight": 0.0,
+            "anchor_weight": 1.0,
+            "condition_equal": False,
+        }
+        v1_model = _fit_power(reference_core, v1_hyper)
+        for cell_id, prefix in target_prefixes.groupby("cell_id", sort=True):
+            ordered = _core(prefix).sort_values("visit_index", kind="stable")
+            if len(ordered) != landmark_int:
+                raise PrivateCyclePriorV2Error("Private V2 prefix is not exact")
+            grid = _forecast_grid(ordered, frozen)
+            power_prediction = _power_prediction(
+                ordered, grid, power_model, power_hyper
+            )
+            basis_prediction = _basis_prediction(
+                ordered, grid, basis_model, basis_hyper
+            )
+            blend_prediction = (
+                power_weight * power_prediction
+                + (1.0 - power_weight) * basis_prediction
+            )
+            v1_prediction = _power_prediction(
+                ordered, grid, v1_model, v1_hyper
+            )
+            persistence = np.full_like(
+                grid,
+                float(ordered.iloc[-1]["capacity_retention_pct"]),
+                dtype=float,
+            )
+            predictions = {
+                "target_prefix_persistence": persistence,
+                "v1_condition_ridge_delta": v1_prediction,
+                "v2_power_condition_shrinkage": power_prediction,
+                "v2_two_basis_kernel_shrinkage": basis_prediction,
+                PRIMARY_MODEL_ID: blend_prediction,
+            }
+            for model_id, values in predictions.items():
+                for exposure, predicted in zip(grid, values, strict=True):
+                    prediction_rows.append(
+                        {
+                            "experiment_id": EXPERIMENT_ID,
+                            "dataset_id": str(frozen["dataset_id"]),
+                            "outer_condition_id": str(outer),
+                            "cell_id": str(cell_id),
+                            "landmark_visit_count": landmark_int,
+                            "model_id": model_id,
+                            "forecast_equivalent_full_cycles": float(exposure),
+                            "predicted_capacity_retention_pct": float(
+                                np.clip(predicted, lower, upper)
+                            ),
+                        }
+                    )
+            nearest, threshold = _ood_diagnostic(ordered, basis_model, frozen)
+            decision_rows.append(
+                {
+                    "experiment_id": EXPERIMENT_ID,
+                    "dataset_id": str(frozen["dataset_id"]),
+                    "outer_condition_id": str(outer),
+                    "cell_id": str(cell_id),
+                    "landmark_visit_count": landmark_int,
+                    "power_hyperparameters_json": _json_text(power_hyper),
+                    "basis_hyperparameters_json": _json_text(basis_hyper),
+                    "power_blend_weight": power_weight,
+                    "inner_power_condition_equal_iae_pp": power_risk,
+                    "inner_basis_condition_equal_iae_pp": basis_risk,
+                    "inner_blend_condition_equal_iae_pp": blend_risk,
+                    "nearest_condition_distance": nearest,
+                    "condition_ood_threshold": threshold,
+                    "prefix_residual_rms_pp": _prefix_residual_rms(
+                        ordered,
+                        power_model,
+                        power_hyper,
+                        basis_model,
+                        basis_hyper,
+                        power_weight,
+                    ),
+                    "evidence_status": (
+                        "supported"
+                        if nearest <= threshold
+                        else "diagnostic_condition_ood"
+                    ),
+                }
+            )
+    predictions_frame = pd.DataFrame(
+        prediction_rows, columns=PREDICTION_COLUMNS
+    ).sort_values(
+        [
+            "outer_condition_id",
+            "cell_id",
+            "landmark_visit_count",
+            "model_id",
+            "forecast_equivalent_full_cycles",
+        ],
+        kind="stable",
+        ignore_index=True,
+    )
+    decisions_frame = pd.DataFrame(
+        decision_rows, columns=DECISION_COLUMNS
+    ).sort_values(
+        ["outer_condition_id", "cell_id", "landmark_visit_count"],
+        kind="stable",
+        ignore_index=True,
+    )
+    manifest: dict[str, object] = {
+        "schema_version": "lifetwin.private_cycle_prior_v2.prediction_manifest.v1",
+        "experiment_id": EXPERIMENT_ID,
+        "dataset_id": str(frozen["dataset_id"]),
+        "private_only": True,
+        "config_sha256": canonical_json_sha256(frozen),
+        "reference_rows_sha256": canonical_frame_sha256(
+            references, REFERENCE_COLUMNS
+        ),
+        "target_prefix_rows_sha256": canonical_frame_sha256(
+            prefixes, TARGET_PREFIX_COLUMNS
+        ),
+        "prediction_rows_sha256": canonical_frame_sha256(
+            predictions_frame, PREDICTION_COLUMNS
+        ),
+        "decision_rows_sha256": canonical_frame_sha256(
+            decisions_frame, DECISION_COLUMNS
+        ),
+        "prediction_row_count": len(predictions_frame),
+        "decision_row_count": len(decisions_frame),
+        "target_truth_argument_accepted": False,
+        "target_suffix_rows_present": False,
+        "public_release_permitted": False,
+    }
+    manifest["manifest_content_sha256"] = canonical_json_sha256(manifest)
+    return predictions_frame, decisions_frame, manifest
+
+
+def _validate_replay(
+    predictions: pd.DataFrame,
+    decisions: pd.DataFrame,
+    manifest: Mapping[str, object],
+    config: Mapping[str, object],
+) -> None:
+    frozen = validate_private_cycle_prior_v2_config(config)
+    if tuple(predictions.columns) != PREDICTION_COLUMNS:
+        raise PrivateCyclePriorV2Error("Private V2 prediction columns changed")
+    if tuple(decisions.columns) != DECISION_COLUMNS:
+        raise PrivateCyclePriorV2Error("Private V2 decision columns changed")
+    if manifest.get("config_sha256") != canonical_json_sha256(frozen):
+        raise PrivateCyclePriorV2Error("Private V2 config hash changed")
+    if manifest.get("prediction_rows_sha256") != canonical_frame_sha256(
+        predictions, PREDICTION_COLUMNS
+    ):
+        raise PrivateCyclePriorV2Error("Private V2 predictions changed after freeze")
+    if manifest.get("decision_rows_sha256") != canonical_frame_sha256(
+        decisions, DECISION_COLUMNS
+    ):
+        raise PrivateCyclePriorV2Error("Private V2 decisions changed after freeze")
+
+
+def score_private_cycle_prior_v2(
+    truth: pd.DataFrame,
+    predictions: pd.DataFrame,
+    decisions: pd.DataFrame,
+    manifest: Mapping[str, object],
+    config: Mapping[str, object],
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Link frozen private V2 predictions to held-condition truth."""
+    frozen = validate_private_cycle_prior_v2_config(config)
+    if tuple(truth.columns) != TARGET_TRUTH_COLUMNS:
+        raise PrivateCyclePriorV2Error("Private V2 truth columns changed")
+    _validate_replay(predictions, decisions, manifest, frozen)
+    score_end = float(frozen["score_end_equivalent_full_cycles"])
+    landmarks = tuple(int(item) for item in frozen["landmark_visit_counts"])
+    rows: list[dict[str, object]] = []
+    for (outer, cell_id), cell in truth.groupby(
+        ["outer_condition_id", "cell_id"], sort=True
+    ):
+        ordered = _core(cell).sort_values("visit_index", kind="stable")
+        for landmark in landmarks:
+            prefix, future = _future(
+                ordered, landmark=landmark, score_end=score_end
+            )
+            forecast = future["equivalent_full_cycles"].to_numpy(dtype=float)
+            actual = future["capacity_retention_pct"].to_numpy(dtype=float)
+            x0 = float(prefix.iloc[-1]["equivalent_full_cycles"])
+            for model_id in MODEL_IDS:
+                curve = predictions.loc[
+                    (predictions["outer_condition_id"] == outer)
+                    & (predictions["cell_id"] == cell_id)
+                    & (predictions["landmark_visit_count"] == landmark)
+                    & (predictions["model_id"] == model_id)
+                ].sort_values("forecast_equivalent_full_cycles", kind="stable")
+                if curve.empty:
+                    raise PrivateCyclePriorV2Error("Private V2 score curve is missing")
+                predicted = np.interp(
+                    forecast,
+                    curve["forecast_equivalent_full_cycles"].to_numpy(dtype=float),
+                    curve["predicted_capacity_retention_pct"].to_numpy(dtype=float),
+                )
+                error = predicted - actual
+                rows.append(
+                    {
+                        "experiment_id": EXPERIMENT_ID,
+                        "dataset_id": str(frozen["dataset_id"]),
+                        "outer_condition_id": str(outer),
+                        "cell_id": str(cell_id),
+                        "landmark_visit_count": landmark,
+                        "model_id": model_id,
+                        "future_observation_count": len(future),
+                        "trajectory_iae_pp": _trajectory_iae(
+                            x0, forecast, actual, predicted
+                        ),
+                        "trajectory_mae_pp": float(np.mean(np.abs(error))),
+                        "trajectory_rmse_pp": float(
+                            np.sqrt(np.mean(np.square(error)))
+                        ),
+                        "endpoint_absolute_error_pp": float(abs(error[-1])),
+                    }
+                )
+    scores = pd.DataFrame(rows, columns=SCORE_COLUMNS).sort_values(
+        ["outer_condition_id", "cell_id", "landmark_visit_count", "model_id"],
+        kind="stable",
+        ignore_index=True,
+    )
+    summaries: dict[str, object] = {}
+    comparisons: dict[str, object] = {}
+    for landmark in landmarks:
+        selected = scores.loc[scores["landmark_visit_count"] == landmark]
+        model_summary: dict[str, object] = {}
+        condition_iae: dict[str, pd.Series] = {}
+        for model_id in MODEL_IDS:
+            model_scores = selected.loc[selected["model_id"] == model_id]
+            condition_means = model_scores.groupby(
+                "outer_condition_id", sort=True
+            )[
+                [
+                    "trajectory_iae_pp",
+                    "trajectory_mae_pp",
+                    "trajectory_rmse_pp",
+                    "endpoint_absolute_error_pp",
+                ]
+            ].mean()
+            condition_iae[model_id] = condition_means["trajectory_iae_pp"]
+            model_summary[model_id] = {
+                "condition_equal_trajectory_iae_pp": float(
+                    condition_means["trajectory_iae_pp"].mean()
+                ),
+                "cell_equal_trajectory_iae_pp": float(
+                    model_scores["trajectory_iae_pp"].mean()
+                ),
+                "condition_equal_trajectory_mae_pp": float(
+                    condition_means["trajectory_mae_pp"].mean()
+                ),
+                "condition_equal_trajectory_rmse_pp": float(
+                    condition_means["trajectory_rmse_pp"].mean()
+                ),
+                "condition_equal_endpoint_absolute_error_pp": float(
+                    condition_means["endpoint_absolute_error_pp"].mean()
+                ),
+            }
+        summaries[str(landmark)] = model_summary
+        baseline = condition_iae["v1_condition_ridge_delta"]
+        candidate = condition_iae[PRIMARY_MODEL_ID]
+        improvement = baseline - candidate
+        comparisons[str(landmark)] = {
+            "baseline_model_id": "v1_condition_ridge_delta",
+            "candidate_model_id": PRIMARY_MODEL_ID,
+            "absolute_condition_equal_iae_improvement_pp": float(
+                baseline.mean() - candidate.mean()
+            ),
+            "relative_condition_equal_iae_improvement_fraction": float(
+                (baseline.mean() - candidate.mean())
+                / max(float(baseline.mean()), 1e-12)
+            ),
+            "improved_condition_fraction": float((improvement > 0.0).mean()),
+            "worst_condition_regression_pp": float(
+                max(0.0, float((-improvement).max()))
+            ),
+            "exact_one_sided_condition_sign_flip_p_value": (
+                _exact_one_sided_sign_flip_p(improvement.tolist())
+            ),
+        }
+    summary: dict[str, object] = {
+        "schema_version": "lifetwin.private_cycle_prior_v2.score_summary.v1",
+        "experiment_id": EXPERIMENT_ID,
+        "dataset_id": str(frozen["dataset_id"]),
+        "private_only": True,
+        "evidence_role": "outcome_exposed_private_model_development",
+        "model_summary_by_landmark": summaries,
+        "comparison_vs_v1_condition_prior": comparisons,
+        "prediction_manifest_content_sha256": manifest.get(
+            "manifest_content_sha256"
+        ),
+        "claim_boundary": (
+            "Private cycle-aging development only; not calendar-aging, field, "
+            "Hithium-product, or 15-25 year validation."
+        ),
+        "public_release_permitted": False,
+    }
+    summary["score_rows_sha256"] = canonical_frame_sha256(scores, SCORE_COLUMNS)
+    summary["summary_content_sha256"] = canonical_json_sha256(summary)
+    return scores, summary
+
+
+def _interval_quantiles(
+    inner_predictions: Sequence[Mapping[str, object]],
+    *,
+    power_weight: float,
+    config: Mapping[str, object],
+) -> list[dict[str, object]]:
+    bins = [float(value) for value in config["uncertainty"]["horizon_bins_efc"]]
+    quantile = float(config["uncertainty"]["absolute_residual_quantile"])
+    records: list[tuple[float, float]] = []
+    for record in inner_predictions:
+        prefix = record["prefix"]
+        future = record["future"]
+        predicted = power_weight * np.asarray(record["power"], dtype=float) + (
+            1.0 - power_weight
+        ) * np.asarray(record["basis"], dtype=float)
+        horizon = future["equivalent_full_cycles"].to_numpy(dtype=float) - float(
+            prefix.iloc[-1]["equivalent_full_cycles"]
+        )
+        error = np.abs(
+            predicted - future["capacity_retention_pct"].to_numpy(dtype=float)
+        )
+        records.extend(
+            (float(horizon_value), float(error_value))
+            for horizon_value, error_value in zip(horizon, error, strict=True)
+        )
+    output = []
+    all_errors = np.asarray([error for _, error in records], dtype=float)
+    fallback = float(np.quantile(all_errors, quantile, method="higher"))
+    for lower, upper in zip(bins[:-1], bins[1:], strict=True):
+        errors = np.asarray(
+            [error for horizon, error in records if lower <= horizon < upper],
+            dtype=float,
+        )
+        output.append(
+            {
+                "minimum_horizon_efc": lower,
+                "maximum_horizon_efc": upper,
+                "support_count": len(errors),
+                "absolute_error_quantile_pp": (
+                    float(np.quantile(errors, quantile, method="higher"))
+                    if len(errors) >= 5
+                    else fallback
+                ),
+            }
+        )
+    return output
+
+
+def train_private_cycle_prior_capsule(
+    trajectories: pd.DataFrame,
+    config: Mapping[str, object],
+    *,
+    training_identity: Mapping[str, object] | None = None,
+) -> dict[str, object]:
+    """Train full-reference priors and export a private JSON-safe capsule."""
+    frozen = validate_private_cycle_prior_v2_config(config)
+    data = _core(trajectories).sort_values(
+        ["condition_id", "cell_id", "visit_index"],
+        kind="stable",
+        ignore_index=True,
+    )
+    landmark_models: dict[str, object] = {}
+    for landmark in (int(value) for value in frozen["landmark_visit_counts"]):
+        power_hyper, power_risk = _select_power_hyperparameters(
+            data, landmark=landmark, config=frozen
+        )
+        basis_hyper, basis_risk = _select_basis_hyperparameters(
+            data, landmark=landmark, config=frozen
+        )
+        inner = _selected_inner_predictions(
+            data,
+            landmark=landmark,
+            power_hyperparameters=power_hyper,
+            basis_hyperparameters=basis_hyper,
+            config=frozen,
+        )
+        power_weight, blend_risk = _select_blend_weight(inner, frozen)
+        power_model = _fit_power(data, power_hyper)
+        basis_model = _fit_basis(data, basis_hyper)
+        support_prefix = data.groupby("cell_id", sort=True).head(landmark)
+        nearest_values = []
+        threshold_values = []
+        for _, prefix in support_prefix.groupby("cell_id", sort=True):
+            nearest, threshold = _ood_diagnostic(prefix, basis_model, frozen)
+            nearest_values.append(nearest)
+            threshold_values.append(threshold)
+        landmark_models[str(landmark)] = {
+            "power_hyperparameters": power_hyper,
+            "power_prior": power_model.to_dict(),
+            "basis_hyperparameters": basis_hyper,
+            "basis_prior": basis_model.to_dict(),
+            "power_blend_weight": power_weight,
+            "inner_condition_equal_iae_pp": {
+                "power": power_risk,
+                "basis": basis_risk,
+                "blend": blend_risk,
+            },
+            "condition_ood_threshold": float(max(threshold_values)),
+            "training_support_nearest_condition_distance_maximum": float(
+                max(nearest_values)
+            ),
+            "diagnostic_interval_quantiles": _interval_quantiles(
+                inner,
+                power_weight=power_weight,
+                config=frozen,
+            ),
+        }
+    capsule: dict[str, object] = {
+        "schema_version": "lifetwin.private_cycle_prior_v2.capsule.v1",
+        "model_id": PRIMARY_MODEL_ID,
+        "private_only": True,
+        "dataset_id": str(frozen["dataset_id"]),
+        "config_sha256": canonical_json_sha256(frozen),
+        "training_identity": dict(training_identity or {}),
+        "condition_fields": [
+            "temperature_c",
+            "dod_fraction",
+            "discharge_c_rate",
+        ],
+        "exposure_field": "equivalent_full_cycles",
+        "target_field": "capacity_retention_pct",
+        "minimum_prefix_visits": min(
+            int(value) for value in frozen["landmark_visit_counts"]
+        ),
+        "maximum_validated_prefix_visits": max(
+            int(value) for value in frozen["landmark_visit_counts"]
+        ),
+        "prediction_clip_pct": frozen["prediction_clip_pct"],
+        "landmark_models": landmark_models,
+        "raw_training_rows_in_capsule": False,
+        "formal_interval_coverage_claim": False,
+        "public_release_permitted": False,
+    }
+    capsule["capsule_content_sha256"] = canonical_json_sha256(capsule)
+    return capsule
+
+
+def _interval_width(
+    horizon: float,
+    quantiles: Sequence[Mapping[str, object]],
+) -> float:
+    for item in quantiles:
+        if float(item["minimum_horizon_efc"]) <= horizon < float(
+            item["maximum_horizon_efc"]
+        ):
+            return float(item["absolute_error_quantile_pp"])
+    return float(quantiles[-1]["absolute_error_quantile_pp"])
+
+
+def predict_private_cycle_prior_capsule(
+    prefix: pd.DataFrame,
+    forecast_efc: Sequence[float] | np.ndarray,
+    capsule: Mapping[str, object],
+    *,
+    strict_ood: bool = True,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Predict a new private cell from an exported capsule and prefix."""
+    if capsule.get("schema_version") != "lifetwin.private_cycle_prior_v2.capsule.v1":
+        raise PrivateCyclePriorV2Error("Private V2 capsule schema changed")
+    expected_hash = str(capsule.get("capsule_content_sha256", ""))
+    hash_input = dict(capsule)
+    hash_input.pop("capsule_content_sha256", None)
+    if canonical_json_sha256(hash_input) != expected_hash:
+        raise PrivateCyclePriorV2Error("Private V2 capsule content changed")
+    ordered = _core(prefix).sort_values("visit_index", kind="stable")
+    visit_count = len(ordered)
+    landmarks = sorted(int(value) for value in capsule["landmark_models"])
+    supported = [value for value in landmarks if value <= visit_count]
+    if not supported:
+        raise PrivateCyclePriorV2Error("Private prefix has too few RPT visits")
+    selected_landmark = max(supported)
+    model_bundle = capsule["landmark_models"][str(selected_landmark)]
+    power_hyper = model_bundle["power_hyperparameters"]
+    basis_hyper = model_bundle["basis_hyperparameters"]
+    power_model = PowerConditionPrior.from_dict(model_bundle["power_prior"])
+    basis_model = BasisKernelPrior.from_dict(model_bundle["basis_prior"])
+    forecast = np.asarray(forecast_efc, dtype=float)
+    if not np.isfinite(forecast).all() or (
+        forecast <= float(ordered.iloc[-1]["equivalent_full_cycles"])
+    ).any():
+        raise PrivateCyclePriorV2Error(
+            "Private forecast coordinates must be finite and beyond the prefix"
+        )
+    nearest, _ = _ood_diagnostic(
+        ordered,
+        basis_model,
+        {
+            "ood": {
+                "cross_condition_quantile": 0.99,
+                "threshold_multiplier": 1.5,
+            }
+        },
+    )
+    threshold = float(model_bundle["condition_ood_threshold"])
+    if strict_ood and nearest > threshold:
+        raise PrivateCyclePriorV2Error(
+            "Private target condition is outside capsule support"
+        )
+    power = _power_prediction(ordered, forecast, power_model, power_hyper)
+    basis = _basis_prediction(ordered, forecast, basis_model, basis_hyper)
+    weight = float(model_bundle["power_blend_weight"])
+    predicted = weight * power + (1.0 - weight) * basis
+    lower_clip, upper_clip = (
+        float(value) for value in capsule["prediction_clip_pct"]
+    )
+    predicted = np.clip(predicted, lower_clip, upper_clip)
+    x0 = float(ordered.iloc[-1]["equivalent_full_cycles"])
+    widths = np.asarray(
+        [
+            _interval_width(
+                float(exposure - x0),
+                model_bundle["diagnostic_interval_quantiles"],
+            )
+            for exposure in forecast
+        ],
+        dtype=float,
+    )
+    result = pd.DataFrame(
+        {
+            "forecast_equivalent_full_cycles": forecast,
+            "predicted_capacity_retention_pct": predicted,
+            "diagnostic_lower_capacity_retention_pct": np.clip(
+                predicted - widths, lower_clip, upper_clip
+            ),
+            "diagnostic_upper_capacity_retention_pct": np.clip(
+                predicted + widths, lower_clip, upper_clip
+            ),
+        }
+    )
+    metadata = {
+        "model_id": PRIMARY_MODEL_ID,
+        "selected_landmark_visit_count": selected_landmark,
+        "provided_prefix_visit_count": visit_count,
+        "evidence_status": (
+            "supported"
+            if nearest <= threshold and visit_count <= max(landmarks)
+            else "extended_prefix_or_condition_diagnostic"
+        ),
+        "nearest_condition_distance": nearest,
+        "condition_ood_threshold": threshold,
+        "strict_ood": strict_ood,
+        "formal_interval_coverage_claim": False,
+    }
+    return result, metadata
+
+
+__all__ = [
+    "DECISION_COLUMNS",
+    "EXPERIMENT_ID",
+    "MODEL_IDS",
+    "PREDICTION_COLUMNS",
+    "PRIMARY_MODEL_ID",
+    "PrivateCyclePriorV2Error",
+    "SCORE_COLUMNS",
+    "SCHEMA_VERSION",
+    "default_private_cycle_prior_v2_config",
+    "predict_private_cycle_prior_capsule",
+    "predict_private_cycle_prior_v2",
+    "score_private_cycle_prior_v2",
+    "train_private_cycle_prior_capsule",
+    "validate_private_cycle_prior_v2_config",
+]

@@ -1,0 +1,145 @@
+{
+  "claim_boundaries": {
+    "allowed": [
+      "measurement_contract_software_dry_run",
+      "noise_ledger_selection_software_dry_run",
+      "outcome_free_stability_gate_software_dry_run"
+    ],
+    "prohibited": [
+      "model_accuracy_improvement",
+      "real_measurement_repeatability",
+      "independent_confirmation",
+      "production_readiness",
+      "calendar_or_fifteen_to_twenty_five_year_accuracy"
+    ]
+  },
+  "config_sha256": "ab4ce07b13a83345d92ca932aa6f3f82f2e9052b4f91605fc2d2b2bdcdd9e15a",
+  "decision": "software_dry_run_passed_without_real_model_evidence",
+  "experiment_id": "fastcharge_v8_measurement_stability_synthetic_dry_run",
+  "frozen_v7_rule_sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0",
+  "implementation": {
+    "module_path": "src/lifetwin/experiments/fastcharge_v8_measurement_stability.py",
+    "module_sha256": "0da31f31440e8faabf124ef251311b9afca79ae7b9e23debe97e7a07fbc1b2ea",
+    "runner_path": "scripts/run_fastcharge_v8_measurement_stability_synthetic_dry_run.py",
+    "runner_sha256": "284f5af1a60e610d573c133b2b677caa85e4c379998bb4152dd48ebdb0188bd0"
+  },
+  "measurement_fixture": {
+    "future_outcome_columns_present": false,
+    "physical_cell_count": 24,
+    "row_count": 192,
+    "synthetic_only": true
+  },
+  "measurement_quality": {
+    "daily_reference": {
+      "all_noise_groups_present": true,
+      "maximum_absolute_shift_pp": 0.005161634253909142,
+      "minimum_tester_date_group_count_per_noise_group": 4,
+      "passed": true,
+      "tester_date_group_count": 8
+    },
+    "measurement_quality_passed": true,
+    "noise_candidate_scores": [
+      {
+        "leave_one_cell_out_log_score": 628.30322820529,
+        "model_id": "zero_mean_gaussian",
+        "passed_all_folds": true,
+        "valid_fold_count": 24
+      },
+      {
+        "leave_one_cell_out_log_score": 627.7371780011263,
+        "model_id": "zero_mean_student_t_df10",
+        "passed_all_folds": true,
+        "valid_fold_count": 24
+      },
+      {
+        "leave_one_cell_out_log_score": 613.9391075992098,
+        "model_id": "zero_mean_student_t_df3",
+        "passed_all_folds": true,
+        "valid_fold_count": 24
+      },
+      {
+        "leave_one_cell_out_log_score": 625.0575491016358,
+        "model_id": "zero_mean_student_t_df5",
+        "passed_all_folds": true,
+        "valid_fold_count": 24
+      }
+    ],
+    "noise_group_count": 2,
+    "noise_group_support_passed": true,
+    "physical_cell_count": 24,
+    "repeat_order": {
+      "median_absolute_slope_pp_per_repeat": 0.0015581521197827563,
+      "passed": true
+    },
+    "selected_noise_model_id": "zero_mean_gaussian",
+    "tester_bridge": {
+      "all_noise_group_testers_present": true,
+      "bridge_id_count": 4,
+      "maximum_range_pp": 0.005179315132181728,
+      "passed": true,
+      "tester_graph_connected": true
+    }
+  },
+  "missing_mapping_fallback": {
+    "base_diagnostics": {
+      "absolute_history_spearman": 1.0,
+      "bounded_unassimilated_slope_pp_per_cycle": 0.003999999999999998,
+      "history_recent_theil_slope_pp_per_cycle": 0.006,
+      "history_slope_sign_agreement": true,
+      "history_theil_slope_pp_per_cycle": 0.006,
+      "projected_unassimilated_change_pp": 0.15999999999999992,
+      "raw_unassimilated_slope_pp_per_cycle": 0.003999999999999998,
+      "reissue_shift_theil_slope_pp_per_cycle": 0.0020000000000000018,
+      "unassimilated_history_slope_sign_agreement": true
+    },
+    "draw_count": 0,
+    "exact_zero_correction": true,
+    "measurement_resampled_activation_probability": null,
+    "measurement_resampled_correction_sign_probability": null,
+    "noise_model_id": null,
+    "noise_scale_pp": null,
+    "p95_endpoint_effective_correction_deviation_pp": null,
+    "quality_activated": false,
+    "reasons": [
+      "noise_mapping_missing"
+    ],
+    "unperturbed_v7_activated": true
+  },
+  "parent_protocol_sha256": "e3e373164e6afd2ac4d318a0ce703796ce4eac37880f427116324e750d7e163d",
+  "real_model_evidence_created": false,
+  "runtime_versions": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scipy": "1.18.0"
+  },
+  "schema_version": "lifetwin.fastcharge_v8_measurement_stability.synthetic_dry_run.result.v1",
+  "stable_path": {
+    "base_diagnostics": {
+      "absolute_history_spearman": 1.0,
+      "bounded_unassimilated_slope_pp_per_cycle": 0.003999999999999998,
+      "history_recent_theil_slope_pp_per_cycle": 0.006,
+      "history_slope_sign_agreement": true,
+      "history_theil_slope_pp_per_cycle": 0.006,
+      "projected_unassimilated_change_pp": 0.15999999999999992,
+      "raw_unassimilated_slope_pp_per_cycle": 0.003999999999999998,
+      "reissue_shift_theil_slope_pp_per_cycle": 0.0020000000000000018,
+      "unassimilated_history_slope_sign_agreement": true
+    },
+    "draw_count": 128,
+    "endpoint_correction_pp": 0.4009355550029057,
+    "mean_absolute_correction_pp": 0.20147011638896012,
+    "measurement_resampled_activation_probability": 1.0,
+    "measurement_resampled_correction_sign_probability": 1.0,
+    "noise_degrees_of_freedom": null,
+    "noise_distribution": "gaussian",
+    "noise_model_id": "zero_mean_gaussian",
+    "noise_scale_pp": 0.0028740592736216275,
+    "p95_endpoint_effective_correction_deviation_pp": 0.0079394902963824,
+    "quality_activated": true,
+    "reasons": [],
+    "unperturbed_v7_activated": true
+  },
+  "status": "software_only_synthetic_dry_run_not_a_model_result",
+  "v5_champion_changed": false
+}

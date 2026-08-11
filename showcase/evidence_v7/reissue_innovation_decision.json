@@ -1,0 +1,232 @@
+{
+  "activation_gate_candidate_count_including_fallback": 19,
+  "claim_boundary": [
+    "Outcome-informed development on the same 41 training cells",
+    "Nested cell and within-cohort batch audits are not independent confirmation",
+    "No Hithium, calendar-aging, 15-25 year, or production claim"
+  ],
+  "decision": "retain_v5_and_freeze_nominated_v7_transitions_for_future_blind_test",
+  "evidence_role": "training_only_method_development_with_cell_and_batch_holdout_stress_tests",
+  "experiment_id": "fastcharge_v7_reissue_innovation_development",
+  "exposed_81_cell_evaluation_used": false,
+  "full_training_selected_gate_by_current_prefix": {
+    "100": "a0p5_d0p01_r0p0",
+    "40": "a0p1_d0p01_r0p5",
+    "60": "a0p1_d0p01_r0p5"
+  },
+  "implementation": {
+    "module_path": "src/lifetwin/experiments/fastcharge_v7_reissue_innovation.py",
+    "module_sha256": "4ea94535b88f1ec6e18e022946a9658d054760859b57cb0656e0e7872941e9f7",
+    "runner_path": "scripts/run_fastcharge_v7_reissue_innovation_development.py",
+    "runner_sha256": "131cd5c84a7cfabc6973c1ea8158fb2b52a09d637cb45d2c6a5fd653bcc67bb9"
+  },
+  "nested_and_batch_future_blind_nomination": {
+    "any_transition_nominated": true,
+    "nominated_current_prefix_cycles": [
+      100
+    ],
+    "transitions": [
+      {
+        "batch_holdout": {
+          "batches": [
+            {
+              "activation_count": 5,
+              "activation_precision": 0.4,
+              "active_maximum_delta_mae_pp": 0.007786512012076557,
+              "held_out_batch": "1",
+              "mean_gated_delta_mae_pp": -0.0015860748994404538,
+              "passed": false,
+              "physical_cell_count": 20,
+              "selected_gate_counts": {
+                "a0p1_d0p02_r0p0": 20
+              }
+            },
+            {
+              "activation_count": 0,
+              "activation_precision": null,
+              "active_maximum_delta_mae_pp": null,
+              "held_out_batch": "2",
+              "mean_gated_delta_mae_pp": 0.0,
+              "passed": false,
+              "physical_cell_count": 21,
+              "selected_gate_counts": {
+                "no_update": 21
+              }
+            }
+          ],
+          "held_out_batch_count": 2,
+          "passed": false
+        },
+        "cell_holdout": {
+          "activation_count": 14,
+          "activation_coverage": 0.34146341463414637,
+          "activation_precision": 0.7142857142857143,
+          "active_maximum_delta_mae_pp": 0.013545897309328647,
+          "active_p90_delta_mae_pp": 0.007391896902355607,
+          "matched_active_ablation": {
+            "comparison": "same_activated_cells_and_projection_scale",
+            "naive_history_slope_activation_precision": 0.7142857142857143,
+            "naive_history_slope_maximum_delta_mae_pp": 0.0491188320221612,
+            "naive_history_slope_mean_delta_mae_pp": -0.028448654777480303,
+            "reissue_aware_activation_precision": 0.7142857142857143,
+            "reissue_aware_maximum_delta_mae_pp": 0.013545897309328647,
+            "reissue_aware_mean_delta_mae_pp": -0.023194244434417803
+          },
+          "mean_gated_delta_mae_pp": -0.007919985904435347,
+          "modal_gate_selection_fraction": 0.926829268292683,
+          "passed": true,
+          "selected_gate_counts": {
+            "a0p1_d0p01_r0p0": 1,
+            "a0p1_d0p01_r0p5": 38,
+            "a0p1_d0p02_r0p5": 2
+          }
+        },
+        "current_prefix_cycle": 40,
+        "mean_base_trajectory_mae_pp": 0.35218217163047016,
+        "mean_updated_trajectory_mae_pp": 0.34426218572603484,
+        "nominated_for_future_blind_test": false,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 20
+      },
+      {
+        "batch_holdout": {
+          "batches": [
+            {
+              "activation_count": 2,
+              "activation_precision": 0.5,
+              "active_maximum_delta_mae_pp": 0.05663060025564863,
+              "held_out_batch": "1",
+              "mean_gated_delta_mae_pp": -0.00048107388341424377,
+              "passed": false,
+              "physical_cell_count": 20,
+              "selected_gate_counts": {
+                "a0p25_d0p02_r0p5": 20
+              }
+            },
+            {
+              "activation_count": 0,
+              "activation_precision": null,
+              "active_maximum_delta_mae_pp": null,
+              "held_out_batch": "2",
+              "mean_gated_delta_mae_pp": 0.0,
+              "passed": false,
+              "physical_cell_count": 21,
+              "selected_gate_counts": {
+                "no_update": 21
+              }
+            }
+          ],
+          "held_out_batch_count": 2,
+          "passed": false
+        },
+        "cell_holdout": {
+          "activation_count": 2,
+          "activation_coverage": 0.04878048780487805,
+          "activation_precision": 0.0,
+          "active_maximum_delta_mae_pp": 0.021123949986288082,
+          "active_p90_delta_mae_pp": 0.019840847967286565,
+          "matched_active_ablation": {
+            "comparison": "same_activated_cells_and_projection_scale",
+            "naive_history_slope_activation_precision": 0.0,
+            "naive_history_slope_maximum_delta_mae_pp": 0.022375510579189378,
+            "naive_history_slope_mean_delta_mae_pp": 0.015405302179066077,
+            "reissue_aware_activation_precision": 0.0,
+            "reissue_aware_maximum_delta_mae_pp": 0.021123949986288082,
+            "reissue_aware_mean_delta_mae_pp": 0.014708439891280498
+          },
+          "mean_gated_delta_mae_pp": 0.0007174848727453902,
+          "modal_gate_selection_fraction": 0.8292682926829268,
+          "passed": false,
+          "selected_gate_counts": {
+            "a0p1_d0p01_r0p5": 2,
+            "a0p1_d0p02_r0p5": 34,
+            "no_update": 5
+          }
+        },
+        "current_prefix_cycle": 60,
+        "mean_base_trajectory_mae_pp": 0.3054782360712743,
+        "mean_updated_trajectory_mae_pp": 0.3061957209440197,
+        "nominated_for_future_blind_test": false,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 40
+      },
+      {
+        "batch_holdout": {
+          "batches": [
+            {
+              "activation_count": 1,
+              "activation_precision": 1.0,
+              "active_maximum_delta_mae_pp": -0.070812572265324,
+              "held_out_batch": "1",
+              "mean_gated_delta_mae_pp": -0.0035406286132662,
+              "passed": true,
+              "physical_cell_count": 20,
+              "selected_gate_counts": {
+                "a0p5_d0p04_r0p0": 20
+              }
+            },
+            {
+              "activation_count": 6,
+              "activation_precision": 1.0,
+              "active_maximum_delta_mae_pp": -0.034928749787625224,
+              "held_out_batch": "2",
+              "mean_gated_delta_mae_pp": -0.0669355008121721,
+              "passed": true,
+              "physical_cell_count": 21,
+              "selected_gate_counts": {
+                "a0p5_d0p01_r0p0": 21
+              }
+            }
+          ],
+          "held_out_batch_count": 2,
+          "passed": true
+        },
+        "cell_holdout": {
+          "activation_count": 9,
+          "activation_coverage": 0.21951219512195122,
+          "activation_precision": 1.0,
+          "active_maximum_delta_mae_pp": -0.02409879411348157,
+          "active_p90_delta_mae_pp": -0.028344784544955128,
+          "matched_active_ablation": {
+            "comparison": "same_activated_cells_and_projection_scale",
+            "naive_history_slope_activation_precision": 0.8888888888888888,
+            "naive_history_slope_maximum_delta_mae_pp": 0.003907507647990159,
+            "naive_history_slope_mean_delta_mae_pp": -0.16956209295226674,
+            "reissue_aware_activation_precision": 1.0,
+            "reissue_aware_maximum_delta_mae_pp": -0.02409879411348157,
+            "reissue_aware_mean_delta_mae_pp": -0.16999590728747144
+          },
+          "mean_gated_delta_mae_pp": -0.03731617477042056,
+          "modal_gate_selection_fraction": 1.0,
+          "passed": true,
+          "selected_gate_counts": {
+            "a0p5_d0p01_r0p0": 41
+          }
+        },
+        "current_prefix_cycle": 100,
+        "mean_base_trajectory_mae_pp": 0.24359906485841418,
+        "mean_updated_trajectory_mae_pp": 0.20628289008799358,
+        "nominated_for_future_blind_test": true,
+        "physical_cell_count": 41,
+        "previous_prefix_cycle": 60
+      }
+    ]
+  },
+  "nominated_current_prefix_cycles": [
+    100
+  ],
+  "parent_decision_sha256": "6123335053ceea9bb884901a6fb94b2c7967eb61113558247aedd31ccfd0d490",
+  "physical_cell_count": 41,
+  "protocol_sha256": "05c188eb57f812602644bd1b7d972d0e8eb3c5ff04351d6774003090f1477d67",
+  "runtime_versions": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0",
+    "scipy": "1.18.0"
+  },
+  "schema_version": "lifetwin.fastcharge_v7_reissue_innovation.result.v1",
+  "training_input_sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+  "v5_champion_remains_active": true,
+  "v7_innovation_gate_activated": false
+}

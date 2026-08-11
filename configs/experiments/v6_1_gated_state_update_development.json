@@ -1,0 +1,169 @@
+{
+  "schema_version": "lifetwin.fastcharge_v6_1_gated_state.config.v1",
+  "experiment_id": "fastcharge_v6_1_gated_state_update_development",
+  "status": "second_round_training_only_hypothesis_generation_not_confirmation",
+  "created_timestamp_utc": "2026-08-10T07:02:35Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "nested_training_development_for_a_future_outcome_blind_test",
+  "purpose": "Turn the V6 bounded-trend signal into an abstaining specialist that updates only when the observed residual history is large, monotone, and directionally stable.",
+  "development_lineage": {
+    "parent_experiment_id": "fastcharge_v6_bounded_state_update_development",
+    "parent_local_decision_sha256": "a11d2cdc308cd2cf0002d5523efeb14f28d39c3429f2d2a840833ace445a8ce9",
+    "parent_result": "ungated_update_failed_promotion_but_showed_a_p100_mean_error_signal",
+    "interpretation": "this_gate_is_outcome_informed_hypothesis_generation_on_the_same_41_training_cells"
+  },
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "modification_permitted": false,
+    "activation_before_new_blind_confirmation_permitted": false,
+    "fallback_action": "retain_frozen_v5_center_and_hybrid_conformal_interval"
+  },
+  "inputs": {
+    "training_crossfit_predictions": {
+      "path": "artifacts/fastcharge-v5-support-uncertainty/crossfit_predictions.csv",
+      "sha256": "3d286519c31602bb00f675f79b33f878e49aa54a615cb00d2cf4fb6a2c735bd4",
+      "physical_cell_count": 41,
+      "selection_role": "only_outcome_source_for_nested_gate_development"
+    },
+    "exposed_public_evaluation_predictions": {
+      "path": "artifacts/fastcharge-v5-pairwise-development/selected_predictions.parquet",
+      "permitted_use": "none"
+    }
+  },
+  "data_firewall": {
+    "candidate_development_uses_training_cells_only": true,
+    "selection_group": "physical_cell_id",
+    "outer_audit": "leave_one_physical_cell_out_gate_selection",
+    "outer_held_out_future_outcomes_available_to_gate_selection": false,
+    "gate_inputs_at_inference": [
+      "previous_issuance_residual_history_through_current_prefix",
+      "future_cycle_coordinates"
+    ],
+    "future_target_outcomes_available_to_gate_activation": false,
+    "exposed_public_evaluation_outcomes_permitted": false,
+    "random_row_split_permitted": false
+  },
+  "landmarks": {
+    "registered_prefix_cycles": [20, 40, 60, 100],
+    "registered_transitions": [[20, 40], [40, 60], [60, 100]],
+    "score_end_cycle": 300,
+    "common_future_support": "cycles_strictly_after_current_prefix_through_cycle_300"
+  },
+  "candidate_rules": {
+    "fallback": "no_update",
+    "robust_local_trend": {
+      "estimator": "theil_sen_slope",
+      "history_windows": ["all", "last_10"],
+      "projection_scales": [0.1, 0.25, 0.5],
+      "maximum_absolute_slope_pp_per_cycle": 0.02
+    },
+    "bounded_alpha_beta": {
+      "state": ["residual_level_pp", "residual_slope_pp_per_cycle"],
+      "profiles": [
+        {
+          "profile_id": "slow",
+          "level_gain": 0.2,
+          "slope_gain": 0.01,
+          "innovation_clip_pp": 0.25
+        },
+        {
+          "profile_id": "balanced",
+          "level_gain": 0.3,
+          "slope_gain": 0.02,
+          "innovation_clip_pp": 0.25
+        }
+      ],
+      "projection_scales": [0.25, 0.5],
+      "maximum_absolute_slope_pp_per_cycle": 0.02
+    },
+    "absolute_correction_cap_pp": 1.0,
+    "future_prediction_clip_pct": [0.0, 110.0]
+  },
+  "activation_gate_candidates": {
+    "correction_family": "theil_all_bounded_trend",
+    "correction_candidate_id_template": "theil_all_a{scale_token}",
+    "projection_scales": [0.1, 0.25],
+    "gate_profiles": [
+      {
+        "profile_id": "d02_r70",
+        "minimum_projected_history_change_pp": 0.02,
+        "minimum_absolute_spearman": 0.7,
+        "require_slope_sign_agreement": true
+      },
+      {
+        "profile_id": "d04_r00",
+        "minimum_projected_history_change_pp": 0.04,
+        "minimum_absolute_spearman": 0.0,
+        "require_slope_sign_agreement": true
+      },
+      {
+        "profile_id": "d04_r50",
+        "minimum_projected_history_change_pp": 0.04,
+        "minimum_absolute_spearman": 0.5,
+        "require_slope_sign_agreement": true
+      },
+      {
+        "profile_id": "d06_r50",
+        "minimum_projected_history_change_pp": 0.06,
+        "minimum_absolute_spearman": 0.5,
+        "require_slope_sign_agreement": true
+      },
+      {
+        "profile_id": "d08_r50",
+        "minimum_projected_history_change_pp": 0.08,
+        "minimum_absolute_spearman": 0.5,
+        "require_slope_sign_agreement": true
+      }
+    ]
+  },
+  "activation_selection": {
+    "performed_separately_by_transition": true,
+    "unit": "physical_cell",
+    "primary_order": [
+      "mean_gated_delta_mae_pp",
+      "activation_coverage_descending",
+      "gate_id"
+    ],
+    "eligibility": {
+      "minimum_activation_coverage": 0.15,
+      "minimum_activation_precision": 0.7,
+      "mean_gated_delta_mae_must_be_below_pp": 0.0,
+      "maximum_active_p90_delta_mae_pp": 0.05,
+      "maximum_active_delta_mae_pp": 0.1
+    },
+    "no_eligible_gate_action": "select_no_update"
+  },
+  "future_blind_nomination_gate": {
+    "evidence_source": "nested_leave_one_physical_cell_out_gate_selection",
+    "minimum_activation_count": 6,
+    "minimum_activation_coverage": 0.15,
+    "minimum_activation_precision": 0.7,
+    "mean_gated_delta_mae_must_be_below_pp": 0.0,
+    "maximum_active_p90_delta_mae_pp": 0.05,
+    "maximum_active_delta_mae_pp": 0.1,
+    "minimum_modal_gate_selection_fraction": 0.8,
+    "pass_action": "nominate_transition_for_new_outcome_blind_test_without_activation",
+    "failure_action": "retain_v5_without_nominating_that_transition"
+  },
+  "stopping_rules": {
+    "exposed_public_evaluation_runs_permitted": 0,
+    "production_activation_permitted": false,
+    "next_required_step": "freeze_the_nominated_gate_then_test_on_new_outcome_blind_cells_or_hithium_private_truth_vault"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "training_only_nested_gate_development",
+      "future_blind_candidate_nomination",
+      "software_and_future_label_firewall_validation"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "public_81_cell_improvement_claim",
+      "current_model_activation_claim",
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "production_deployment_claim"
+    ]
+  }
+}

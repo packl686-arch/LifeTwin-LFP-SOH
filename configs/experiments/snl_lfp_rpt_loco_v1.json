@@ -1,0 +1,191 @@
+{
+  "schema_version": "lifetwin.snl_lfp_rpt_loco.config.v1",
+  "experiment_id": "snl_lfp_rpt_loco_v1",
+  "status": "model_protocol_frozen_after_adapter_outcome_audit_before_any_model_prediction",
+  "freeze_timestamp_utc": "2026-08-05T02:55:05Z",
+  "prepared_by": "Jincheng Liu",
+  "evidence_role": "retrospective_grouped_cross_condition_development",
+  "supersedes_for_modeling": "snl_lfp_cycle_external_v1",
+  "supersession_reason": "raw per-cycle throughput is not a full-capacity SOH observation; use protocol-identified 0.5C full-depth RPT visits",
+  "dataset": {
+    "dataset_id": "SNL_BATTERY_ARCHIVE_LFP_CYCLE_V1",
+    "raw_zip_sha256": "006a335cbcdabc858a85ab0cdbc59a7001150751cf22abe8a7132c85ef63223d",
+    "metadata_xlsx_sha256": "4cf981b4a54efd0e526a026711e82a3ad7ec17cd462b13ac40b8930b1b5ae8a3",
+    "metadata_lfp_rows_canonical_sha256": "9deb97fd61fe28e1d6e2a70fddad14db19084d72995e3ebbedea1a90db7774c4",
+    "rpt_trajectory_sha256": "5f0bdb1f600ba5ffab349a0296defebbd50821482e3116d86d9a79fc88480586",
+    "physical_cell_count": 30,
+    "condition_cluster_count": 12,
+    "rpt_trajectory_row_count": 365,
+    "minimum_rpt_visit_count": 7,
+    "minimum_maximum_elapsed_days": 239.3307327301273,
+    "minimum_maximum_equivalent_full_cycles": 1728.988181818158
+  },
+  "outcome_exposure": {
+    "individual_rpt_capacities_inspected_before_model_freeze": true,
+    "model_predictions_or_scores_inspected_before_freeze": false,
+    "classification": "development_only",
+    "reason": "Capacity values were required to diagnose the failed per-cycle adapter and verify the replacement RPT extraction before model design was frozen."
+  },
+  "rpt_adapter": {
+    "capacity_check_protocol": "three_0.5C_charge_discharge_cycles_from_0_to_100_percent_SOC",
+    "voltage_window_v": [
+      2.0,
+      3.6
+    ],
+    "standalone_current_bounds_fraction_of_nominal_capacity": [
+      0.4,
+      0.65
+    ],
+    "standalone_capacity_bounds_fraction_of_nominal_capacity": [
+      0.6,
+      1.3
+    ],
+    "long_rest_gap_hours": 1.0,
+    "adjacent_check_collapse_maximum_efc": 10.0,
+    "exact_duplicate_coordinate": [
+      "Cycle_Index",
+      "Start_Time",
+      "End_Time"
+    ],
+    "exact_duplicate_policy": "keep_first_and_count",
+    "health_visit_capacity": "median_standalone_RPT_discharge_capacity",
+    "health_visit_exposure": "cumulative_all_nonnegative_discharge_Ah_divided_by_1.1Ah_then_zeroed_at_initial_RPT",
+    "normalization": "initial_RPT_visit_median_capacity",
+    "timeseries_used": false
+  },
+  "outer_validation": {
+    "method": "leave_one_condition_cluster_out",
+    "condition_cluster_fields": [
+      "temperature_c",
+      "min_soc_pct",
+      "max_soc_pct",
+      "discharge_c_rate"
+    ],
+    "expected_outer_folds": 12,
+    "target_cells_per_fold": "all_physical_replicates_in_the_held_out_condition",
+    "reference_cells_per_fold": "all_cells_in_the_other_11_conditions",
+    "physical_cell_overlap_between_target_and_reference": false,
+    "target_condition_outcomes_used_for_training_or_selection": false
+  },
+  "dynamic_landmarks": {
+    "prefix_visit_counts": [
+      3,
+      4
+    ],
+    "primary_prefix_visit_count": 3,
+    "minimum_future_visits_by_landmark": {
+      "3": 3,
+      "4": 2
+    },
+    "score_end_equivalent_full_cycles": 2500.0,
+    "forecast_grid_step_equivalent_full_cycles": 25.0,
+    "prediction_input": "held_out_cell_RPT_prefix_only",
+    "score_target": "later_RPT_visits_above_the_landmark_and_at_or_below_2500_EFC"
+  },
+  "base_experts": {
+    "model_ids": [
+      "target_prefix_persistence",
+      "target_prefix_constrained_linear_efc",
+      "target_prefix_constrained_sqrt_efc",
+      "target_prefix_bounded_power_efc",
+      "condition_ridge_delta",
+      "nearest_reference_delta_transfer"
+    ],
+    "prediction_clip_pct": [
+      0.0,
+      110.0
+    ],
+    "bounded_power_exponent_grid": [
+      0.3,
+      0.5,
+      0.7,
+      1.0,
+      1.3
+    ],
+    "condition_ridge_alpha": 1.0,
+    "nearest_reference_count": 5,
+    "reference_curve": "monotone_piecewise_linear_with_nonpositive_terminal_sqrt_extrapolation"
+  },
+  "prefix_signature": {
+    "feature_ids": [
+      "capacity_full_slope_pp_per_1000_efc",
+      "capacity_sqrt_slope_pp_per_sqrt_1000_efc",
+      "capacity_residual_std_pp",
+      "capacity_last_retention_pct",
+      "log_observation_density_per_1000_efc",
+      "temperature_c",
+      "dod_fraction",
+      "discharge_c_rate"
+    ],
+    "robust_scaling": "outer_reference_inner_validation_median_and_MAD_times_1.4826",
+    "scale_floor": 0.001,
+    "distance": "root_mean_square_robust_standardized_difference"
+  },
+  "safe_hard_selector": {
+    "model_id": "snl_nested_safe_hard_local_risk_selector",
+    "inner_validation": "leave_one_reference_condition_cluster_out_within_each_outer_fold",
+    "risk_metric": "cell_trajectory_IAE_normalized_by_EFC_horizon_then_condition_equal_mean",
+    "persistence_anchor_always_included": true,
+    "maximum_relative_risk_vs_persistence": 1.25,
+    "maximum_absolute_risk_above_persistence_pp": 0.1,
+    "local_neighbor_count": 5,
+    "local_neighbor_weighting": "inverse_prefix_signature_distance",
+    "dispersion_penalty": 0.5,
+    "minimum_relative_local_risk_margin": 0.1,
+    "supported_case": "choose_lowest_local_risk_expert_in_safe_pool",
+    "ambiguous_case": "choose_lowest_global_inner_LOCO_risk_expert_in_safe_pool",
+    "out_of_domain_threshold": "1.5_times_inner_validation_99th_percentile_nearest_neighbor_distance",
+    "out_of_domain_case": "refuse_primary_numeric_output_and_keep_labeled_diagnostic_expert_outputs",
+    "continuous_mixture_is_primary": false
+  },
+  "uncertainty": {
+    "method": "inner_LOCO_absolute_residual_quantile_on_reference_conditions",
+    "nominal_pointwise_coverage": 0.9,
+    "status": "diagnostic_only",
+    "formal_coverage_claim": false
+  },
+  "evaluation": {
+    "primary_landmark_visit_count": 3,
+    "primary_metric": "condition_cluster_equal_trajectory_IAE_pp",
+    "secondary_metrics": [
+      "condition_cluster_equal_trajectory_MAE_pp",
+      "physical_cell_equal_trajectory_IAE_pp",
+      "endpoint_absolute_error_pp",
+      "issued_cell_fraction",
+      "improved_condition_cluster_fraction",
+      "worst_condition_cluster_regression_vs_persistence_pp",
+      "exact_one_sided_condition_sign_flip_p_value"
+    ],
+    "descriptive_success_gate": {
+      "minimum_relative_cluster_equal_IAE_improvement_vs_persistence": 0.05,
+      "minimum_absolute_cluster_equal_IAE_improvement_pp": 0.1,
+      "minimum_improved_condition_cluster_fraction": 0.6,
+      "maximum_worst_condition_cluster_regression_pp": 0.5,
+      "minimum_issued_cell_fraction": 0.8,
+      "maximum_exact_one_sided_condition_sign_flip_p_value": 0.05,
+      "interpretation": "retrospective_development_gate_not_independent_confirmation"
+    }
+  },
+  "rights_and_release": {
+    "local_noncommercial_research_execution": true,
+    "public_aggregate_results": "hold_until_Battery_Archive_clarifies_competition_and_publication_scope",
+    "raw_or_derived_measurement_redistribution": false,
+    "permission_artifacts_in_public_repository": false
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "retrospective_grouped_cross_condition_method_development",
+      "dynamic_RPT_landmark_software_validation",
+      "descriptive_SNL_LFP_robustness_analysis_after_permission_clarification"
+    ],
+    "prohibited": [
+      "outcome_blind_independent_confirmation",
+      "calendar_aging_validation",
+      "stationary_storage_field_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy",
+      "formal_predictive_interval_coverage",
+      "commercial_use_rights"
+    ]
+  }
+}

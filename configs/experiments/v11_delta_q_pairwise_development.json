@@ -1,0 +1,94 @@
+{
+  "schema_version": "lifetwin.fastcharge_v11.delta_q_pairwise.config.v1",
+  "experiment_id": "fastcharge_v11_delta_q_pairwise_development",
+  "status": "outcome_exposed_training_only_challenger_development_not_independent_confirmation",
+  "prepared_by": "Jincheng Liu",
+  "dataset": {
+    "dataset_id": "MATR_SEVERSON_2019",
+    "training_cell_count": 41,
+    "training_cycle_canonical_sha256": "4a7ae36ac155f016fb8a0c7c6589c2e7e0cde78e5e292a77ec55ddca9c98b846",
+    "delta_q_feature_file_sha256": "6ae9e9c599b0bc278dab4266223a35f4eae22629ea2e4bbba3dd96107c8c1e25",
+    "authoritative_crosswalk_sha256": "d7f4f8f956a50007dddd0d0338e698c3718d8233e3c7518099eedde35783c2c0",
+    "source_license": "CC-BY-4.0",
+    "evaluation_cell_outcomes_permitted": false
+  },
+  "frozen_v5_selection": {
+    "path": "showcase/evidence_v5/pairwise_training_selection.json",
+    "sha256": "a6e7bd4d60cb70ba938b29473184f7506f3ee9f1a939d5bda0c5ba92845a0d9c",
+    "model_id": "pairwise_extra_trees_leaf3_48",
+    "reference_count": 12,
+    "aggregation": "weighted_mean",
+    "anchor_stride": 20,
+    "random_state": 20260809
+  },
+  "frozen_v5_core_config": {
+    "path": "configs/experiments/fastcharge_lfp_safe_prior_v2.json",
+    "sha256": "87974bbbb7220bf0b0940534a7122a38695da1f94a01bc805afd6d958630d91d"
+  },
+  "curve_feature_contract": {
+    "early_cycle": 10,
+    "late_cycle": 100,
+    "feature_ids": [
+      "log10_delta_q_variance",
+      "delta_q_min_ah",
+      "delta_q_mean_ah",
+      "delta_q_abs_area_ah_v",
+      "delta_q_skewness",
+      "delta_q_kurtosis"
+    ],
+    "feature_scaling": "median_and_MAD_fit_only_on_pair_training_cells_with_IQR_and_standard_deviation_fallback",
+    "future_capacity_or_cycle_life_columns_read": false
+  },
+  "challengers": [
+    {
+      "candidate_id": "v11_delta_q_residual_only",
+      "curve_features_in_pairwise_residual_model": true,
+      "geometry_mode": "base_only",
+      "geometry_curve_weight": 0
+    },
+    {
+      "candidate_id": "v11_delta_q_residual_plus_geometry",
+      "curve_features_in_pairwise_residual_model": true,
+      "geometry_mode": "base_plus_curve",
+      "geometry_curve_weight": 0.25
+    }
+  ],
+  "selection_protocol": {
+    "primary_prefix_cycle": 100,
+    "score_end_cycle": 300,
+    "primary_folds": "deterministic_batch_stratified_physical_cell_5fold",
+    "stress_folds": "bidirectional_leave_one_manufacturing_batch_out",
+    "selection_unit": "physical_cell",
+    "held_out_cell_excluded_from_both_pair_roles": true,
+    "held_out_cell_excluded_from_curve_scaler": true,
+    "bootstrap_repetitions": 10000,
+    "bootstrap_confidence": 0.95,
+    "candidate_tie_break_order": [
+      "v11_delta_q_residual_only",
+      "v11_delta_q_residual_plus_geometry"
+    ]
+  },
+  "promotion_gate": {
+    "minimum_relative_mean_mae_improvement": 0.05,
+    "bootstrap_upper_delta_must_be_below_pp": 0,
+    "minimum_improved_cell_fraction": 0.6,
+    "maximum_p90_cell_delta_mae_pp": 0.03,
+    "maximum_worst_cell_regression_pp": 0.1,
+    "maximum_each_batch_holdout_mean_delta_mae_pp": 0
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "training_only_multimodal_method_development",
+      "cycle_10_to_100_Delta_Q_feature_ablation",
+      "grouped_cross_validation_and_cross_batch_stress_on_the_41_training_cells"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "automatic_replacement_of_the_frozen_V5_champion",
+      "evaluation_on_the_exposed_81_cell_suffix",
+      "calendar_aging_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy"
+    ]
+  }
+}

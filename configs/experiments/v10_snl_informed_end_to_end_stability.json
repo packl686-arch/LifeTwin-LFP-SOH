@@ -1,0 +1,122 @@
+{
+  "schema_version": "lifetwin.fastcharge_v10.snl_informed_end_to_end_stability.config.v1",
+  "experiment_id": "fastcharge_v10_snl_informed_end_to_end_stability",
+  "status": "private_post_outcome_measurement_stress_not_model_accuracy_evidence",
+  "prepared_by": "Jincheng Liu",
+  "parent_protocol": {
+    "path": "configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json",
+    "sha256": "68df7d546fa71a3f066404c277b011095a925f05d769cc04d7ed645c4459ca0c"
+  },
+  "frozen_v7_rule": {
+    "path": "configs/experiments/v7_p100_reissue_innovation_blind_candidate.json",
+    "sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0"
+  },
+  "frozen_v5_selection": {
+    "path": "showcase/evidence_v5/pairwise_training_selection.json",
+    "sha256": "a6e7bd4d60cb70ba938b29473184f7506f3ee9f1a939d5bda0c5ba92845a0d9c"
+  },
+  "frozen_v5_core_config": {
+    "path": "configs/experiments/fastcharge_lfp_safe_prior_v2.json",
+    "sha256": "87974bbbb7220bf0b0940534a7122a38695da1f94a01bc805afd6d958630d91d"
+  },
+  "measurement_component_config": {
+    "path": "configs/experiments/v10_snl_rpt_repeatability_development.json",
+    "sha256": "2e2128a17ef0e20655fad20101a73d598970e6f2489d67d00838388ed2e4b9ac"
+  },
+  "eligible_transition": {
+    "previous_prefix_cycle": 60,
+    "current_prefix_cycle": 100,
+    "score_end_cycle": 300
+  },
+  "model_contract": {
+    "model_id": "pairwise_extra_trees_leaf3_48",
+    "family": "extra_trees",
+    "parameters": {
+      "min_samples_leaf": 3,
+      "n_estimators": 48
+    },
+    "reference_count": 12,
+    "aggregation": "weighted_mean",
+    "anchor_stride": 20,
+    "random_state": 20260809,
+    "refit_historical_reference_measurements_each_draw": true,
+    "reselect_target_references_each_draw": true
+  },
+  "correlated_error_model": {
+    "model_id": "snl_within_visit_repeatability_component_only_v1",
+    "capacity": {
+      "iid_distribution": "loaded_from_private_v10_decision",
+      "iid_degrees_of_freedom": 0,
+      "iid_sigma_pp": 0,
+      "common_bias_sigma_pp": 0,
+      "ar1_stationary_sigma_pp": 0,
+      "ar1_rho": 0,
+      "linear_drift_slope_sigma_pp_per_cycle": 0,
+      "spike_probability_per_cycle": 0,
+      "spike_sigma_pp": 0
+    },
+    "other_channels": {
+      "log_internal_resistance_iid_sigma": 0,
+      "temperature_iid_sigma_c": 0,
+      "log_charge_time_iid_sigma": 0,
+      "energy_efficiency_iid_sigma": 0
+    },
+    "parameter_origin": "private_SNL_within_visit_RPT_repeatability_component",
+    "zero_is_not_an_estimate_for_missing_components": true
+  },
+  "stability_gate": {
+    "draw_count": 1024,
+    "minimum_refit_activation_probability": 0.95,
+    "minimum_refit_correction_sign_probability": 0.95,
+    "minimum_p05_reference_jaccard": 0.8,
+    "maximum_p95_v5_endpoint_deviation_pp": 0.1,
+    "maximum_p95_v5_trajectory_mae_deviation_pp": 0.05,
+    "maximum_p95_issued_endpoint_deviation_pp": 0.1,
+    "maximum_p95_issued_trajectory_mae_deviation_pp": 0.05,
+    "stable_correction": "pointwise_median_of_all_end_to_end_refit_effective_corrections",
+    "failed_action": "exact_zero_update_to_unperturbed_p100_v5_center"
+  },
+  "synthetic_fixture": {
+    "seed": 20260811,
+    "training_cell_count": 16,
+    "target_cell_id": "SYNTH_V10_TARGET_001",
+    "manufacturing_batch_id": "SYNTH_V10_BATCH_001",
+    "nominal_capacity_ah": 1.1,
+    "target_acceleration_after_cycle_60_pp_per_cycle": 0.006
+  },
+  "identifiability_gate": {
+    "required_components": [
+      "within_visit_repeatability",
+      "repeat_order_effect",
+      "daily_reference_common_bias",
+      "cross_visit_ar1",
+      "long_term_drift",
+      "tester_bridge_bias",
+      "temperature_chamber_bias"
+    ],
+    "all_required_before_full_qualification": true
+  },
+  "data_firewall": {
+    "future_target_capacity_or_soh_permitted": false,
+    "target_fixture_generated_only_through_cycle_100": true,
+    "same_41_cell_outcomes_used": false,
+    "exposed_81_cell_evaluation_used": false,
+    "hithium_data_used": false,
+    "SNL_row_level_outputs_public": false
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "private_component_level_repeatability_stress",
+      "end_to_end_v5_refit_and_reference_reselection_under_observed_repeatability",
+      "retirement_or_blocking_decision_for_the_unconfirmed_v7_update"
+    ],
+    "prohibited": [
+      "model_accuracy_improvement",
+      "complete_measurement_system_qualification",
+      "independent_confirmation",
+      "hithium_product_accuracy",
+      "calendar_or_fifteen_to_twenty_five_year_accuracy",
+      "public_release_of_SNL_derived_numeric_results_before_rights_clarification"
+    ]
+  }
+}

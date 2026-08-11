@@ -1,0 +1,110 @@
+{
+  "schema_version": "lifetwin.fastcharge_v9_end_to_end_correlated_stability.execution.template.v1",
+  "experiment_id": "fastcharge_v9_end_to_end_correlated_stability_blind_qualification",
+  "status": "preregistered_template_pending_real_measurement_characterization_and_hash_freeze",
+  "prepared_by": "Jincheng Liu",
+  "parent_protocol": {
+    "path": "configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json",
+    "sha256": "68df7d546fa71a3f066404c277b011095a925f05d769cc04d7ed645c4459ca0c"
+  },
+  "frozen_v7_rule": {
+    "path": "configs/experiments/v7_p100_reissue_innovation_blind_candidate.json",
+    "sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0"
+  },
+  "frozen_v5_selection": {
+    "path": "showcase/evidence_v5/pairwise_training_selection.json",
+    "sha256": "a6e7bd4d60cb70ba938b29473184f7506f3ee9f1a939d5bda0c5ba92845a0d9c"
+  },
+  "frozen_v5_core_config": {
+    "path": "configs/experiments/fastcharge_lfp_safe_prior_v2.json",
+    "sha256": "87974bbbb7220bf0b0940534a7122a38695da1f94a01bc805afd6d958630d91d"
+  },
+  "eligible_transition": {
+    "previous_prefix_cycle": 60,
+    "current_prefix_cycle": 100,
+    "score_end_cycle": 300
+  },
+  "model_contract": {
+    "model_id": "pairwise_extra_trees_leaf3_48",
+    "family": "extra_trees",
+    "parameters": {
+      "min_samples_leaf": 3,
+      "n_estimators": 48
+    },
+    "reference_count": 12,
+    "aggregation": "weighted_mean",
+    "anchor_stride": 20,
+    "random_state": 20260809,
+    "refit_historical_reference_measurements_each_draw": true,
+    "reselect_target_references_each_draw": true
+  },
+  "replicate_ledger_contract": {
+    "schema_version": "lifetwin.fastcharge_v9.end_to_end_replicate_ledger.v1",
+    "exact_columns": [
+      "schema_version",
+      "issuance_id",
+      "cell_id",
+      "manufacturing_batch_id",
+      "draw_index",
+      "trajectory_role",
+      "cycle_index",
+      "retention_pct",
+      "reference_cell_ids_json",
+      "source_sha256"
+    ],
+    "baseline_draw_index": 0,
+    "future_target_outcome_columns_permitted": false
+  },
+  "correlated_error_model": {
+    "status": "replace_with_stage_a_hash_bound_estimates_before_execution",
+    "required_components": [
+      "within_cycle_iid_repeatability",
+      "tester_and_chamber_common_mode_bias",
+      "cross_cycle_ar1_component",
+      "linear_or_random_walk_drift",
+      "rare_heavy_tailed_spike"
+    ],
+    "parameter_source_manifest_sha256": "replace_before_execution",
+    "insufficient_component_support_action": "stop_without_generating_a_replicate_ledger"
+  },
+  "stability_gate": {
+    "draw_count": 1024,
+    "minimum_refit_activation_probability": 0.95,
+    "minimum_refit_correction_sign_probability": 0.95,
+    "minimum_p05_reference_jaccard": 0.8,
+    "maximum_p95_v5_endpoint_deviation_pp": 0.1,
+    "maximum_p95_v5_trajectory_mae_deviation_pp": 0.05,
+    "maximum_p95_issued_endpoint_deviation_pp": 0.1,
+    "maximum_p95_issued_trajectory_mae_deviation_pp": 0.05,
+    "stable_correction": "pointwise_median_of_all_end_to_end_refit_effective_corrections",
+    "failed_action": "exact_zero_update_to_unperturbed_p100_v5_center"
+  },
+  "cohort_gate": {
+    "minimum_new_physical_cell_count": 60,
+    "minimum_manufacturing_batch_count": 3,
+    "minimum_quality_activated_cell_count": 6,
+    "minimum_quality_activated_coverage": 0.1,
+    "minimum_activated_batch_count": 2,
+    "outcomes_may_be_opened_only_after_complete_cohort_hash_commitment": true
+  },
+  "data_firewall": {
+    "future_target_capacity_or_soh_permitted": false,
+    "same_41_cell_outcomes_permitted_for_threshold_selection": false,
+    "exposed_81_cell_evaluation_permitted": false,
+    "completed_historical_reference_trajectories_permitted_for_refit": true,
+    "hithium_data_used": false
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "outcome_free_end_to_end_input_stability_qualification",
+      "v5_refit_and_neighbour_selection_stability",
+      "exact_v5_fallback_issuance"
+    ],
+    "prohibited": [
+      "model_accuracy_improvement_before_stage_c",
+      "independent_confirmation_before_stage_c",
+      "production_readiness",
+      "calendar_or_fifteen_to_twenty_five_year_accuracy"
+    ]
+  }
+}

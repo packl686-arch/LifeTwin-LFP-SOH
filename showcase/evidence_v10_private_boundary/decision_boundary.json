@@ -1,0 +1,18 @@
+{
+  "schema_version": "lifetwin.fastcharge_v10.public_boundary.v1",
+  "experiment_id": "fastcharge_v10_snl_informed_end_to_end_stability",
+  "evidence_role": "private_post_outcome_measurement_stress",
+  "private_execution_completed": true,
+  "draw_count": 1024,
+  "repeatability_component_qualified": false,
+  "complete_measurement_model_identified": false,
+  "dynamic_update_qualified": false,
+  "effective_dynamic_correction": "exact_zero_fallback",
+  "decision": "retire_v7_dynamic_update_retain_v5",
+  "v5_champion_changed": false,
+  "public_numeric_SNL_results_disclosed": false,
+  "raw_or_row_level_SNL_data_disclosed": false,
+  "model_accuracy_evidence_created": false,
+  "hithium_data_used": false,
+  "claim_boundary": "Public boundary record only. Private SNL-derived parameters and numeric diagnostics are intentionally excluded pending reusable publication-rights clarification."
+}
