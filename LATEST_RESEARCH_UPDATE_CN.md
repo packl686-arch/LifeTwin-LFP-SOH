@@ -191,3 +191,23 @@ V9 针对 V8 的两个剩余缺口继续推进：V8 固定了已签发的 P60/P1
 - [V9 实验设计与执行说明](docs/v9_end_to_end_correlated_stability_experiment_cn.md)
 - [V9 软件演练报告](reports/fastcharge_v9_end_to_end_correlated_stability_dry_run_2026-08-11.md)
 - [V9 合成机器可读证据](showcase/evidence_v9_dry_run/README.md)
+
+## V10 真实重复性分量与 1,024 次端到端压力传播（2026-08-11）
+
+V10 使用本地 SNL LFP RPT bundle 中同一 visit 的重复容量测量，校正组内中心化方差收缩，并以留一物理电芯对数分数选择 Gaussian 或固定自由度 Student-t 误差族。该数据只能识别 visit 内重复性和测量顺序效应，不能识别共同偏置、跨 visit AR(1)、长期漂移、设备桥接偏差或温箱偏差。
+
+私有重复性审计没有通过冻结门槛；把该误差分量传播到 1,024 次完整 V5 重拟合、参考电芯重选与 P60/P100 重签发后，V7 仍未取得资格，最终动态修正精确回退为零。V7 因而退役，V5 保持 champion。SNL 行级数据、拟合参数和数值诊断不进入公开仓库，公开层只记录 fail-closed 决策。
+
+- [V10 公开决策边界](showcase/evidence_v10_private_boundary/README.md)
+- [V10 重复性配置](configs/experiments/v10_snl_rpt_repeatability_development.json)
+- [V10 1,024-draw 配置](configs/experiments/v10_snl_informed_end_to_end_stability.json)
+
+## V11 Delta-Q 多模态挑战者（2026-08-11）
+
+V11 只读取 cycle 10 到 100 的六个 `Delta Q(V)` 特征，不读取 cycle life 或未来容量。两个固定候选分别把曲线特征加入成对残差模型，以及同时加入残差模型和近邻几何。模型选择严格限于 41 个训练电芯，验证电芯从 pair 两侧和 robust scaler 同时移除，81 个公开评估电芯没有再次使用。
+
+残差-only 候选 MAE 为 `0.24385 pp`，略差于冻结 V5 的 `0.24360 pp`。残差+几何候选为 `0.24183 pp`，只改善 `0.73%`；改善电芯比例仅 `46.34%`，bootstrap delta 95% 区间为 `[-0.01845, 0.01062] pp`，且一个制造批次留出方向退化 `0.00659 pp`。两个候选均未通过冻结门槛，不进入新盲测队列。
+
+- [V10/V11 收口报告](reports/fastcharge_v10_v11_model_boundary_2026-08-11.md)
+- [V11 机器可读证据](showcase/evidence_v11/README.md)
+- [V11 冻结开发配置](configs/experiments/v11_delta_q_pairwise_development.json)

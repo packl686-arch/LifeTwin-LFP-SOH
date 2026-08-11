@@ -105,14 +105,11 @@ def test_partition_manifest_tampering_is_rejected() -> None:
 def test_private_bundle_separates_prefixes_from_truth_vaults() -> None:
     config = _config()
     manifest = freeze_private_cycle_partitions(_metadata(), config)
-    normalized = normalize_private_cycle_measurements(
-        _measurements(), manifest, config
-    )
+    normalized = normalize_private_cycle_measurements(_measurements(), manifest, config)
     assert tuple(normalized.columns) == PARTITIONED_TRAJECTORY_COLUMNS
     assert normalized["capacity_retention_pct"].between(0.0, 110.0).all()
-    frames, bundle = build_private_cycle_blind_bundle(
-        normalized, manifest, config
-    )
+    assert set(normalized["rpt_cycle_count"]) == {1}
+    frames, bundle = build_private_cycle_blind_bundle(normalized, manifest, config)
     assert bundle["prediction_inputs_contain_target_suffix_outcomes"] is False
     assert bundle["truth_vault_must_be_inaccessible_to_prediction_process"] is True
     for partition in ("calibration", "locked_test"):
@@ -159,8 +156,6 @@ def test_bundle_requires_future_visits_inside_score_window() -> None:
     config = _config()
     config["trajectory_policy"]["score_end_equivalent_full_cycles"] = 800.0
     manifest = freeze_private_cycle_partitions(_metadata(), config)
-    normalized = normalize_private_cycle_measurements(
-        _measurements(), manifest, config
-    )
+    normalized = normalize_private_cycle_measurements(_measurements(), manifest, config)
     with pytest.raises(PrivateCycleAdapterError, match="score-window future support"):
         build_private_cycle_blind_bundle(normalized, manifest, config)

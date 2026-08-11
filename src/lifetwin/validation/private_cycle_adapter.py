@@ -136,7 +136,9 @@ def validate_private_cycle_adapter_config(
     )
     fraction_values = [float(fractions[name]) for name in PARTITIONS]
     if not all(math.isfinite(item) and item > 0.0 for item in fraction_values):
-        raise PrivateCycleAdapterError("Partition fractions must be finite and positive")
+        raise PrivateCycleAdapterError(
+            "Partition fractions must be finite and positive"
+        )
     if not math.isclose(sum(fraction_values), 1.0, abs_tol=1e-12):
         raise PrivateCycleAdapterError("Partition fractions must sum to one")
 
@@ -174,11 +176,15 @@ def validate_private_cycle_adapter_config(
     model = _exact_keys(
         value["model_contract"], _MODEL_CONTRACT_KEYS, path="$.model_contract"
     )
-    _nonempty_string(model["primary_model_id"], path="$.model_contract.primary_model_id")
+    _nonempty_string(
+        model["primary_model_id"], path="$.model_contract.primary_model_id"
+    )
     if model["future_schedule_assumption"] != "constant_prefix_efc_per_day":
         raise PrivateCycleAdapterError("Future schedule assumption changed")
     if model["explicit_forecast_elapsed_days_supported"] is not True:
-        raise PrivateCycleAdapterError("Explicit elapsed-day forecasts must remain supported")
+        raise PrivateCycleAdapterError(
+            "Explicit elapsed-day forecasts must remain supported"
+        )
     if model["target_suffix_permitted_in_prediction_process"] is not False:
         raise PrivateCycleAdapterError("Prediction process must reject target suffixes")
     return value
@@ -296,9 +302,10 @@ def validate_private_cycle_partition_manifest(
         raise PrivateCycleAdapterError("Private partition manifest schema changed")
     if value.get("adapter_config_sha256") != canonical_json_sha256(frozen):
         raise PrivateCycleAdapterError("Partition manifest config binding changed")
-    if value.get("private_only") is not True or value.get(
-        "public_release_permitted"
-    ) is not False:
+    if (
+        value.get("private_only") is not True
+        or value.get("public_release_permitted") is not False
+    ):
         raise PrivateCycleAdapterError("Partition manifest privacy flags changed")
     if value.get("partition_selection_uses_measurement_values") is not False:
         raise PrivateCycleAdapterError("Partition manifest used measurement values")
@@ -343,9 +350,10 @@ def validate_private_cycle_bundle_manifest(
         raise PrivateCycleAdapterError("Private bundle manifest schema changed")
     if value.get("adapter_config_sha256") != canonical_json_sha256(frozen):
         raise PrivateCycleAdapterError("Private bundle config binding changed")
-    if value.get("private_only") is not True or value.get(
-        "public_release_permitted"
-    ) is not False:
+    if (
+        value.get("private_only") is not True
+        or value.get("public_release_permitted") is not False
+    ):
         raise PrivateCycleAdapterError("Private bundle privacy flags changed")
     if value.get("prediction_inputs_contain_target_suffix_outcomes") is not False:
         raise PrivateCycleAdapterError("Private prediction inputs contain suffix truth")
@@ -375,9 +383,10 @@ def validate_private_cycle_bundle_manifest(
         for item in hashes.values()
     ):
         raise PrivateCycleAdapterError("Private bundle artifact hash is invalid")
-    if value.get("landmark_visit_counts") != frozen["trajectory_policy"][
-        "landmark_visit_counts"
-    ]:
+    if (
+        value.get("landmark_visit_counts")
+        != frozen["trajectory_policy"]["landmark_visit_counts"]
+    ):
         raise PrivateCycleAdapterError("Private bundle landmarks changed")
     return value
 
@@ -426,9 +435,12 @@ def normalize_private_cycle_measurements(
             raise PrivateCycleAdapterError(f"{column} contains empty values")
     if data["record_id"].duplicated().any():
         raise PrivateCycleAdapterError("Private record_id values must be unique")
-    if not data["cathode_chemistry"].str.casefold().isin(
-        {"lfp", "lifepo4", "lithium_iron_phosphate"}
-    ).all():
+    if (
+        not data["cathode_chemistry"]
+        .str.casefold()
+        .isin({"lfp", "lifepo4", "lithium_iron_phosphate"})
+        .all()
+    ):
         raise PrivateCycleAdapterError("Non-LFP measurements are not accepted")
     allowlist = set(frozen["trajectory_policy"]["quality_status_allowlist"])
     if not set(data["quality_status"]).issubset(allowlist):
@@ -441,7 +453,9 @@ def normalize_private_cycle_measurements(
         if not np.isfinite(data[column].to_numpy(dtype=float)).all():
             raise PrivateCycleAdapterError(f"{column} contains non-finite values")
     if (data[["elapsed_days", "equivalent_full_cycles"]] < 0.0).any().any():
-        raise PrivateCycleAdapterError("Time and exposure coordinates must be non-negative")
+        raise PrivateCycleAdapterError(
+            "Time and exposure coordinates must be non-negative"
+        )
     if (data[["capacity_ah", "reference_capacity_ah"]] <= 0.0).any().any():
         raise PrivateCycleAdapterError("Capacity values must be positive")
     if (
@@ -455,22 +469,27 @@ def normalize_private_cycle_measurements(
     assignment = pd.DataFrame(assignment_rows).set_index("cell_id")
     observed_cells = set(data["cell_id"])
     if observed_cells != set(assignment.index):
-        raise PrivateCycleAdapterError("Measurement cells differ from frozen partitions")
+        raise PrivateCycleAdapterError(
+            "Measurement cells differ from frozen partitions"
+        )
     for cell_id, cell in data.groupby("cell_id", sort=True):
         expected = assignment.loc[cell_id]
         if set(cell["batch_id"]) != {str(expected["batch_id"])} or set(
             cell["condition_id"]
         ) != {str(expected["condition_id"])}:
-            raise PrivateCycleAdapterError("Cell identity changed after partition freeze")
+            raise PrivateCycleAdapterError(
+                "Cell identity changed after partition freeze"
+            )
         ordered = cell.sort_values("visit_index", kind="stable")
         visit = ordered["visit_index"].to_numpy(dtype=float)
         if not np.array_equal(visit, np.arange(len(ordered), dtype=float)):
             raise PrivateCycleAdapterError("visit_index must be contiguous from zero")
         if (np.diff(ordered["elapsed_days"].to_numpy(dtype=float)) <= 0.0).any():
-            raise PrivateCycleAdapterError("elapsed_days must increase within each cell")
+            raise PrivateCycleAdapterError(
+                "elapsed_days must increase within each cell"
+            )
         if (
-            np.diff(ordered["equivalent_full_cycles"].to_numpy(dtype=float))
-            <= 0.0
+            np.diff(ordered["equivalent_full_cycles"].to_numpy(dtype=float)) <= 0.0
         ).any():
             raise PrivateCycleAdapterError(
                 "equivalent_full_cycles must increase within each cell"
@@ -508,7 +527,9 @@ def normalize_private_cycle_measurements(
                 "capacity_retention_pct": float(
                     100.0 * row.capacity_ah / row.reference_capacity_ah
                 ),
-                "rpt_cycle_count": int(row.visit_index),
+                # The private input has one accepted aggregate capacity per RPT
+                # visit.  Visit order is not a measurement-repeat count.
+                "rpt_cycle_count": 1,
             }
         )
     return pd.DataFrame(rows, columns=PARTITIONED_TRAJECTORY_COLUMNS).sort_values(
@@ -532,9 +553,7 @@ def build_private_cycle_blind_bundle(
         int(value) for value in frozen["trajectory_policy"]["landmark_visit_counts"]
     )
     minimum_future = int(frozen["trajectory_policy"]["minimum_future_visits"])
-    score_end = float(
-        frozen["trajectory_policy"]["score_end_equivalent_full_cycles"]
-    )
+    score_end = float(frozen["trajectory_policy"]["score_end_equivalent_full_cycles"])
     for cell_id, cell in normalized.groupby("cell_id", sort=True):
         ordered = cell.sort_values("visit_index", kind="stable")
         for landmark in landmarks:
@@ -567,7 +586,9 @@ def build_private_cycle_blind_bundle(
                         {
                             "partition": partition,
                             "landmark_visit_count": landmark,
-                            **{column: row[column] for column in RPT_TRAJECTORY_COLUMNS},
+                            **{
+                                column: row[column] for column in RPT_TRAJECTORY_COLUMNS
+                            },
                         }
                     )
         outputs[f"{partition}_prefixes"] = pd.DataFrame(
@@ -592,9 +613,7 @@ def build_private_cycle_blind_bundle(
         "prediction_inputs_contain_target_suffix_outcomes": False,
         "truth_vault_must_be_inaccessible_to_prediction_process": True,
         "partition_selection_uses_target_outcomes": False,
-        "artifact_row_counts": {
-            name: len(frame) for name, frame in outputs.items()
-        },
+        "artifact_row_counts": {name: len(frame) for name, frame in outputs.items()},
         "artifact_canonical_sha256": artifact_hashes,
         "claim_boundary": (
             "Bundle construction is a private custodian operation, not model "
@@ -603,9 +622,7 @@ def build_private_cycle_blind_bundle(
         ),
         "public_release_permitted": False,
     }
-    bundle_manifest["manifest_content_sha256"] = canonical_json_sha256(
-        bundle_manifest
-    )
+    bundle_manifest["manifest_content_sha256"] = canonical_json_sha256(bundle_manifest)
     return outputs, bundle_manifest
 
 

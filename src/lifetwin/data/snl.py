@@ -104,6 +104,22 @@ RPT_TRAJECTORY_COLUMNS = (
     "capacity_retention_pct",
     "rpt_cycle_count",
 )
+RPT_REPEAT_COLUMNS = (
+    "dataset_id",
+    "cell_id",
+    "condition_id",
+    "visit_index",
+    "repeat_index",
+    "source_cycle_index",
+    "measurement_time",
+    "elapsed_days",
+    "equivalent_full_cycles",
+    "capacity_ah",
+    "retention_pct",
+    "visit_center_capacity_ah",
+    "visit_center_retention_pct",
+    "rpt_cycle_count",
+)
 SOURCE_TRAINING_COLUMNS = (
     "dataset_id",
     "cell_id",
@@ -114,9 +130,7 @@ SOURCE_TRAINING_COLUMNS = (
 
 _SHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
-_DOC_REL_NS = (
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-)
+_DOC_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
 class SNLCycleDataError(ValueError):
@@ -153,9 +167,7 @@ def _worksheet_path(archive: ZipFile, sheet_name: str) -> str:
             break
     if relation_id is None:
         raise SNLCycleDataError(f"XLSX sheet is missing: {sheet_name}")
-    relationships = ElementTree.fromstring(
-        archive.read("xl/_rels/workbook.xml.rels")
-    )
+    relationships = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
     for relation in relationships.findall(f"{{{_REL_NS}}}Relationship"):
         if relation.attrib.get("Id") == relation_id:
             target = relation.attrib.get("Target", "")
@@ -169,9 +181,7 @@ def _worksheet_path(archive: ZipFile, sheet_name: str) -> str:
 def _xlsx_scalar(cell: ElementTree.Element, shared: list[str]) -> object:
     cell_type = cell.attrib.get("t")
     if cell_type == "inlineStr":
-        return "".join(
-            node.text or "" for node in cell.findall(f".//{{{_SHEET_NS}}}t")
-        )
+        return "".join(node.text or "" for node in cell.findall(f".//{{{_SHEET_NS}}}t"))
     value_node = cell.find(f"{{{_SHEET_NS}}}v")
     if value_node is None or value_node.text is None:
         return None
@@ -351,9 +361,7 @@ def audit_snl_archive_structure(
         "cycle_summary_member_count": len(expected_cycle),
         "timeseries_member_count": len(expected_timeseries),
         "uncompressed_byte_size": uncompressed_bytes,
-        "cycle_summary_headers_sha256": canonical_json_sha256(
-            list(CYCLE_DATA_HEADERS)
-        ),
+        "cycle_summary_headers_sha256": canonical_json_sha256(list(CYCLE_DATA_HEADERS)),
         "member_identity_sha256": canonical_json_sha256(sorted(names)),
         "capacity_values_read": False,
     }
@@ -363,9 +371,7 @@ def _finite_positive(text: object, *, field: str, cell_id: str, cycle: int) -> f
     try:
         value = float(str(text))
     except (TypeError, ValueError) as exc:
-        raise SNLCycleDataError(
-            f"Invalid {field} for {cell_id} cycle {cycle}"
-        ) from exc
+        raise SNLCycleDataError(f"Invalid {field} for {cell_id} cycle {cycle}") from exc
     if not math.isfinite(value) or value <= 0.0:
         raise SNLCycleDataError(
             f"Non-positive or non-finite {field} for {cell_id} cycle {cycle}"
@@ -452,7 +458,9 @@ def prepare_snl_cycle_inputs(
                         }
                     )
     except (BadZipFile, KeyError, OSError) as exc:
-        raise SNLCycleDataError(f"Cannot parse SNL cycle summaries: {zip_path}") from exc
+        raise SNLCycleDataError(
+            f"Cannot parse SNL cycle summaries: {zip_path}"
+        ) from exc
     cycles = pd.DataFrame(cycle_records, columns=CANONICAL_CYCLE_COLUMNS).sort_values(
         ["cell_id", "cycle_index"], kind="stable", ignore_index=True
     )
@@ -512,17 +520,13 @@ def prepare_source_training_capacity(
     if result["cell_id"].nunique() != expected_cell_count:
         raise SNLCycleDataError("Source training cell count changed")
     for cell_id, cell in result.groupby("cell_id", sort=True):
-        if sorted(cell["cycle_index"].tolist()) != list(
-            range(1, score_end_cycle + 1)
-        ):
+        if sorted(cell["cycle_index"].tolist()) != list(range(1, score_end_cycle + 1)):
             raise SNLCycleDataError(
                 f"Source training support is incomplete for {cell_id}"
             )
         values = cell["discharge_capacity_ah"].to_numpy(dtype=float)
         if not all(math.isfinite(value) and value > 0.0 for value in values):
-            raise SNLCycleDataError(
-                f"Source capacity is invalid for {cell_id}"
-            )
+            raise SNLCycleDataError(f"Source capacity is invalid for {cell_id}")
     result = result.sort_values(
         ["cell_id", "cycle_index"], kind="stable", ignore_index=True
     )
@@ -589,9 +593,7 @@ def _is_standalone_lfp_capacity_check(
         and current_lower <= max_current <= current_upper
         and min_voltage <= 2.05
         and max_voltage >= 3.55
-        and 0.6 * nominal_capacity_ah
-        <= discharge_capacity
-        <= 1.3 * nominal_capacity_ah
+        and 0.6 * nominal_capacity_ah <= discharge_capacity <= 1.3 * nominal_capacity_ah
     )
 
 
@@ -625,13 +627,18 @@ def _merge_position_groups(groups: list[set[int]]) -> list[set[int]]:
     return sorted(merged, key=lambda value: min(value))
 
 
-def _rpt_visits_for_cell(
+def _detected_rpt_groups_for_cell(
     rows: list[dict[str, object]],
     *,
     meta: Mapping[str, object],
     rest_gap_hours: float,
     duplicate_visit_efc: float,
-) -> tuple[list[dict[str, object]], dict[str, object]]:
+) -> tuple[
+    list[dict[str, object]],
+    list[dict[str, object]],
+    list[dict[str, object]],
+    dict[str, object],
+]:
     cell_id = str(meta["cell_id"])
     nominal_capacity = float(meta["nominal_capacity_ah"])
     parsed: list[dict[str, object]] = []
@@ -680,7 +687,9 @@ def _rpt_visits_for_cell(
     groups: list[set[int]] = []
     initial = [index for index in range(min(8, len(parsed))) if candidates[index]][:3]
     if len(initial) != 3:
-        raise SNLCycleDataError(f"Initial three-cycle capacity check missing for {cell_id}")
+        raise SNLCycleDataError(
+            f"Initial three-cycle capacity check missing for {cell_id}"
+        )
     groups.append(set(initial))
 
     runs = _candidate_runs(candidates)
@@ -695,9 +704,7 @@ def _rpt_visits_for_cell(
         if gap_hours < rest_gap_hours:
             continue
         before = [
-            index
-            for index in range(max(0, right - 8), right)
-            if candidates[index]
+            index for index in range(max(0, right - 8), right) if candidates[index]
         ][-3:]
         after = [
             index
@@ -761,6 +768,34 @@ def _rpt_visits_for_cell(
             collapsed.append(visit)
     if len(collapsed) < 2:
         raise SNLCycleDataError(f"Fewer than two RPT visits detected for {cell_id}")
+    return (
+        parsed,
+        raw_visits,
+        collapsed,
+        {
+            "cell_id": cell_id,
+            "raw_row_count": len(rows),
+            "deduplicated_row_count": len(parsed),
+            "exact_duplicate_row_count": duplicate_rows,
+            "standalone_capacity_check_row_count": int(sum(candidates)),
+        },
+    )
+
+
+def _rpt_visits_for_cell(
+    rows: list[dict[str, object]],
+    *,
+    meta: Mapping[str, object],
+    rest_gap_hours: float,
+    duplicate_visit_efc: float,
+) -> tuple[list[dict[str, object]], dict[str, object]]:
+    parsed, _, collapsed, detection_audit = _detected_rpt_groups_for_cell(
+        rows,
+        meta=meta,
+        rest_gap_hours=rest_gap_hours,
+        duplicate_visit_efc=duplicate_visit_efc,
+    )
+    cell_id = str(meta["cell_id"])
     initial_capacity = float(collapsed[0]["capacity_ah"])
     initial_efc = float(collapsed[0]["equivalent_full_cycles_raw"])
     initial_time = collapsed[0]["timestamp"]
@@ -793,16 +828,69 @@ def _rpt_visits_for_cell(
             }
         )
     return visits, {
-        "cell_id": cell_id,
-        "raw_row_count": len(rows),
-        "deduplicated_row_count": len(parsed),
-        "exact_duplicate_row_count": duplicate_rows,
-        "standalone_capacity_check_row_count": int(sum(candidates)),
+        **detection_audit,
         "rpt_visit_count": len(visits),
         "maximum_elapsed_days": float(visits[-1]["elapsed_days"]),
-        "maximum_equivalent_full_cycles": float(
-            visits[-1]["equivalent_full_cycles"]
-        ),
+        "maximum_equivalent_full_cycles": float(visits[-1]["equivalent_full_cycles"]),
+    }
+
+
+def _rpt_repeats_for_cell(
+    rows: list[dict[str, object]],
+    *,
+    meta: Mapping[str, object],
+    rest_gap_hours: float,
+    duplicate_visit_efc: float,
+) -> tuple[list[dict[str, object]], dict[str, object]]:
+    parsed, raw_visits, _, detection_audit = _detected_rpt_groups_for_cell(
+        rows,
+        meta=meta,
+        rest_gap_hours=rest_gap_hours,
+        duplicate_visit_efc=duplicate_visit_efc,
+    )
+    cell_id = str(meta["cell_id"])
+    initial_capacity = float(raw_visits[0]["capacity_ah"])
+    initial_efc = float(raw_visits[0]["equivalent_full_cycles_raw"])
+    initial_time = raw_visits[0]["timestamp"]
+    records: list[dict[str, object]] = []
+    for visit_index, visit in enumerate(raw_visits):
+        positions = sorted(visit["positions"])
+        center_capacity = float(visit["capacity_ah"])
+        for repeat_index, position in enumerate(positions):
+            item = parsed[position]
+            capacity = float(item["capacity_ah"])
+            elapsed_days = (item["end"] - initial_time).total_seconds() / 86400.0
+            equivalent_full_cycles = float(item["cumulative_efc"]) - initial_efc
+            records.append(
+                {
+                    "dataset_id": DATASET_ID,
+                    "cell_id": cell_id,
+                    "condition_id": str(meta["condition_id"]),
+                    "visit_index": visit_index,
+                    "repeat_index": repeat_index,
+                    "source_cycle_index": _integer_cycle(
+                        item["row"]["Cycle_Index"], cell_id=cell_id
+                    ),
+                    "measurement_time": item["end"].isoformat(),
+                    "elapsed_days": max(0.0, elapsed_days),
+                    "equivalent_full_cycles": max(0.0, equivalent_full_cycles),
+                    "capacity_ah": capacity,
+                    "retention_pct": 100.0 * capacity / initial_capacity,
+                    "visit_center_capacity_ah": center_capacity,
+                    "visit_center_retention_pct": (
+                        100.0 * center_capacity / initial_capacity
+                    ),
+                    "rpt_cycle_count": len(positions),
+                }
+            )
+    counts = pd.Series([len(visit["positions"]) for visit in raw_visits], dtype=int)
+    return records, {
+        **detection_audit,
+        "rpt_visit_count": len(raw_visits),
+        "repeat_measurement_count": len(records),
+        "minimum_repeats_per_visit": int(counts.min()),
+        "median_repeats_per_visit": float(counts.median()),
+        "maximum_repeats_per_visit": int(counts.max()),
     }
 
 
@@ -842,7 +930,9 @@ def extract_snl_rpt_trajectories(
                 records.extend(visits)
                 cell_audits.append(cell_audit)
     except (BadZipFile, KeyError, OSError) as exc:
-        raise SNLCycleDataError(f"Cannot extract SNL RPT trajectories: {zip_path}") from exc
+        raise SNLCycleDataError(
+            f"Cannot extract SNL RPT trajectories: {zip_path}"
+        ) from exc
     trajectories = pd.DataFrame(records, columns=RPT_TRAJECTORY_COLUMNS).sort_values(
         ["condition_id", "cell_id", "visit_index"],
         kind="stable",
@@ -861,15 +951,11 @@ def extract_snl_rpt_trajectories(
         "physical_cell_count": int(trajectories["cell_id"].nunique()),
         "condition_cluster_count": int(trajectories["condition_id"].nunique()),
         "trajectory_row_count": len(trajectories),
-        "minimum_rpt_visit_count": int(
-            trajectories.groupby("cell_id").size().min()
-        ),
+        "minimum_rpt_visit_count": int(trajectories.groupby("cell_id").size().min()),
         "median_rpt_visit_count": float(
             trajectories.groupby("cell_id").size().median()
         ),
-        "maximum_rpt_visit_count": int(
-            trajectories.groupby("cell_id").size().max()
-        ),
+        "maximum_rpt_visit_count": int(trajectories.groupby("cell_id").size().max()),
         "minimum_maximum_elapsed_days": float(
             trajectories.groupby("cell_id")["elapsed_days"].max().min()
         ),
@@ -884,11 +970,78 @@ def extract_snl_rpt_trajectories(
     return trajectories, audit
 
 
+def extract_snl_rpt_repeat_measurements(
+    zip_path: str | Path,
+    metadata: pd.DataFrame,
+    *,
+    rest_gap_hours: float = 1.0,
+    duplicate_visit_efc: float = 10.0,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Extract within-visit RPT repeats without publishing raw cycle summaries."""
+    if tuple(metadata.columns) != METADATA_COLUMNS:
+        raise SNLCycleDataError("Metadata frame columns changed")
+    if rest_gap_hours <= 0.0 or duplicate_visit_efc < 0.0:
+        raise SNLCycleDataError("RPT extraction thresholds must be non-negative")
+    records: list[dict[str, object]] = []
+    cell_audits: list[dict[str, object]] = []
+    try:
+        with ZipFile(zip_path) as archive:
+            for meta in metadata.to_dict(orient="records"):
+                member_name = str(meta["cycle_member"])
+                with TextIOWrapper(
+                    archive.open(member_name), encoding="utf-8-sig", newline=""
+                ) as stream:
+                    reader = csv.DictReader(stream)
+                    if tuple(reader.fieldnames or ()) != CYCLE_DATA_HEADERS:
+                        raise SNLCycleDataError(
+                            f"Cycle-summary headers changed: {member_name}"
+                        )
+                    cell_rows = list(reader)
+                repeats, cell_audit = _rpt_repeats_for_cell(
+                    cell_rows,
+                    meta=meta,
+                    rest_gap_hours=rest_gap_hours,
+                    duplicate_visit_efc=duplicate_visit_efc,
+                )
+                records.extend(repeats)
+                cell_audits.append(cell_audit)
+    except (BadZipFile, KeyError, OSError) as exc:
+        raise SNLCycleDataError(
+            f"Cannot extract SNL RPT repeat measurements: {zip_path}"
+        ) from exc
+    repeats = pd.DataFrame(records, columns=RPT_REPEAT_COLUMNS).sort_values(
+        ["condition_id", "cell_id", "visit_index", "repeat_index"],
+        kind="stable",
+        ignore_index=True,
+    )
+    audit = {
+        "schema_version": "lifetwin.snl_rpt_repeat_extraction_audit.v1",
+        "dataset_id": DATASET_ID,
+        "evidence_role": "private_post_outcome_repeatability_development",
+        "physical_cell_count": int(repeats["cell_id"].nunique()),
+        "condition_cluster_count": int(repeats["condition_id"].nunique()),
+        "visit_count": int(
+            repeats[["cell_id", "visit_index"]].drop_duplicates().shape[0]
+        ),
+        "repeat_measurement_count": len(repeats),
+        "minimum_repeats_per_visit": int(
+            repeats.groupby(["cell_id", "visit_index"]).size().min()
+        ),
+        "canonical_repeat_table_sha256": canonical_frame_sha256(
+            repeats, RPT_REPEAT_COLUMNS
+        ),
+        "raw_or_row_level_release_permitted": False,
+        "cell_audits": sorted(cell_audits, key=lambda value: str(value["cell_id"])),
+    }
+    return repeats, audit
+
+
 __all__ = [
     "CANONICAL_CYCLE_COLUMNS",
     "CYCLE_DATA_HEADERS",
     "DATASET_ID",
     "METADATA_COLUMNS",
+    "RPT_REPEAT_COLUMNS",
     "RPT_TRAJECTORY_COLUMNS",
     "SNLCycleDataError",
     "SOURCE_TRAINING_COLUMNS",
@@ -896,6 +1049,7 @@ __all__ = [
     "TRUTH_COLUMNS",
     "audit_snl_archive_structure",
     "extract_snl_rpt_trajectories",
+    "extract_snl_rpt_repeat_measurements",
     "load_snl_metadata",
     "prepare_snl_cycle_inputs",
     "prepare_source_training_capacity",

@@ -43,6 +43,8 @@ V5 相对 V2 的总体 MAE 降低 **27.3%**；10,000 次物理电芯配对 boots
 - V5 的三种 GP 在线残差候选和训练内选出的轻量 offset 均未通过激活门槛，完整 H2 判定为未通过。
 - CALCE PLN 被确认是 LiCoO2 且时长不足，不能用于长期 LFP 证明。
 - SNL 逐循环吞吐记录不是完整容量 SOH，原协议在预测前终止并改为 RPT 轨迹协议。
+- V7 在真实 RPT 重复性分量驱动的 1,024 次端到端压力传播中仍未取得资格，动态修正精确回退为零并正式退役；SNL 数值结果不公开。
+- V11 的两个 `Delta Q(V)` 多模态候选均未通过五折、逐电芯与双向批次门槛，较好版本也只有 0.73% 平均改善，因此 V5 不变。
 
 ## 证据等级
 
@@ -62,8 +64,8 @@ V5 相对 V2 的总体 MAE 降低 **27.3%**；10,000 次物理电芯配对 boots
 1. 在 V5 在线控制台选择 P20、P40、P60 或 P100，查看当前前缀、支持状态、点预测和区间如何变化。
 2. 展示 41 个训练电芯完成模型选择、81 个评估电芯只用于回顾性评分的物理电芯级防泄漏拆分。
 3. 展示动态 landmark 审计：重新签发改善总体误差，但 GP 未过门槛后自动回退。
-4. 在飞书流程中提交目标电芯 RPT 与批次/工况元数据，由 AI 编排 `validate → predict → register → score` 工具链。
-5. 预测进程只读开发/校准前缀，生成不含原始训练行的模型胶囊、预测文件、拒绝原因和 SHA-256。
+4. 在飞书流程中提交目标电芯 RPT 与批次/工况元数据，由 AI 先编排不接受真值库参数的 `readiness` 审计；批次不独立、landmark 不完整或前缀域外时停止。
+5. readiness 通过后，预测进程只读开发/校准前缀，生成不含原始训练行的模型胶囊、预测文件、拒绝原因和 SHA-256。
 6. 校准评分器验证哈希后才读取真值并执行晋级门槛；模型冻结后，locked-test 真值只打开一次。
 7. 新 RPT 到来时重新签发，保留所有历史版本、区间、门控动作和误差记录。
 
@@ -87,6 +89,9 @@ V5 相对 V2 的总体 MAE 降低 **27.3%**；10,000 次物理电芯配对 boots
 - V5 技术报告：`reports/fastcharge_v5_pairwise_development_2026-08-09.md`
 - 动态 landmark 审计：`reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md`
 - V5 机器可读证据：`showcase/evidence_v5/`
+- V10 私有审计公开边界：`showcase/evidence_v10_private_boundary/`
+- V11 多模态挑战者证据：`showcase/evidence_v11/`
+- V10/V11 模型边界报告：`reports/fastcharge_v10_v11_model_boundary_2026-08-11.md`
 - 飞书 AI 工作流：`docs/feishu_ai_workflow_cn.md`
 - 海辰私有执行手册：`docs/hithium_private_blind_execution_cn.md`
 - 数据字典：`docs/hithium_private_data_dictionary_cn.md`

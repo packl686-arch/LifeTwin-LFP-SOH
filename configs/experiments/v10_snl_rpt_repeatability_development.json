@@ -1,0 +1,83 @@
+{
+  "schema_version": "lifetwin.fastcharge_v10.snl_rpt_repeatability.config.v1",
+  "experiment_id": "fastcharge_v10_snl_rpt_repeatability_development",
+  "status": "private_post_outcome_measurement_development_not_model_accuracy_evidence",
+  "prepared_by": "Jincheng Liu",
+  "dataset": {
+    "dataset_id": "battery_archive_snl_lfp",
+    "raw_zip_sha256": "006a335cbcdabc858a85ab0cdbc59a7001150751cf22abe8a7132c85ef63223d",
+    "metadata_xlsx_sha256": "4cf981b4a54efd0e526a026711e82a3ad7ec17cd462b13ac40b8930b1b5ae8a3",
+    "metadata_lfp_rows_canonical_sha256": "9deb97fd61fe28e1d6e2a70fddad14db19084d72995e3ebbedea1a90db7774c4",
+    "physical_cell_count": 30,
+    "condition_cluster_count": 12,
+    "rights_status": "Battery_Archive_competition_and_publication_scope_not_yet_machine_readable",
+    "public_row_level_release_permitted": false
+  },
+  "rpt_adapter": {
+    "long_rest_gap_hours": 1.0,
+    "adjacent_check_collapse_maximum_efc": 10.0
+  },
+  "repeat_contract": {
+    "minimum_physical_cell_count": 20,
+    "minimum_visits_per_cell": 5,
+    "minimum_repeats_per_visit": 3,
+    "unit": "capacity_retention_percentage_points"
+  },
+  "noise_model_selection": {
+    "selection_rule": "maximum_leave_one_physical_cell_out_log_score",
+    "candidate_families": [
+      {
+        "model_id": "gaussian_zero_mean",
+        "distribution": "gaussian"
+      },
+      {
+        "model_id": "student_t_df3_zero_mean",
+        "distribution": "student_t",
+        "degrees_of_freedom": 3
+      },
+      {
+        "model_id": "student_t_df5_zero_mean",
+        "distribution": "student_t",
+        "degrees_of_freedom": 5
+      },
+      {
+        "model_id": "student_t_df10_zero_mean",
+        "distribution": "student_t",
+        "degrees_of_freedom": 10
+      }
+    ],
+    "minimum_scale_pp": 0.000001,
+    "tie_tolerance_log_score": 0.000000001,
+    "tie_break_order": [
+      "gaussian_zero_mean",
+      "student_t_df10_zero_mean",
+      "student_t_df5_zero_mean",
+      "student_t_df3_zero_mean"
+    ]
+  },
+  "engineering_gates": {
+    "maximum_repeatability_scale_pp": 0.02,
+    "maximum_median_absolute_repeat_order_slope_pp_per_repeat": 0.01,
+    "rationale": "The withdrawn V7 update already failed its frozen robustness gate at 0.02 percentage-point IID capacity noise; this component audit must not weaken that boundary."
+  },
+  "identifiability": {
+    "available_components": [
+      "within_visit_repeatability",
+      "repeat_order_effect"
+    ],
+    "unavailable_components": [
+      "daily_reference_common_bias",
+      "cross_visit_ar1",
+      "long_term_drift",
+      "tester_bridge_bias",
+      "temperature_chamber_bias"
+    ]
+  },
+  "claim_boundaries": [
+    "This is a private post-outcome measurement-development audit, not an independent model evaluation.",
+    "Within-visit RPT repeats estimate only repeatability and repeat-order effects.",
+    "The data cannot identify common bias, cross-visit correlation, long-term drift, tester bias, or chamber bias.",
+    "Passing this component gate cannot qualify V7 or change the frozen V5 champion.",
+    "No raw or row-level SNL measurements may be published while reuse rights remain unclear."
+  ]
+}

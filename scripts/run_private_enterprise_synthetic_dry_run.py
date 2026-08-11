@@ -36,6 +36,10 @@ from lifetwin.validation.private_cycle_adapter import (
     normalize_private_cycle_measurements,
     validate_private_cycle_adapter_config,
 )
+from lifetwin.validation.private_prefix_readiness import (
+    audit_private_prefix_readiness,
+    validate_private_prefix_readiness_config,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -202,6 +206,23 @@ def main() -> int:
         frames, bundle = build_private_cycle_blind_bundle(
             normalized, partition_manifest, adapter
         )
+        readiness_config = validate_private_prefix_readiness_config(
+            json.loads(
+                (
+                    ROOT / "configs/validation/hithium_private_prefix_readiness_v1.json"
+                ).read_text(encoding="utf-8")
+            )
+        )
+        readiness_drift, readiness_decision = audit_private_prefix_readiness(
+            frames["development_trajectories"],
+            frames["calibration_prefixes"],
+            frames["locked_test_prefixes"],
+            partition_manifest,
+            adapter,
+            readiness_config,
+        )
+        if not readiness_decision["ready_to_issue_predictions"]:
+            raise RuntimeError("Synthetic private prefixes failed readiness audit")
         model = _model_config(adapter)
         development = frames["development_trajectories"]
         calibration_prefixes = frames["calibration_prefixes"]
@@ -310,12 +331,22 @@ def main() -> int:
         atomic_write_json(
             locked_manifest, output / "locked_prediction_manifest.synthetic.json"
         )
+        atomic_write_csv(
+            readiness_drift, output / "prefix_support_distances.synthetic.csv"
+        )
+        atomic_write_json(
+            readiness_decision, output / "prefix_readiness.synthetic.json"
+        )
         result = {
             "schema_version": "lifetwin.private_enterprise.synthetic_dry_run.v1",
             "synthetic_only": True,
             "hithium_data_accessed": False,
             "calibration_truth_opened": True,
             "locked_test_truth_opened": False,
+            "prefix_readiness_passed_before_truth_access": bool(
+                readiness_decision["ready_to_issue_predictions"]
+            ),
+            "readiness_truth_vault_inputs_read": False,
             "candidate_gate_pass": {
                 mode_id: bool(gate["promote_candidate"])
                 for mode_id, gate in gate_results.items()
@@ -343,6 +374,7 @@ def main() -> int:
                 "operation": "synthetic_private_enterprise_rehearsal",
                 "hithium_data_accessed": False,
                 "locked_test_truth_opened": False,
+                "prefix_readiness_passed": True,
                 "public_release_permitted": False,
             },
         )

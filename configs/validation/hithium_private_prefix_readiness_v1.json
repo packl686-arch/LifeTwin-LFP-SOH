@@ -1,0 +1,45 @@
+{
+  "schema_version": "lifetwin.private_prefix_readiness.config.v1",
+  "audit_id": "hithium_private_prefix_readiness_v1",
+  "private_only": true,
+  "minimum_cells_by_partition": {
+    "development": 4,
+    "calibration": 2,
+    "locked_test": 2
+  },
+  "support_distance": {
+    "feature_ids": [
+      "temperature_c",
+      "dod_fraction",
+      "charge_c_rate",
+      "discharge_c_rate",
+      "last_elapsed_days",
+      "last_equivalent_full_cycles",
+      "prefix_efc_per_day",
+      "retention_change_pp",
+      "retention_slope_pp_per_efc"
+    ],
+    "feature_scale_floors": {
+      "temperature_c": 1.0,
+      "dod_fraction": 0.05,
+      "charge_c_rate": 0.1,
+      "discharge_c_rate": 0.1,
+      "last_elapsed_days": 7.0,
+      "last_equivalent_full_cycles": 25.0,
+      "prefix_efc_per_day": 0.01,
+      "retention_change_pp": 0.1,
+      "retention_slope_pp_per_efc": 0.0001
+    },
+    "development_loo_quantile": 0.95,
+    "threshold_multiplier": 1.25,
+    "minimum_threshold": 0.5
+  },
+  "decision_gate": {
+    "maximum_out_of_support_fraction_by_partition": 0.1,
+    "maximum_distance_ratio": 2.0,
+    "require_complete_landmarks": true,
+    "require_batch_disjoint_partitions": true,
+    "truth_vault_inputs_permitted": false
+  },
+  "claim_boundary": "This truth-free audit checks bundle completeness and prefix support only. Passing permits calibration prediction issuance, not truth-vault access, model promotion, Hithium accuracy claims, or 15-to-25-year validation."
+}

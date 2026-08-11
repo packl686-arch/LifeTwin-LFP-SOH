@@ -15,6 +15,7 @@ from lifetwin.data.snl import (
     METADATA_COLUMNS,
     SNLCycleDataError,
     audit_snl_archive_structure,
+    extract_snl_rpt_repeat_measurements,
     extract_snl_rpt_trajectories,
     load_snl_metadata,
     prepare_snl_cycle_inputs,
@@ -76,7 +77,7 @@ def _write_metadata_xlsx(path: Path) -> None:
     worksheet = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        f'<sheetData>{row_xml(1, headers)}{row_xml(2, values)}</sheetData>'
+        f"<sheetData>{row_xml(1, headers)}{row_xml(2, values)}</sheetData>"
         "</worksheet>"
     )
     with ZipFile(path, "w") as archive:
@@ -161,6 +162,15 @@ def test_snl_metadata_identity_mapping_and_rpt_extraction(tmp_path: Path) -> Non
     assert trajectories["visit_index"].tolist() == [0, 1, 2]
     assert trajectories.iloc[0]["capacity_retention_pct"] == pytest.approx(100.0)
     assert audit["minimum_rpt_visit_count"] == 3
+
+    repeats, repeat_audit = extract_snl_rpt_repeat_measurements(
+        bundle, metadata, duplicate_visit_efc=4.0
+    )
+    assert repeats.groupby(["cell_id", "visit_index"]).size().tolist() == [3, 6, 3]
+    assert repeats["repeat_index"].min() == 0
+    assert repeat_audit["visit_count"] == 3
+    assert repeat_audit["repeat_measurement_count"] == 12
+    assert repeat_audit["raw_or_row_level_release_permitted"] is False
 
 
 def test_per_cycle_adapter_fails_closed_on_zero_capacity(tmp_path: Path) -> None:

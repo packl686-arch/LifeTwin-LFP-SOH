@@ -33,7 +33,9 @@ def test_synthetic_enterprise_dry_run_stops_before_locked_truth(tmp_path: Path) 
     assert summary["synthetic_only"] is True
     assert summary["hithium_data_accessed"] is False
     assert summary["locked_test_truth_opened"] is False
+    assert summary["prefix_readiness_passed_before_truth_access"] is True
+    assert summary["readiness_truth_vault_inputs_read"] is False
     assert summary["fallback_to_v3"] is True
     completion = json.loads((output / "dry_run_complete.json").read_text())
     verified = verify_completion_manifest(output, completion)
-    assert verified["artifact_count"] == 12
+    assert verified["artifact_count"] == 14

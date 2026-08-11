@@ -43,7 +43,7 @@
     "module_path": "src/lifetwin/experiments/fastcharge_v9_end_to_end_stability.py",
     "module_sha256": "7bbf1a597868bc6ac88f3e69b99e3e403b600cc766090c6b9337a88fcd290300",
     "runner_path": "scripts/run_fastcharge_v9_end_to_end_synthetic_dry_run.py",
-    "runner_sha256": "188654e727d1b47714f3b4d09c835369f5f20399d6e4528ce40f7c058cb02f3c"
+    "runner_sha256": "a3bcd17ff07087c5ed8937b87a49fdbf34fb8d4a257228bed2f13d7bc3cdff46"
   },
   "model_accuracy_evidence_created": false,
   "p05_p100_reference_jaccard": 0.8461538461538461,
@@ -62,8 +62,8 @@
   "refit_correction_sign_probability": 1.0,
   "runtime_versions": {
     "numpy": "2.5.1",
-    "pandas": "3.0.5",
-    "python": "3.13.11",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
     "scikit_learn": "1.9.0"
   },
   "schema_version": "lifetwin.fastcharge_v9.end_to_end_stability_decision.v1",

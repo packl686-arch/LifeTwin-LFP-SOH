@@ -181,7 +181,21 @@ def perturb_cycle_frame(
             rho=float(capacity["ar1_rho"]),
             stationary_sigma=float(capacity["ar1_stationary_sigma_pp"]),
         )
-        iid = rng.normal(0.0, float(capacity["iid_sigma_pp"]), size=count)
+        iid_distribution = str(capacity.get("iid_distribution", "gaussian"))
+        iid_scale = float(capacity["iid_sigma_pp"])
+        if iid_distribution == "gaussian":
+            iid = rng.normal(0.0, iid_scale, size=count)
+        elif iid_distribution == "student_t":
+            degrees = float(capacity["iid_degrees_of_freedom"])
+            if degrees <= 2.0:
+                raise v5.FastChargeV5PairwiseError(
+                    "V9 Student-t IID perturbations require df > 2"
+                )
+            iid = rng.standard_t(degrees, size=count) * iid_scale
+        else:
+            raise v5.FastChargeV5PairwiseError(
+                f"Unknown V9 IID perturbation distribution: {iid_distribution}"
+            )
         spikes = (
             rng.random(count) < float(capacity["spike_probability_per_cycle"])
         ) * rng.normal(0.0, float(capacity["spike_sigma_pp"]), size=count)

@@ -1,0 +1,100 @@
+{
+  "any_promotion_gate_passed": false,
+  "baseline_id": "v5_pairwise_extra_trees_leaf3_k12_weighted_mean",
+  "candidate_summaries": [
+    {
+      "baseline_mean_trajectory_mae_pp": 0.24359906485841404,
+      "batch_holdout_mean_delta_mae_pp": {
+        "MATR_BATCH_1": -0.265125475682337,
+        "MATR_BATCH_2": 0.006574157505575544
+      },
+      "candidate_id": "v11_delta_q_residual_only",
+      "candidate_mean_trajectory_mae_pp": 0.24384676705624686,
+      "gate_checks": {
+        "bootstrap_upper_delta": false,
+        "each_batch_holdout_mean_delta": false,
+        "improved_cell_fraction": false,
+        "p90_cell_delta": false,
+        "relative_mean_improvement": false,
+        "worst_cell_regression": true
+      },
+      "improved_cell_fraction": 0.4634146341463415,
+      "mean_delta_mae_pp": 0.000247702197832822,
+      "p90_cell_delta_mae_pp": 0.030247326935133434,
+      "paired_cell_bootstrap": {
+        "lower_delta_mae_pp": -0.010942855794676942,
+        "mean_delta_mae_pp": 0.0002477021978328504,
+        "physical_cell_count": 41,
+        "repetitions": 10000,
+        "upper_delta_mae_pp": 0.009149098141466196
+      },
+      "physical_cell_count": 41,
+      "promotion_gate_passed": false,
+      "relative_mean_mae_improvement": -0.0010168437960826854,
+      "worst_cell_regression_pp": 0.06734025426163698
+    },
+    {
+      "baseline_mean_trajectory_mae_pp": 0.24359906485841404,
+      "batch_holdout_mean_delta_mae_pp": {
+        "MATR_BATCH_1": -0.26630525275923694,
+        "MATR_BATCH_2": 0.006588028258048666
+      },
+      "candidate_id": "v11_delta_q_residual_plus_geometry",
+      "candidate_mean_trajectory_mae_pp": 0.24182844868148556,
+      "gate_checks": {
+        "bootstrap_upper_delta": false,
+        "each_batch_holdout_mean_delta": false,
+        "improved_cell_fraction": false,
+        "p90_cell_delta": false,
+        "relative_mean_improvement": false,
+        "worst_cell_regression": true
+      },
+      "improved_cell_fraction": 0.4634146341463415,
+      "mean_delta_mae_pp": -0.0017706161769284745,
+      "p90_cell_delta_mae_pp": 0.03625773418997197,
+      "paired_cell_bootstrap": {
+        "lower_delta_mae_pp": -0.01845086950219518,
+        "mean_delta_mae_pp": -0.00177061617692844,
+        "physical_cell_count": 41,
+        "repetitions": 10000,
+        "upper_delta_mae_pp": 0.01061917818056202
+      },
+      "physical_cell_count": 41,
+      "promotion_gate_passed": false,
+      "relative_mean_mae_improvement": 0.0072685672170277075,
+      "worst_cell_regression_pp": 0.07881539468758839
+    }
+  ],
+  "claim_boundaries": {
+    "allowed": [
+      "training_only_multimodal_method_development",
+      "cycle_10_to_100_Delta_Q_feature_ablation",
+      "grouped_cross_validation_and_cross_batch_stress_on_the_41_training_cells"
+    ],
+    "prohibited": [
+      "independent_confirmation",
+      "automatic_replacement_of_the_frozen_V5_champion",
+      "evaluation_on_the_exposed_81_cell_suffix",
+      "calendar_aging_validation",
+      "hithium_product_accuracy",
+      "fifteen_to_twenty_five_year_accuracy"
+    ]
+  },
+  "config_semantic_sha256": "85a3bec9198f9f46354d84b4cfb3fdfe9dff7106bd8d6cb7220152c93b820020",
+  "curve_feature_input_sha256": "6ae9e9c599b0bc278dab4266223a35f4eae22629ea2e4bbba3dd96107c8c1e25",
+  "curve_feature_table_canonical_sha256": "e50de29b3892a6b68e802928e363e0f5bd81be8e4ee9541d02f7103d03301c1c",
+  "evaluation_cell_outcomes_used": false,
+  "experiment_id": "fastcharge_v11_delta_q_pairwise_development",
+  "future_target_capacity_or_cycle_life_columns_read": false,
+  "independent_confirmation": false,
+  "next_action": "retain_v5_and_do_not_advance_delta_q_challengers",
+  "physical_training_cell_count": 41,
+  "primary_prefix_cycle": 100,
+  "schema_version": "lifetwin.fastcharge_v11.delta_q_pairwise.result.v1",
+  "score_end_cycle": 300,
+  "score_table_sha256": "3d2c9b290872583bc3650b4ef6f107c460724a2a1e199f95230c7b4201a60c8d",
+  "selected_challenger_for_future_blind_freeze": null,
+  "status": "outcome_exposed_training_only_challenger_development_not_independent_confirmation",
+  "training_cycle_canonical_sha256": "4a7ae36ac155f016fb8a0c7c6589c2e7e0cde78e5e292a77ec55ddca9c98b846",
+  "v5_champion_changed": false
+}

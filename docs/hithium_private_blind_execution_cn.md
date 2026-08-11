@@ -83,7 +83,26 @@ python scripts/prepare_private_cycle_blind_bundle.py build-bundle `
 | `locked_test_truth_vault.private.parquet` | 最终独立评分进程 |
 | `blind_bundle_manifest.private.json` | 三方均可读取，但不得修改 |
 
-### 3. 校准阶段
+### 3. 真值隔离的前缀 readiness 审计
+
+在生成任何校准预测前，先校验批次隔离、每个 landmark 的完整前缀以及目标前缀相对开发集的工况和双时间轴支持。该命令的接口不接受任何 truth-vault 路径：
+
+```powershell
+$env:PYTHONPATH='src'
+python scripts/audit_hithium_private_readiness.py `
+  D:\private-vault\hithium-cycle-v1\bundle\development_trajectories.private.parquet `
+  D:\private-vault\hithium-cycle-v1\bundle\calibration_prefixes.private.parquet `
+  D:\private-vault\hithium-cycle-v1\bundle\locked_test_prefixes.private.parquet `
+  --partition-manifest D:\private-vault\hithium-cycle-v1\partition_manifest.private.json `
+  --bundle-manifest D:\private-vault\hithium-cycle-v1\bundle\blind_bundle_manifest.private.json `
+  --adapter-config D:\private-vault\hithium-cycle-v1\adapter_config.private.json `
+  --readiness-config configs/validation/hithium_private_prefix_readiness_v1.json `
+  --output-directory D:\private-audit\hithium-readiness-v1
+```
+
+审计只使用 development 完整轨迹以及 calibration/locked-test 的可见前缀。它按 landmark 用 development 电芯拟合稳健尺度，计算目标电芯到最近开发电芯的支持距离；批次交叉、前缀缺行、时间或 EFC 不递增、域外比例超限都会停止。`ready_to_issue_predictions=true` 只允许进入校准预测，不允许打开校准或 locked-test 真值，也不等于模型已经通过。
+
+### 4. 校准阶段
 
 只用 development 完整轨迹训练候选模型；只用 calibration 前缀生成预测。预测进程命令没有真值参数：
 
@@ -111,7 +130,7 @@ python scripts/run_private_enterprise_cycle.py score `
 
 评分器会重新校验预测、决策、模型配置、数据包成员及完成清单哈希。校准阶段可以确定是否采用 V3、区间宽度和拒绝输出规则，但不得读取 locked-test 真值。
 
-### 4. 锁定测试阶段
+### 5. 锁定测试阶段
 
 冻结最终模型和全部决策阈值后，用同一 `predict` 命令把输入替换为 `locked_test_prefixes.private.parquet`，且使用新的只写输出目录。先生成原子完成清单，再由独立评分进程用 `locked_test_truth_vault.private.parquet` 评分。任何崩溃重跑、人工删行、阈值修改或模型切换都必须作为新的试验版本登记，不能覆盖原结果。
 

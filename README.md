@@ -8,6 +8,7 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 
 - [V5 在线评审与飞书流程控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/v5-console/)
 - [完整中文参赛方案](docs/LifeTwin_competition_submission_cn.md)
+- [最新评委简报](JUDGE_BRIEF_LATEST_CN.md)
 - [V5 模型与不确定性报告](reports/fastcharge_v5_pairwise_development_2026-08-09.md)
 - [动态 landmark 与在线残差审计](reports/fastcharge_v5_dynamic_landmark_audit_2026-08-09.md)
 - [V5 小型机器可读证据包](showcase/evidence_v5/README.md)
@@ -24,6 +25,9 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 - [V9 端到端相关扰动盲测协议](configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json)
 - [V9 实验设计与执行说明](docs/v9_end_to_end_correlated_stability_experiment_cn.md)
 - [V9 合成端到端重拟合证据](showcase/evidence_v9_dry_run/README.md)
+- [V10 私有重复性审计公开边界](showcase/evidence_v10_private_boundary/README.md)
+- [V11 Delta-Q 多模态挑战者证据](showcase/evidence_v11/README.md)
+- [V10/V11 模型边界收口报告](reports/fastcharge_v10_v11_model_boundary_2026-08-11.md)
 - [海辰私有数据盲测执行手册](docs/hithium_private_blind_execution_cn.md)
 - [飞书 AI 工作流设计](docs/feishu_ai_workflow_cn.md)
 
@@ -40,6 +44,10 @@ V7 进一步扣除当前 V5 重发轨迹已经吸收的趋势，只投影“未�
 V8 已把这条负结果转化为可执行实验：先用重复测量、日参考和跨设备桥接记录建立不读取未来结局的噪声台账，再以 1024 次测量重采样检查每个 P100 更新是否稳定；任何质量、映射或概率门槛失败均逐元素精确回退 V5。合成演练仅证明代码与哈希承诺链可运行，**没有产生新的准确率证据**。真实 Stage C 仍需至少 60 个新电芯、3 个制造批次和完整队列预测承诺后才能一次性开放未来轨迹。
 
 V9 进一步把扰动向上游推进：每次 draw 都重新扰动历史参考测量与目标前缀、重建 V5 训练矩阵、重拟合冻结模型、重选 12 个近邻，再重新生成 P60/P100 中心并执行未经修改的 V7 门控；误差模型显式包含共同偏置、AR(1)、漂移和尖峰。24-draw 合成演练实际完成了 48 次 V5 重拟合，稳定路径的最终签发轨迹偏差 P95 为 `0.01261 pp`，人工压力负对照则精确回退 0 修正。该结果仍只是软件证据，**不代表真实测量稳定性或模型准确率提升，V5 仍是 champion**。
+
+V10 随后用本地 SNL RPT 重复测量做私有失效优先审计，并把拟合的重复性分量传播到 1,024 次完整 V5 重拟合和近邻重选。重复性分量没有通过冻结门槛，完整设备误差模型也无法由该数据识别，所以 V7 动态修正正式退役，最终修正精确回退为零。仓库不公开 SNL 测量、参数或数值诊断，只保留决策边界。
+
+V11 再检验“补充电压曲线形状是否能突破瓶颈”。两个固定 `Delta Q(V)` 挑战者只在 41 个训练电芯上做五折和双向批次留出；较好的残差+几何版本 MAE 为 `0.24183 pp`，相对冻结 V5 仅改善 `0.73%`，物理电芯 bootstrap 区间跨零，并在一个批次方向退化。因此不推进新候选，**当前最高价值工作已从继续堆模型转为海辰批次独立盲测接入**。
 
 > 边界：仓库不包含海辰内部测量，也不公开 MATR、SNL 等上游原始数据。上述数字属于结果已暴露的公开循环老化开发证据，不是海辰产品验证、日历老化确认或 15 至 25 年准确率证明。
 
@@ -58,7 +66,7 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 
 先用三分钟看到系统如何工作，再按需深入证据：
 
-1. [评委三分钟简报](JUDGE_BRIEF.md)：一屏了解问题、方法、四个关键结果和边界。
+1. [最新评委三分钟简报](JUDGE_BRIEF_LATEST_CN.md)：一屏了解 V5 结果、V10/V11 收口和企业落地边界；[冻结版简报](JUDGE_BRIEF.md)保留历史发布口径。
 2. [在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
 3. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
 

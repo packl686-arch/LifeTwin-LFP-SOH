@@ -345,6 +345,10 @@ V5 控制台交互回放支持度门控、公开开发指标与飞书工作流�
 - V7 原始 P100 盲测提名记录：`configs/experiments/v7_p100_reissue_innovation_blind_candidate.json`
 - V7 前缀稳健性否决报告：`reports/fastcharge_v7_prefix_robustness_audit_2026-08-10.md`
 - V7 稳健性机器可读负结果：`showcase/evidence_v7_robustness/`
+- V10 私有重复性审计公开边界：`showcase/evidence_v10_private_boundary/`
+- V11 Delta-Q 多模态挑战者证据：`showcase/evidence_v11/`
+- V10/V11 模型边界收口报告：`reports/fastcharge_v10_v11_model_boundary_2026-08-11.md`
+- 海辰私有前缀 readiness 配置：`configs/validation/hithium_private_prefix_readiness_v1.json`
 - 海辰私有盲测手册：`docs/hithium_private_blind_execution_cn.md`
 - 海辰数据字典：`docs/hithium_private_data_dictionary_cn.md`
 - 数据资格矩阵：`configs/validation/dataset_evidence_matrix_2026_08.json`
