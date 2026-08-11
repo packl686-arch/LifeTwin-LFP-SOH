@@ -1,0 +1,166 @@
+{
+  "schema_version": "lifetwin.fastcharge_v9_end_to_end_correlated_stability_blind_protocol.template.v1",
+  "experiment_id": "fastcharge_v9_end_to_end_correlated_stability_blind_qualification",
+  "status": "blocked_template_pending_real_correlated_measurement_ledger_and_new_physical_cells",
+  "prepared_by": "Jincheng Liu",
+  "freeze_date": "2026-08-11",
+  "lineage": {
+    "parent_v8_protocol": {
+      "path": "configs/experiments/v8_measurement_stability_blind_protocol.template.json",
+      "sha256": "e3e373164e6afd2ac4d318a0ce703796ce4eac37880f427116324e750d7e163d"
+    },
+    "frozen_v7_candidate": {
+      "path": "configs/experiments/v7_p100_reissue_innovation_blind_candidate.json",
+      "sha256": "e855ed46e897488772597bcd5d082bf6ae5e39d973f03d6d31d78c120fe044e0"
+    },
+    "frozen_v5_selection": {
+      "path": "showcase/evidence_v5/pairwise_training_selection.json",
+      "sha256": "a6e7bd4d60cb70ba938b29473184f7506f3ee9f1a939d5bda0c5ba92845a0d9c"
+    },
+    "unresolved_v8_limitations": [
+      "v8_holds_the_already_issued_p60_and_p100_v5_centers_fixed",
+      "v8_propagates_only_repeatability_noise_through_the_final_residual_gate",
+      "v8_does_not_measure_neighbour_selection_or_model_refit_instability",
+      "v8_does_not_represent_common_bias_serial_correlation_or_drift"
+    ],
+    "v9_hypothesis": "a_candidate_update_is_eligible_only_if_the_complete_v5_refit_neighbour_selection_and_v7_update_chain_remains_stable_under_a_preregistered_correlated_measurement_error_model"
+  },
+  "scientific_basis": [
+    {
+      "doi": "10.1016/j.est.2019.100761",
+      "design_implication": "separate_environmental_and_procedural_measurement_errors_and_propagate_them_into_model_outputs"
+    },
+    {
+      "doi": "10.1016/j.est.2017.01.006",
+      "design_implication": "represent_persistent_bias_separately_from_zero_mean_noise"
+    },
+    {
+      "doi": "10.1016/j.est.2021.103316",
+      "design_implication": "test_combined_bias_and_noise_instead_of_iid_noise_alone"
+    },
+    {
+      "arxiv": "1703.05687",
+      "design_implication": "retain_distributional_uncertainty_and_cross_cell_dependence_as_first_class_outputs"
+    }
+  ],
+  "champion": {
+    "model_id": "fastcharge_v5_pairwise_support_uq",
+    "remains_active_until_every_v9_and_later_blind_accuracy_gate_passes": true
+  },
+  "eligible_transition": {
+    "previous_prefix_cycle": 60,
+    "current_prefix_cycle": 100,
+    "score_end_cycle": 300
+  },
+  "stage_a_correlated_measurement_characterization": {
+    "future_target_outcomes_required": false,
+    "required_sources": [
+      "same_cell_same_landmark_independent_repeats",
+      "daily_reference_channel_time_series",
+      "cross_tester_bridge_cells",
+      "temperature_chamber_reference_time_series",
+      "calibration_and_maintenance_event_log"
+    ],
+    "registered_components": [
+      "within_cycle_iid_repeatability",
+      "tester_and_chamber_common_mode_bias",
+      "cross_cycle_ar1_component",
+      "linear_or_random_walk_drift",
+      "rare_heavy_tailed_spike"
+    ],
+    "minimum_daily_reference_dates_per_noise_group": 20,
+    "minimum_span_days_per_noise_group": 30,
+    "minimum_bridge_cell_count": 5,
+    "insufficient_serial_support_action": "stop_v9_or_use_a_preregistered_worst_case_envelope_never_silently_assume_iid",
+    "freeze_before_model_replay": [
+      "component_families",
+      "all_component_parameters",
+      "cross_channel_correlation_matrix",
+      "tester_chamber_mapping",
+      "seed_derivation",
+      "raw_input_hashes"
+    ]
+  },
+  "stage_b_end_to_end_outcome_free_replay": {
+    "target_future_outcomes_available": false,
+    "minimum_new_physical_cell_count": 60,
+    "minimum_manufacturing_batch_count": 3,
+    "monte_carlo_draw_count": 1024,
+    "each_draw_must": [
+      "perturb_complete_historical_reference_measurements_under_the_frozen_error_model",
+      "perturb_the_target_prefix_once_and_reuse_the_same_cycles_in_p60_and_p100_views",
+      "rebuild_v5_training_matrices",
+      "refit_the_frozen_v5_estimator",
+      "reselect_the_twelve_reference_cells",
+      "regenerate_p60_and_p100_v5_centers",
+      "rerun_the_unchanged_v7_gate"
+    ],
+    "required_ledger_roles": [
+      "p100_observed_prefix_cycles_61_through_100",
+      "p60_v5_center_cycles_61_through_300",
+      "p100_v5_center_cycles_101_through_300"
+    ],
+    "nonzero_update_requires_all": {
+      "unperturbed_v7_gate_activated": true,
+      "minimum_refit_activation_probability": 0.95,
+      "minimum_refit_correction_sign_probability": 0.95,
+      "minimum_p05_reference_jaccard": 0.8,
+      "maximum_p95_v5_endpoint_deviation_pp": 0.1,
+      "maximum_p95_v5_trajectory_mae_deviation_pp": 0.05,
+      "maximum_p95_issued_endpoint_deviation_pp": 0.1,
+      "maximum_p95_issued_trajectory_mae_deviation_pp": 0.05
+    },
+    "stable_correction": "pointwise_median_of_all_end_to_end_refit_effective_corrections",
+    "failed_cell_action": "exact_zero_update_to_the_unperturbed_p100_v5_center",
+    "commit_before_any_target_future_outcome_access": [
+      "correlated_noise_model_and_source_hashes",
+      "complete_replicate_ledger_hash",
+      "per_draw_stability_metrics",
+      "per_cell_qualification_and_fallback",
+      "qualified_prediction_trajectory",
+      "protocol_runtime_and_implementation_hashes",
+      "complete_file_manifest"
+    ]
+  },
+  "stage_c_single_open_scoring": {
+    "inherits_v8_primary_and_batch_accuracy_endpoints_without_change": true,
+    "v9_is_a_precondition_not_a_replacement_for_blind_accuracy_scoring": true,
+    "future_outcomes_may_be_opened_once_after_cohort_commitment": true,
+    "same_batch_noise_model_or_gate_retuning_permitted": false,
+    "failure_action": "retain_v5_and_publish_the_negative_result_without_same_batch_retuning"
+  },
+  "ablation_matrix": [
+    "iid_only_negative_control",
+    "iid_plus_common_bias",
+    "iid_plus_ar1",
+    "iid_plus_drift",
+    "full_registered_combined_model"
+  ],
+  "business_outputs": [
+    "stable_update_yield",
+    "fallback_rate",
+    "neighbour_set_instability_rate",
+    "p95_v5_center_deviation_pp",
+    "p95_final_issued_trajectory_deviation_pp",
+    "tester_or_chamber_groups_blocked_by_quality",
+    "additional_reference_testing_hours"
+  ],
+  "data_firewall": {
+    "same_41_cell_outcomes_permitted_for_new_threshold_selection": false,
+    "exposed_81_cell_public_evaluation_permitted": false,
+    "target_cycles_101_through_300_permitted_before_commitment": false,
+    "hithium_data_used_in_template_or_synthetic_dry_run": false,
+    "completed_historical_reference_cell_trajectories_permitted_for_v5_refit": true
+  },
+  "claim_boundaries": {
+    "before_real_execution": "preregistered_qualification_template_and_synthetic_software_evidence_only",
+    "after_v9_pass_before_stage_c": "input_and_pipeline_stability_evidence_not_model_accuracy_evidence",
+    "always_prohibited_without_separate_evidence": [
+      "hithium_product_accuracy",
+      "calendar_aging_validation",
+      "fifteen_to_twenty_five_year_accuracy",
+      "storage_station_warranty_claim",
+      "production_activation"
+    ]
+  }
+}

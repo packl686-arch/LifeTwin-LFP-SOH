@@ -177,3 +177,17 @@ Stage B 对每个 P100 签发执行 1024 次哈希确定的测量噪声重采样
 - [V8 执行手册](docs/v8_measurement_stability_execution_cn.md)
 - [V8 软件演练报告](reports/fastcharge_v8_measurement_stability_dry_run_2026-08-10.md)
 - [V8 合成机器可读证据](showcase/evidence_v8_dry_run/README.md)
+
+## V9 端到端相关扰动稳定性资格实验（2026-08-11）
+
+V9 针对 V8 的两个剩余缺口继续推进：V8 固定了已签发的 P60/P100 V5 中心，也只把零均值重复性噪声传播到末端门控。V9 则让每个扰动 draw 同时穿过历史参考库和目标前缀，重新构造 pairwise 训练矩阵、重新拟合冻结的 48-tree V5、重新选择 12 个参考电芯、重新生成 P60/P100 中心，再运行未经修改的 V7 门控。误差模型显式拆成 IID、设备/温箱共同偏置、AR(1)、漂移和低概率尖峰。
+
+真实协议固定 1024 draw，并增加近邻集合 Jaccard、V5 中心偏差和最终签发轨迹偏差门槛。评估 ledger 只有可见周期 61-100、模型中心、参考身份与哈希，目标周期 101-300 真值没有接口；任一门槛失败都逐元素精确返回 0 修正。V9 通过也只代表输入与管线稳定，仍必须沿用 V8 的新队列一次性准确率评分，不能直接晋升模型。
+
+已完成的 24-draw 合成软件演练实际执行了 48 次 V5 重拟合。一个只生成到周期 100 的目标前缀产生 12,000 行 outcome-free ledger；重拟合激活和修正方向概率均为 1.0，P60/P100 近邻 Jaccard P05 均为 0.8462，最终签发轨迹偏差 P95 为 0.01261 pp。人工压力负对照破坏近邻集合与中心稳定性后，七项门槛失败并精确回退 0 修正。该结果没有使用真实电池、海辰数据或目标未来结果，不构成准确率提升；V5 继续作为 champion。
+
+- [V9 盲测资格协议](configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json)
+- [V9 真实执行配置模板](configs/experiments/v9_end_to_end_correlated_stability_execution.template.json)
+- [V9 实验设计与执行说明](docs/v9_end_to_end_correlated_stability_experiment_cn.md)
+- [V9 软件演练报告](reports/fastcharge_v9_end_to_end_correlated_stability_dry_run_2026-08-11.md)
+- [V9 合成机器可读证据](showcase/evidence_v9_dry_run/README.md)

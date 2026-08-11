@@ -21,6 +21,9 @@ LifeTwin 是面向储能 LFP 电池的证据优先型 SOH 轨迹预测与动态�
 - [V8 真实执行配置模板](configs/experiments/v8_measurement_stability_execution.template.json)
 - [V8 执行手册与数据字典](docs/v8_measurement_stability_execution_cn.md)
 - [V8 合成软件演练证据](showcase/evidence_v8_dry_run/README.md)
+- [V9 端到端相关扰动盲测协议](configs/experiments/v9_end_to_end_correlated_stability_blind_protocol.template.json)
+- [V9 实验设计与执行说明](docs/v9_end_to_end_correlated_stability_experiment_cn.md)
+- [V9 合成端到端重拟合证据](showcase/evidence_v9_dry_run/README.md)
 - [海辰私有数据盲测执行手册](docs/hithium_private_blind_execution_cn.md)
 - [飞书 AI 工作流设计](docs/feishu_ai_workflow_cn.md)
 
@@ -35,6 +38,8 @@ V7 进一步扣除当前 V5 重发轨迹已经吸收的趋势，只投影“未�
 但冻结后的前缀扰动审计否决了 V7-P100 的当前盲测资格：在 `0.02 pp` IID 噪声下，门控决策一致率只有 `84.20%`，原未激活电芯误触发率为 `14.55%`；在 `0.05 pp` 下激活精度降至 `58.58%`，重复内最差 active delta 的 P95 为 `+0.1414 pp`。因此项目没有用训练内 `9/9` 结果继续包装升级，而是撤回该候选，要求后续先提供重复测量或独立设备噪声台账。**V5 继续作为当前 champion，V7 从未启用。**
 
 V8 已把这条负结果转化为可执行实验：先用重复测量、日参考和跨设备桥接记录建立不读取未来结局的噪声台账，再以 1024 次测量重采样检查每个 P100 更新是否稳定；任何质量、映射或概率门槛失败均逐元素精确回退 V5。合成演练仅证明代码与哈希承诺链可运行，**没有产生新的准确率证据**。真实 Stage C 仍需至少 60 个新电芯、3 个制造批次和完整队列预测承诺后才能一次性开放未来轨迹。
+
+V9 进一步把扰动向上游推进：每次 draw 都重新扰动历史参考测量与目标前缀、重建 V5 训练矩阵、重拟合冻结模型、重选 12 个近邻，再重新生成 P60/P100 中心并执行未经修改的 V7 门控；误差模型显式包含共同偏置、AR(1)、漂移和尖峰。24-draw 合成演练实际完成了 48 次 V5 重拟合，稳定路径的最终签发轨迹偏差 P95 为 `0.01261 pp`，人工压力负对照则精确回退 0 修正。该结果仍只是软件证据，**不代表真实测量稳定性或模型准确率提升，V5 仍是 champion**。
 
 > 边界：仓库不包含海辰内部测量，也不公开 MATR、SNL 等上游原始数据。上述数字属于结果已暴露的公开循环老化开发证据，不是海辰产品验证、日历老化确认或 15 至 25 年准确率证明。
 
