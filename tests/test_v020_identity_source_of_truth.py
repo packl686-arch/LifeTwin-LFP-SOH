@@ -5,6 +5,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+from types import MappingProxyType
 
 import pandas as pd
 import pytest
@@ -36,9 +37,28 @@ def _alternate_view(tmp_path) -> contract.V024ContractView:
         ensure_ascii=True,
         separators=(",", ":"),
     )
+    amendment_payload = json.loads(base.artifacts.config_path.read_text("utf-8"))
+    amendment_payload["protocol_id"] = protocol_id
+    amendment_payload["status"] = "fixture_authenticated"
+    amendment_payload["fresh_generation"]["seed_roots"] = dict(roots)
+    amendment_json = json.dumps(
+        amendment_payload,
+        allow_nan=False,
+        ensure_ascii=True,
+        indent=2,
+    )
     config_path = tmp_path / "alternate_contract.json"
-    config_path.write_text(config_json + "\n", encoding="ascii")
+    config_path.write_text(amendment_json + "\n", encoding="ascii")
     byte_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+    canonical_hash = hashlib.sha256(
+        json.dumps(
+            amendment_payload,
+            allow_nan=False,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("ascii")
+    ).hexdigest()
     return contract.V024ContractView(
         protocol=replace(
             base.protocol,
@@ -54,7 +74,7 @@ def _alternate_view(tmp_path) -> contract.V024ContractView:
             config_byte_sha256=byte_hash,
         ),
         design_status="fixture_authenticated",
-        config_canonical_sha256=hashlib.sha256(config_json.encode("ascii")).hexdigest(),
+        config_canonical_sha256=canonical_hash,
         whole_rows=base.whole_rows,
         partition_rows=base.partition_rows,
         base_config_canonical_sha256=base.base_config_canonical_sha256,
@@ -197,6 +217,165 @@ def test_contract_view_rejects_cross_object_identity_drift(tmp_path) -> None:
                     for index, (name, root) in enumerate(view.protocol.seed_roots)
                 ),
             ),
+        )
+
+
+def test_contract_view_rejects_unbound_scientific_and_artifact_drift(tmp_path) -> None:
+    view = _alternate_view(tmp_path)
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            protocol=replace(
+                view.protocol,
+                time_scale_days=view.protocol.time_scale_days + 1.0,
+            ),
+        )
+
+    config_payload = view.protocol.config()
+    config_payload["time_grid"]["days_per_year_for_labels"] += 1.0
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            protocol=replace(
+                view.protocol,
+                config_json=json.dumps(
+                    config_payload,
+                    allow_nan=False,
+                    ensure_ascii=True,
+                    separators=(",", ":"),
+                ),
+            ),
+        )
+
+    reduced_schemas = dict(view.artifacts.csv_schemas)
+    reduced_schemas.pop(next(iter(reduced_schemas)))
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            artifacts=replace(
+                view.artifacts,
+                csv_schemas=MappingProxyType(reduced_schemas),
+            ),
+        )
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            artifacts=replace(
+                view.artifacts,
+                truth_filenames=view.artifacts.truth_filenames[:-1],
+            ),
+        )
+    reduced_allowlists = dict(view.artifacts.json_key_allowlists)
+    reduced_allowlists.pop(next(iter(reduced_allowlists)))
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            artifacts=replace(
+                view.artifacts,
+                json_key_allowlists=MappingProxyType(reduced_allowlists),
+            ),
+        )
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            artifacts=replace(
+                view.artifacts,
+                exposure_keys=frozenset((*view.artifacts.exposure_keys, "extra")),
+            ),
+        )
+    changed_member_counts = dict(view.artifacts.partition_member_counts)
+    partition = next(iter(changed_member_counts))
+    changed_member_counts[partition] += 1
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            artifacts=replace(
+                view.artifacts,
+                partition_member_counts=MappingProxyType(changed_member_counts),
+            ),
+        )
+
+
+def test_contract_view_rejects_mutable_or_unbound_row_registries(tmp_path) -> None:
+    view = _alternate_view(tmp_path)
+    with pytest.raises(contract.V024ContractError):
+        replace(view, whole_rows=dict(view.whole_rows))
+
+    changed_whole = dict(view.whole_rows)
+    changed_whole["prefix_pack.csv"] += 1
+    with pytest.raises(contract.V024ContractError):
+        replace(view, whole_rows=MappingProxyType(changed_whole))
+
+    changed_partitions = dict(view.partition_rows)
+    counts = changed_partitions["center_development"]
+    changed_partitions["center_development"] = (counts[0] + 1, *counts[1:])
+    with pytest.raises(contract.V024ContractError):
+        replace(view, partition_rows=MappingProxyType(changed_partitions))
+
+
+def test_contract_view_snapshots_mapping_proxy_backing_dicts(tmp_path) -> None:
+    view = _alternate_view(tmp_path)
+    whole_backing = dict(view.whole_rows)
+    schema_backing = dict(view.artifacts.csv_schemas)
+    snapshotted = replace(
+        view,
+        whole_rows=MappingProxyType(whole_backing),
+        artifacts=replace(
+            view.artifacts,
+            csv_schemas=MappingProxyType(schema_backing),
+        ),
+    )
+
+    whole_backing["prefix_pack.csv"] += 1
+    schema_backing.pop(next(iter(schema_backing)))
+
+    assert snapshotted.whole_rows == view.whole_rows
+    assert snapshotted.artifacts.csv_schemas == view.artifacts.csv_schemas
+    assert contract.require_contract_view(snapshotted) is snapshotted
+
+
+def test_contract_view_rejects_amendment_commitment_drift(tmp_path) -> None:
+    view = _alternate_view(tmp_path)
+    with pytest.raises(contract.V024ContractError):
+        replace(view, config_canonical_sha256="0" * 64)
+
+    view.artifacts.config_path.write_text(
+        view.artifacts.config_path.read_text("ascii") + " ",
+        encoding="ascii",
+    )
+    with pytest.raises(contract.V024ContractError):
+        contract.require_contract_view(view)
+
+
+def test_contract_view_rejects_self_committed_amendment_science_drift(
+    tmp_path,
+) -> None:
+    view = _alternate_view(tmp_path)
+    payload = json.loads(view.artifacts.config_path.read_text("ascii"))
+    payload["numeric_output_contract"]["infinity_forbidden"] = False
+    amended = json.dumps(
+        payload,
+        allow_nan=False,
+        ensure_ascii=True,
+        indent=2,
+    )
+    view.artifacts.config_path.write_text(amended + "\n", encoding="ascii")
+    byte_hash = hashlib.sha256(view.artifacts.config_path.read_bytes()).hexdigest()
+    canonical_hash = hashlib.sha256(
+        json.dumps(
+            payload,
+            allow_nan=False,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(contract.V024ContractError):
+        replace(
+            view,
+            protocol=replace(view.protocol, config_sha256=byte_hash),
+            artifacts=replace(view.artifacts, config_byte_sha256=byte_hash),
+            config_canonical_sha256=canonical_hash,
         )
 
 

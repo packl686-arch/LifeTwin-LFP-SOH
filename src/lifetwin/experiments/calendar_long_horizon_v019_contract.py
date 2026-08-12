@@ -49,6 +49,14 @@ _ARTIFACT_ADAPTED_FIELDS = frozenset(
 )
 _PROTOCOL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_MAPPING_PROXY_TYPE = type(MappingProxyType({}))
+_WHOLE_ROW_INDEX = {
+    "prefix_pack.csv": 1,
+    "forecast_coordinates.csv": 2,
+    "operating_pack.csv": 3,
+    "member_fit_diagnostics.csv": 4,
+    "member_forecast_bundle.csv": 5,
+}
 
 
 class V024ContractError(ValueError):
@@ -75,6 +83,34 @@ class V024ContractView:
     base_config_byte_sha256: str
 
     def __post_init__(self) -> None:
+        if (
+            type(self.whole_rows) is not _MAPPING_PROXY_TYPE
+            or type(self.partition_rows) is not _MAPPING_PROXY_TYPE
+        ):
+            raise V024ContractError("Row registries must be immutable mappings")
+        object.__setattr__(self, "whole_rows", MappingProxyType(dict(self.whole_rows)))
+        object.__setattr__(
+            self,
+            "partition_rows",
+            MappingProxyType(
+                {name: tuple(counts) for name, counts in self.partition_rows.items()}
+            ),
+        )
+        if type(self.artifacts) is FrozenArtifactContract:
+            object.__setattr__(
+                self,
+                "artifacts",
+                replace(
+                    self.artifacts,
+                    csv_schemas=MappingProxyType(dict(self.artifacts.csv_schemas)),
+                    json_key_allowlists=MappingProxyType(
+                        dict(self.artifacts.json_key_allowlists)
+                    ),
+                    partition_member_counts=MappingProxyType(
+                        dict(self.artifacts.partition_member_counts)
+                    ),
+                ),
+            )
         require_contract_view(self)
 
 
@@ -222,12 +258,63 @@ def _assert_only_allowed_dataclass_changes(
     if type(base) is not type(adapted):
         raise V024ContractError(f"{context} type changed")
     for field in fields(base):
-        if field.name not in allowed and getattr(base, field.name) != getattr(
-            adapted, field.name
-        ):
+        if field.name in allowed:
+            continue
+        base_value = getattr(base, field.name)
+        adapted_value = getattr(adapted, field.name)
+        if type(base_value) is not type(adapted_value) or base_value != adapted_value:
             raise V024ContractError(
                 f"{context}.{field.name} changed outside the amendment"
             )
+
+
+def _load_bound_amendment(view: V024ContractView) -> Mapping[str, Any]:
+    def object_without_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in result:
+                raise V024ContractError("Adapted amendment has duplicate JSON keys")
+            result[key] = item
+        return result
+
+    def reject_nonfinite(token: str) -> None:
+        raise V024ContractError(f"Adapted amendment contains {token}")
+
+    try:
+        raw = view.artifacts.config_path.read_bytes()
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=object_without_duplicates,
+            parse_constant=reject_nonfinite,
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise V024ContractError("Cannot parse adapted amendment") from exc
+    if not isinstance(payload, Mapping):
+        raise V024ContractError("Adapted amendment must be a JSON object")
+    if hashlib.sha256(raw).hexdigest() != view.artifacts.config_byte_sha256:
+        raise V024ContractError("Adapted config commitment is not the amendment")
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    if hashlib.sha256(canonical).hexdigest() != view.config_canonical_sha256:
+        raise V024ContractError("Adapted canonical config commitment drifted")
+
+    load_v024_design(DEFAULT_V024_AMENDMENT_PATH)
+    frozen = json.loads(DEFAULT_V024_AMENDMENT_PATH.read_text(encoding="utf-8"))
+    restored = json.loads(json.dumps(payload, ensure_ascii=True, allow_nan=False))
+    restored["protocol_id"] = frozen["protocol_id"]
+    restored["status"] = frozen["status"]
+    restored_generation = restored.get("fresh_generation")
+    if not isinstance(restored_generation, dict):
+        raise V024ContractError("Adapted amendment generation contract is absent")
+    restored_generation["seed_roots"] = frozen["fresh_generation"]["seed_roots"]
+    if restored != frozen:
+        raise V024ContractError("Adapted amendment changed a scientific field")
+    return payload
 
 
 def require_contract_view(value: object) -> V024ContractView:
@@ -242,6 +329,21 @@ def require_contract_view(value: object) -> V024ContractView:
     _require_exact_type(
         view.artifacts, FrozenArtifactContract, context="adapted artifacts"
     )
+    base_protocol = load_frozen_protocol_config(DEFAULT_V2_CONFIG_PATH)
+    base_artifacts = load_artifact_contract(DEFAULT_V2_CONFIG_PATH)
+    _validate_base_contracts(base_protocol, base_artifacts)
+    _assert_only_allowed_dataclass_changes(
+        base_protocol,
+        view.protocol,
+        allowed=_PROTOCOL_ADAPTED_FIELDS,
+        context="protocol",
+    )
+    _assert_only_allowed_dataclass_changes(
+        base_artifacts,
+        view.artifacts,
+        allowed=_ARTIFACT_ADAPTED_FIELDS,
+        context="artifacts",
+    )
     protocol_id = view.protocol.protocol_id
     if (
         not isinstance(protocol_id, str)
@@ -252,13 +354,10 @@ def require_contract_view(value: object) -> V024ContractView:
     if view.protocol.config_sha256 != view.artifacts.config_byte_sha256:
         raise V024ContractError("Adapted config commitments disagree")
     config_sha256 = view.protocol.config_sha256
-    if (
-        not isinstance(config_sha256, str)
-        or _SHA256.fullmatch(config_sha256) is None
-        or config_sha256
-        != _file_sha256(view.artifacts.config_path, context="adapted amendment")
-    ):
-        raise V024ContractError("Adapted config commitment is not the amendment")
+    if not isinstance(config_sha256, str) or _SHA256.fullmatch(config_sha256) is None:
+        raise V024ContractError("Adapted config commitment is invalid")
+    if view.artifacts.config_path != view.artifacts.config_path.resolve():
+        raise V024ContractError("Adapted amendment path must be absolute")
     if (
         not isinstance(view.config_canonical_sha256, str)
         or _SHA256.fullmatch(view.config_canonical_sha256) is None
@@ -275,22 +374,15 @@ def require_contract_view(value: object) -> V024ContractView:
     ):
         raise V024ContractError("Adapted seed-root registry is not exact")
     if (
-        not isinstance(view.whole_rows, Mapping)
-        or set(view.whole_rows)
-        != {
-            "prefix_pack.csv",
-            "forecast_coordinates.csv",
-            "operating_pack.csv",
-            "member_fit_diagnostics.csv",
-            "member_forecast_bundle.csv",
-        }
+        type(view.whole_rows) is not _MAPPING_PROXY_TYPE
+        or set(view.whole_rows) != set(_WHOLE_ROW_INDEX)
         or any(
             type(count) is not int or count < 1 for count in view.whole_rows.values()
         )
     ):
         raise V024ContractError("Adapted whole-row registry is invalid")
     if (
-        not isinstance(view.partition_rows, Mapping)
+        type(view.partition_rows) is not _MAPPING_PROXY_TYPE
         or tuple(view.partition_rows) != view.artifacts.partitions
         or any(
             not isinstance(counts, tuple)
@@ -322,6 +414,55 @@ def require_contract_view(value: object) -> V024ContractView:
         raise V024ContractError("Adapted seed_roots is not an object")
     if tuple(config_roots.items()) != roots:
         raise V024ContractError("Adapted JSON and parsed roots disagree")
+    expected_config = base_protocol.config()
+    expected_config["protocol_id"] = protocol_id
+    expected_partitions = expected_config.get("design_partitions")
+    if not isinstance(expected_partitions, dict):
+        raise V024ContractError("Base design_partitions is not mutable JSON")
+    expected_partitions["seed_roots"] = dict(roots)
+    if adapted_config != expected_config:
+        raise V024ContractError("Adapted protocol JSON changed a scientific field")
+
+    amendment = _load_bound_amendment(view)
+    if (
+        amendment.get("protocol_id") != protocol_id
+        or amendment.get("status") != view.design_status
+    ):
+        raise V024ContractError("Adapted amendment identity or status drifted")
+    fresh_generation = amendment.get("fresh_generation")
+    if not isinstance(fresh_generation, Mapping):
+        raise V024ContractError("Adapted amendment generation contract is absent")
+    amendment_roots = fresh_generation.get("seed_roots")
+    if (
+        not isinstance(amendment_roots, Mapping)
+        or tuple(amendment_roots.items()) != roots
+    ):
+        raise V024ContractError("Adapted amendment seed roots drifted")
+    whole_contract = amendment.get("whole_bundle_contract")
+    partition_contract = amendment.get("partition_contract")
+    if not isinstance(whole_contract, Mapping) or not isinstance(
+        partition_contract, Mapping
+    ):
+        raise V024ContractError("Adapted amendment row contracts are absent")
+    if whole_contract.get("required_tables") != dict(view.whole_rows):
+        raise V024ContractError("Adapted whole-row registry is not amendment-bound")
+    raw_partition_rows = partition_contract.get("cardinality")
+    if not isinstance(raw_partition_rows, Mapping) or {
+        str(name): tuple(counts) if isinstance(counts, list) else counts
+        for name, counts in raw_partition_rows.items()
+    } != dict(view.partition_rows):
+        raise V024ContractError("Adapted partition-row registry is not amendment-bound")
+    for filename, index in _WHOLE_ROW_INDEX.items():
+        if (
+            sum(counts[index] for counts in view.partition_rows.values())
+            != view.whole_rows[filename]
+        ):
+            raise V024ContractError("Adapted whole and partition row counts disagree")
+    if any(
+        counts[0] != view.artifacts.partition_member_counts[partition]
+        for partition, counts in view.partition_rows.items()
+    ):
+        raise V024ContractError("Adapted partition member counts disagree")
     return view
 
 
