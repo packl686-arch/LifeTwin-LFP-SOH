@@ -1,0 +1,159 @@
+{
+  "schema_version": "lifetwin_synthetic_long_horizon_v2_5/1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2_5",
+  "implementation_profile": "v0.20",
+  "status": "preregistered_post_generic_core_pre_formalization",
+  "design_date": "2026-08-12",
+  "base_contract": {
+    "protocol_id": "synthetic_long_horizon_identifiability_v2_4",
+    "amendment_path": "configs/experiments/synthetic_long_horizon_identifiability_v2_4_amendment.json",
+    "amendment_byte_sha256": "24e4e08f10337080212be8932c9c7b696faf281221d6e39b0a33b0cd2d7cb28f",
+    "amendment_semantic_sha256": "cf449e4440ee4ae73fa9310a237dd515b1cc65d96e314412e0c54bf19a58032e",
+    "generic_core_commit": "1c0b1187e5a44cad3b5aecc1bbd54f88d2fc1d30"
+  },
+  "change_scope": {
+    "allowed": [
+      "new protocol, attempt, seed, generated-data and path identities",
+      "one canonical exact-set checkpoint registry shared by producers and consumers",
+      "typed fail-closed checkpoint registry errors before truth reveal",
+      "formal and prediction process attestation of the same immutable identity"
+    ],
+    "forbidden": [
+      "changing any generating family, equation, feature, model, optimizer or parameter bound",
+      "changing any threshold, partition, endpoint, denominator, gate, confidence rule or success condition",
+      "formal=False, relaxed key sets, skipped hashes, runtime registry overrides or result-dependent changes",
+      "reusing any predecessor seed, row, ID, hash, state, prediction, score or attempt root"
+    ]
+  },
+  "attempt_registry": {
+    "only_attempt_id": "v025-formal-20260812-a1",
+    "maximum_attempts": 1,
+    "a2_or_replacement_attempt_forbidden": true,
+    "retry_or_resume_for_better_result_forbidden": true,
+    "formal_execution_status": "reserved_pending_post_freeze_authorization",
+    "formal_generation_before_freeze_forbidden": true
+  },
+  "fresh_generation": {
+    "generation_has_started": false,
+    "seed_consumed": false,
+    "sealed_truth_created_or_opened": false,
+    "pilot_or_test_generation_forbidden": true,
+    "seed_roots": {
+      "center_development": 202608120501,
+      "risk_development": 202608120502,
+      "calibration": 202608120503,
+      "test": 202608120504,
+      "audit": 202608120505,
+      "novel_mechanism_test": 202608120506,
+      "novel_mechanism_audit": 202608120507,
+      "intrinsic_matched_pairs": 202608120508,
+      "stress_plan_matched_pairs": 202608120509,
+      "random_rankings": 202608120510,
+      "bootstrap": 202608120511,
+      "stress_permutations": 202608120512,
+      "placebo_covariate": 202608120513
+    },
+    "seed_derivation": "For each named stream, derive the first 16 hexadecimal digits of SHA256(protocol_id|seed_root|partition|family_id|zero_based_index|stream_name), interpret as unsigned and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) only in the frozen environment."
+  },
+  "path_isolation": {
+    "label_free_root": "artifacts/v025-formal-20260812-a1-label-free",
+    "sealed_truth_root": "artifacts/v025-formal-20260812-a1-sealed-truth",
+    "score_root": "artifacts/v025-formal-20260812-a1-score",
+    "termination_root": "artifacts/v025-formal-20260812-a1-termination",
+    "formal_roots_must_be_absent_before_launch": true,
+    "resolved_roots_must_be_pairwise_distinct": true,
+    "all_predecessor_roots_are_read_only_and_disjoint": true
+  },
+  "checkpoint_registry_contract": {
+    "binding": "one immutable object identity shared by producer, checkpoint verifier, truth firewall, calibration manifest and model-state validation",
+    "center_development": [
+      "actual_analysis_hash_ledger_commitment.json",
+      "center_development_truth.csv",
+      "fit_commitment.json",
+      "forecast_coordinates.csv",
+      "generation_plan_commitment.json",
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv",
+      "operating_pack.csv",
+      "prefix_pack.csv",
+      "truth_commitments.json"
+    ],
+    "risk_development": [
+      "actual_analysis_hash_ledger_commitment.json",
+      "center_state_checkpoint.json",
+      "fit_commitment.json",
+      "forecast_coordinates.csv",
+      "generation_plan_commitment.json",
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv",
+      "operating_pack.csv",
+      "prefix_pack.csv",
+      "risk_development_truth.csv",
+      "truth_commitments.json"
+    ],
+    "calibration": [
+      "actual_analysis_hash_ledger_commitment.json",
+      "calibration_mask_commitment.json",
+      "calibration_truth.csv",
+      "center_state_checkpoint.json",
+      "fit_commitment.json",
+      "forecast_coordinates.csv",
+      "generation_plan_commitment.json",
+      "member_fit_diagnostics.csv",
+      "member_forecast_bundle.csv",
+      "operating_pack.csv",
+      "prefix_pack.csv",
+      "risk_state_checkpoint.json",
+      "training_manifest.json",
+      "truth_commitments.json"
+    ],
+    "failure_rule": "Any missing, extra, renamed, reordered, mutable or byte-drifted registered input is a typed pre-result integrity failure and truth reveal count remains zero."
+  },
+  "scientific_inheritance": {
+    "rule": "Every scientific field in the byte- and semantic-committed V2.4 amendment remains binding unless explicitly listed in change_scope.allowed. Omission never weakens inheritance.",
+    "unchanged": [
+      "six generating families, equations, distributions and noise",
+      "seven partitions, cluster counts, twelve prefix days, eight forecast days and units",
+      "exact 86 variants, models, features, optimizers, parameter bounds and fit credibility",
+      "risk, isotonic, mean baseline, split-conformal, routing, fallback and rejection rules",
+      "five primary endpoints, eight-family, novel-mechanism and safety gates",
+      "placebo, stress-permutation and information-firewall negative controls",
+      "bootstrap, Clopper-Pearson, permutation and confidence-interval rules",
+      "success, scored failure, terminal inconclusive, integrity void and unknown terminal classifications",
+      "whole-bundle and partition cardinality, schema, key, unit, hash and numeric contracts",
+      "fit commitment, prediction commitment, truth-open, scoring and terminal ordering"
+    ]
+  },
+  "lifecycle_order": [
+    "static environment, source, history, collision and path preflight without seed consumption",
+    "capability-minimal fresh generation",
+    "whole-bundle formal validation and fit commitment",
+    "center, risk and calibration checkpoints through the canonical registry",
+    "prediction commitment",
+    "heldout truth opening and deterministic scoring",
+    "exactly one scored or terminal registry",
+    "independent post-run hash and history audit"
+  ],
+  "terminal_rules": {
+    "scientific_classifications_inherited_from_v2_4": true,
+    "checkpoint_registry_mismatch_is_integrity_void": true,
+    "known_checkpoint_error_may_use_unknown_default": false,
+    "prediction_and_terminal_registries_mutually_exclusive": true,
+    "terminal_registry_exact_files": [
+      "terminal_attempt_record.json",
+      "terminal_artifact_manifest.json",
+      "terminal_exposure_log_snapshot.jsonl"
+    ]
+  },
+  "freeze_requirements": {
+    "preregistration": "reports/synthetic_long_horizon_identifiability_prereg_v2_5.md",
+    "environment_lock": "requirements/v025-formal.txt",
+    "implementation_audit": "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_5.md",
+    "freeze_record": "reports/synthetic_long_horizon_identifiability_freeze_record_v2_5.json",
+    "linear_topology": "P parent is 1c0b1187e5a44cad3b5aecc1bbd54f88d2fc1d30; I is the direct child of P; F is the direct child of I.",
+    "source_tree_byte_semantic_and_file_sha_required": true,
+    "clean_worktree_and_remote_identity_required": true,
+    "no_source_or_protocol_change_after_F": true
+  },
+  "claim_boundary": "Any future V2.5 result is limited to the frozen six-core-family synthetic 25-year protocol. It is not evidence of real LFP cells, Hithium products, storage stations or 15-25 year real-world predictive accuracy."
+}
