@@ -6,6 +6,7 @@ import inspect
 from pathlib import Path
 from types import SimpleNamespace
 
+import pandas as pd
 import pytest
 
 from lifetwin.experiments import calendar_long_horizon_v019_firewall as firewall
@@ -103,6 +104,172 @@ def _center_checkpoint(
     return payload, raw
 
 
+def _risk_checkpoint(
+    *,
+    label: Path,
+    sealed: Path,
+    config_sha256: str,
+    center: dict[str, object],
+    center_raw: bytes,
+) -> tuple[dict[str, object], bytes]:
+    risk_inputs = _producer_hashes("risk_development", label=label, sealed=sealed)
+    training = {
+        "protocol_id": V024_PROTOCOL_ID,
+        "config_sha256": config_sha256,
+        "center_state_sha256": center["center_state_sha256"],
+        "risk_state_sha256": "3" * 64,
+        "center_development_input_hashes": center["input_byte_hashes"],
+        "risk_development_input_hashes": risk_inputs,
+        "opened_truth_files": [
+            "center_development_truth.csv",
+            "risk_development_truth.csv",
+        ],
+        "forbidden_v1_evidence_matches": [],
+        "created_utc": "2026-08-12T00:00:01+00:00",
+    }
+    training_raw = canonical_json_bytes(training)
+    (label / "training_manifest.json").write_bytes(training_raw)
+    payload: dict[str, object] = {
+        "protocol_id": V024_PROTOCOL_ID,
+        "config_sha256": config_sha256,
+        "state_kind": "risk_development",
+        "center_checkpoint_byte_sha256": hashlib.sha256(center_raw).hexdigest(),
+        "training_manifest_byte_sha256": hashlib.sha256(training_raw).hexdigest(),
+        "risk_state_sha256": training["risk_state_sha256"],
+        "development_cluster_count": 2,
+        "eligible_cluster_count": 2,
+        "positive_label_count": 1,
+        "negative_label_count": 1,
+        "input_byte_hashes": risk_inputs,
+        "created_utc": "2026-08-12T00:00:02+00:00",
+    }
+    raw = canonical_json_bytes(payload)
+    (label / "risk_state_checkpoint.json").write_bytes(raw)
+    return payload, raw
+
+
+def _write_truth_commitment(
+    *,
+    label: Path,
+    sealed: Path,
+    contract: object,
+) -> str:
+    entries = []
+    for index, filename in enumerate(contract.sealed_filenames):
+        path = sealed / filename
+        if not path.exists():
+            path.write_bytes(f"sealed fixture/{index}/{filename}\n".encode())
+        raw = path.read_bytes()
+        entries.append(
+            {
+                "path": filename,
+                "row_count": contract.csv_schema(filename).required_rows,
+                "byte_count": len(raw),
+                "byte_sha256": hashlib.sha256(raw).hexdigest(),
+            }
+        )
+    raw = canonical_json_bytes(
+        {
+            "protocol_id": V024_PROTOCOL_ID,
+            "config_sha256": contract.config_byte_sha256,
+            "files": entries,
+            "created_utc": "2026-08-12T00:00:00+00:00",
+            "truth_values_withheld_by_physical_path": True,
+        }
+    )
+    (label / "truth_commitments.json").write_bytes(raw)
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _append_completed_phase(
+    *,
+    label: Path,
+    identity: FormalAttemptIdentity,
+    contract: object,
+    phase: str,
+    index: int,
+    truth_hash: str | None,
+    artifact_hash: str | None = None,
+) -> None:
+    message = (
+        firewall.phase_commitment_message(phase, artifact_hash)
+        if artifact_hash is not None
+        else "deterministic fixture transition"
+    )
+    firewall.append_formal_exposure_event(
+        path=label / "exposure_log.jsonl",
+        identity=identity,
+        contract=contract,
+        created_utc=f"2026-08-12T00:{index:02d}:00+00:00",
+        phase=phase,
+        exit_status="completed",
+        truth_commitments_byte_sha256=truth_hash,
+        prediction_commitment_byte_sha256=None,
+        message=message,
+    )
+
+
+def _ledger_through_center(
+    *,
+    label: Path,
+    identity: FormalAttemptIdentity,
+    contract: object,
+    truth_hash: str,
+    center_hash: str,
+) -> None:
+    commitments = {
+        "generation_plan_committed": hashlib.sha256(
+            (label / "generation_plan_commitment.json").read_bytes()
+        ).hexdigest(),
+        "actual_analysis_hash_ledger_committed": hashlib.sha256(
+            (label / "actual_analysis_hash_ledger_commitment.json").read_bytes()
+        ).hexdigest(),
+        "label_free_fit_committed": hashlib.sha256(
+            (label / "fit_commitment.json").read_bytes()
+        ).hexdigest(),
+        "center_state_committed": center_hash,
+    }
+    phases = (
+        "before_generation",
+        "generation_plan_committed",
+        "truth_committed",
+        "actual_analysis_hash_ledger_committed",
+        "label_free_fit_committed",
+        "center_truth_opened",
+        "center_state_committed",
+    )
+    for index, phase in enumerate(phases):
+        _append_completed_phase(
+            label=label,
+            identity=identity,
+            contract=contract,
+            phase=phase,
+            index=index,
+            truth_hash=(None if index < 2 else truth_hash),
+            artifact_hash=commitments.get(phase),
+        )
+
+
+def _patch_independent_reveal_prerequisites(
+    monkeypatch: pytest.MonkeyPatch,
+    opened: list[str],
+) -> None:
+    for name in (
+        "_verify_generation_plan",
+        "_verify_actual_analysis_hash_ledger",
+        "_verify_fit_commitment",
+        "_verify_mask_commitment",
+    ):
+        monkeypatch.setattr(firewall, name, lambda **_: None)
+
+    def read_spy(path: Path, contract: object, *, formal: bool) -> pd.DataFrame:
+        del formal
+        opened.append(path.name)
+        return pd.DataFrame(index=range(contract.csv_schema(path.name).required_rows))
+
+    monkeypatch.setattr(firewall, "read_canonical_csv", read_spy)
+
+
 def _mutate_registry_or_bytes(
     mutation: str,
     *,
@@ -129,7 +296,7 @@ def _mutate_registry_or_bytes(
     ("stage", "expected_truth"),
     tuple(_NEXT_TRUTH.items()),
 )
-def test_real_runner_registry_precedes_single_firewall_truth_open(
+def test_shared_registry_helper_opens_once_after_validation(
     tmp_path: Path,
     stage: str,
     expected_truth: str,
@@ -156,7 +323,7 @@ def test_real_runner_registry_precedes_single_firewall_truth_open(
 
 @pytest.mark.parametrize("stage", tuple(INPUT_FILENAMES_BY_STAGE))
 @pytest.mark.parametrize("mutation", ["missing", "extra", "renamed", "bytes"])
-def test_invalid_stage_registry_fails_before_truth_open(
+def test_shared_registry_helper_rejects_before_open(
     tmp_path: Path,
     stage: str,
     mutation: str,
@@ -179,6 +346,203 @@ def test_invalid_stage_registry_fails_before_truth_open(
             sealed_root=sealed,
             _input_filenames_by_stage=INPUT_FILENAMES_BY_STAGE,
             opener=lambda: opened.append(True),
+        )
+    assert opened == []
+
+
+def test_open_truth_for_phase_validates_real_checkpoints_before_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    label, sealed = _roots(tmp_path)
+    view = load_v024_contract_view()
+    truth_hash = _write_truth_commitment(
+        label=label,
+        sealed=sealed,
+        contract=view.artifacts,
+    )
+    center, center_raw = _center_checkpoint(
+        label=label,
+        sealed=sealed,
+        config_sha256=view.artifacts.config_byte_sha256,
+    )
+    _, risk_raw = _risk_checkpoint(
+        label=label,
+        sealed=sealed,
+        config_sha256=view.artifacts.config_byte_sha256,
+        center=center,
+        center_raw=center_raw,
+    )
+    identity = FormalAttemptIdentity(
+        "development-fixture",
+        "2" * 40,
+        view.artifacts.config_byte_sha256,
+    )
+    center_hash = hashlib.sha256(center_raw).hexdigest()
+    _ledger_through_center(
+        label=label,
+        identity=identity,
+        contract=view.artifacts,
+        truth_hash=truth_hash,
+        center_hash=center_hash,
+    )
+    opened: list[str] = []
+    _patch_independent_reveal_prerequisites(monkeypatch, opened)
+
+    risk_truth = firewall.open_truth_for_phase(
+        ledger_path=label / "exposure_log.jsonl",
+        identity=identity,
+        contract=view.artifacts,
+        commitment_path=label / "truth_commitments.json",
+        sealed_truth_root=sealed,
+        label_free_root=label,
+        phase="risk_truth_opened",
+        created_utc="2026-08-12T00:07:00+00:00",
+        formal=False,
+        _input_filenames_by_stage=INPUT_FILENAMES_BY_STAGE,
+    )
+    assert tuple(risk_truth) == ("risk_development_truth.csv",)
+    assert opened == ["risk_development_truth.csv"]
+
+    risk_hash = hashlib.sha256(risk_raw).hexdigest()
+    _append_completed_phase(
+        label=label,
+        identity=identity,
+        contract=view.artifacts,
+        phase="risk_state_committed",
+        index=8,
+        truth_hash=truth_hash,
+        artifact_hash=risk_hash,
+    )
+    mask_raw = (label / "calibration_mask_commitment.json").read_bytes()
+    _append_completed_phase(
+        label=label,
+        identity=identity,
+        contract=view.artifacts,
+        phase="calibration_mask_committed",
+        index=9,
+        truth_hash=truth_hash,
+        artifact_hash=hashlib.sha256(mask_raw).hexdigest(),
+    )
+    calibration_truth = firewall.open_truth_for_phase(
+        ledger_path=label / "exposure_log.jsonl",
+        identity=identity,
+        contract=view.artifacts,
+        commitment_path=label / "truth_commitments.json",
+        sealed_truth_root=sealed,
+        label_free_root=label,
+        phase="calibration_truth_opened",
+        created_utc="2026-08-12T00:10:00+00:00",
+        calibration_mask_commitment_path=(label / "calibration_mask_commitment.json"),
+        formal=False,
+        _input_filenames_by_stage=INPUT_FILENAMES_BY_STAGE,
+    )
+    assert tuple(calibration_truth) == ("calibration_truth.csv",)
+    assert opened == ["risk_development_truth.csv", "calibration_truth.csv"]
+
+
+@pytest.mark.parametrize("stage", ["center_development", "risk_development"])
+@pytest.mark.parametrize("mutation", ["missing", "extra", "renamed", "bytes"])
+def test_open_truth_for_phase_rejects_registry_before_sealed_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    mutation: str,
+) -> None:
+    label, sealed = _roots(tmp_path)
+    view = load_v024_contract_view()
+    truth_hash = _write_truth_commitment(
+        label=label,
+        sealed=sealed,
+        contract=view.artifacts,
+    )
+    center, center_raw = _center_checkpoint(
+        label=label,
+        sealed=sealed,
+        config_sha256=view.artifacts.config_byte_sha256,
+    )
+    risk, risk_raw = _risk_checkpoint(
+        label=label,
+        sealed=sealed,
+        config_sha256=view.artifacts.config_byte_sha256,
+        center=center,
+        center_raw=center_raw,
+    )
+    payload, path = (
+        (center, label / "center_state_checkpoint.json")
+        if stage == "center_development"
+        else (risk, label / "risk_state_checkpoint.json")
+    )
+    payload["input_byte_hashes"] = _mutate_registry_or_bytes(
+        mutation,
+        stage=stage,
+        hashes=dict(payload["input_byte_hashes"]),
+        label=label,
+        sealed=sealed,
+    )
+    if mutation != "bytes":
+        path.write_bytes(canonical_json_bytes(payload))
+    center_raw = (label / "center_state_checkpoint.json").read_bytes()
+    risk_raw = (label / "risk_state_checkpoint.json").read_bytes()
+    identity = FormalAttemptIdentity(
+        "development-fixture",
+        "2" * 40,
+        view.artifacts.config_byte_sha256,
+    )
+    _ledger_through_center(
+        label=label,
+        identity=identity,
+        contract=view.artifacts,
+        truth_hash=truth_hash,
+        center_hash=hashlib.sha256(center_raw).hexdigest(),
+    )
+    phase = "risk_truth_opened"
+    mask_path: Path | None = None
+    if stage == "risk_development":
+        _append_completed_phase(
+            label=label,
+            identity=identity,
+            contract=view.artifacts,
+            phase="risk_truth_opened",
+            index=7,
+            truth_hash=truth_hash,
+        )
+        _append_completed_phase(
+            label=label,
+            identity=identity,
+            contract=view.artifacts,
+            phase="risk_state_committed",
+            index=8,
+            truth_hash=truth_hash,
+            artifact_hash=hashlib.sha256(risk_raw).hexdigest(),
+        )
+        mask_path = label / "calibration_mask_commitment.json"
+        _append_completed_phase(
+            label=label,
+            identity=identity,
+            contract=view.artifacts,
+            phase="calibration_mask_committed",
+            index=9,
+            truth_hash=truth_hash,
+            artifact_hash=hashlib.sha256(mask_path.read_bytes()).hexdigest(),
+        )
+        phase = "calibration_truth_opened"
+
+    opened: list[str] = []
+    _patch_independent_reveal_prerequisites(monkeypatch, opened)
+    with pytest.raises(firewall.V024FirewallError):
+        firewall.open_truth_for_phase(
+            ledger_path=label / "exposure_log.jsonl",
+            identity=identity,
+            contract=view.artifacts,
+            commitment_path=label / "truth_commitments.json",
+            sealed_truth_root=sealed,
+            label_free_root=label,
+            phase=phase,
+            created_utc="2026-08-12T00:10:00+00:00",
+            calibration_mask_commitment_path=mask_path,
+            formal=False,
+            _input_filenames_by_stage=INPUT_FILENAMES_BY_STAGE,
         )
     assert opened == []
 
@@ -294,17 +658,15 @@ def test_equal_but_noncanonical_registry_cannot_be_an_override(tmp_path: Path) -
         )
 
 
-def test_real_lifecycle_functions_forward_the_single_internal_registry_seam() -> None:
-    assert "_input_filenames_by_stage=_input_filenames_by_stage" in inspect.getsource(
-        runner._fit_risk_stage
+def test_internal_registry_seam_is_not_a_formal_runner_override() -> None:
+    assert (
+        "_input_filenames_by_stage"
+        in inspect.signature(firewall.open_truth_for_phase).parameters
     )
-    assert "_input_filenames_by_stage=_input_filenames_by_stage" in inspect.getsource(
-        runner._fit_calibration_stage
+    assert (
+        "_input_filenames_by_stage"
+        in inspect.signature(io.load_committed_label_free_bundle_v024).parameters
     )
-    assert "_open_after_checkpoint_registry_v020" in inspect.getsource(
-        firewall.open_truth_for_phase
-    )
-    assert "_resolve_stage_input_hashes" in inspect.getsource(io._verify_training_chain)
     assert (
         "_input_filenames_by_stage"
         not in inspect.signature(runner.run_formal_attempt).parameters
@@ -381,39 +743,13 @@ def test_risk_checkpoint_real_firewall_uses_the_shared_eleven_key_registry(
         sealed=sealed,
         config_sha256=view.artifacts.config_byte_sha256,
     )
-    risk_inputs = _producer_hashes("risk_development", label=label, sealed=sealed)
-    training = {
-        "protocol_id": V024_PROTOCOL_ID,
-        "config_sha256": view.artifacts.config_byte_sha256,
-        "center_state_sha256": center["center_state_sha256"],
-        "risk_state_sha256": "3" * 64,
-        "center_development_input_hashes": center["input_byte_hashes"],
-        "risk_development_input_hashes": risk_inputs,
-        "opened_truth_files": [
-            "center_development_truth.csv",
-            "risk_development_truth.csv",
-        ],
-        "forbidden_v1_evidence_matches": [],
-        "created_utc": "2026-08-12T00:00:01+00:00",
-    }
-    training_raw = canonical_json_bytes(training)
-    (label / "training_manifest.json").write_bytes(training_raw)
-    risk = {
-        "protocol_id": V024_PROTOCOL_ID,
-        "config_sha256": view.artifacts.config_byte_sha256,
-        "state_kind": "risk_development",
-        "center_checkpoint_byte_sha256": hashlib.sha256(center_raw).hexdigest(),
-        "training_manifest_byte_sha256": hashlib.sha256(training_raw).hexdigest(),
-        "risk_state_sha256": training["risk_state_sha256"],
-        "development_cluster_count": 2,
-        "eligible_cluster_count": 2,
-        "positive_label_count": 1,
-        "negative_label_count": 1,
-        "input_byte_hashes": risk_inputs,
-        "created_utc": "2026-08-12T00:00:02+00:00",
-    }
-    risk_raw = canonical_json_bytes(risk)
-    (label / "risk_state_checkpoint.json").write_bytes(risk_raw)
+    risk, risk_raw = _risk_checkpoint(
+        label=label,
+        sealed=sealed,
+        config_sha256=view.artifacts.config_byte_sha256,
+        center=center,
+        center_raw=center_raw,
+    )
     identity = FormalAttemptIdentity(
         "development-fixture",
         "2" * 40,
@@ -440,4 +776,24 @@ def test_risk_checkpoint_real_firewall_uses_the_shared_eleven_key_registry(
         contract=view.artifacts,
         _input_filenames_by_stage=INPUT_FILENAMES_BY_STAGE,
     )
-    assert observed["input_byte_hashes"] == risk_inputs
+    assert observed["input_byte_hashes"] == risk["input_byte_hashes"]
+
+
+def test_ci_runs_reproduction_only_on_reviewed_release_refs() -> None:
+    workflow = (Path(__file__).parents[1] / ".github/workflows/ci.yml").read_text(
+        encoding="utf-8"
+    )
+    quality, reproduce = workflow.split("\n  reproduce:\n", maxsplit=1)
+    assert "\n    if:" not in quality
+    assert reproduce.startswith(
+        "    name: reproduce (${{ matrix.os }})\n"
+        "    if: >-\n"
+        "      github.event_name == 'pull_request' ||\n"
+        "      github.ref == 'refs/heads/main' ||\n"
+        "      startsWith(github.ref, 'refs/tags/v')\n"
+    )
+    upload = reproduce.split("      - uses: actions/upload-artifact@v4\n", maxsplit=1)[
+        1
+    ]
+    assert "          if-no-files-found: warn\n" in upload
+    assert "if-no-files-found: error" not in workflow
