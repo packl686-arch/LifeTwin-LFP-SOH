@@ -6,8 +6,12 @@ from types import SimpleNamespace
 import pytest
 
 from lifetwin.experiments import calendar_long_horizon_v019_runner as runner
+from lifetwin.experiments import calendar_long_horizon_v019_partition as partition
 from lifetwin.experiments.calendar_long_horizon_v019_numeric_contract import (
     V024MemberFitNumericContractError,
+)
+from lifetwin.experiments.calendar_long_horizon_v020_contract import (
+    load_v025_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_terminal import (
     ClassificationMode,
@@ -131,6 +135,70 @@ def test_fit_commitment_follows_readback_whole_validation_and_precedes_phase() -
     assert body.index("commit_validated_fit_result_v024(") < body.index(
         'exit_status="completed"'
     )
+
+
+def test_v025_view_reaches_whole_validator_and_fit_stage_passes_that_view(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    view = load_v025_contract_view()
+    missing_root = tmp_path / "fresh-label-free-root"
+
+    with pytest.raises(partition.V024WholeBundleContractError, match="physical"):
+        partition.validate_whole_bundle_from_root(missing_root, view)
+    with pytest.raises(partition.V024PartitionCapabilityError, match="invalid"):
+        partition.validate_whole_bundle_from_root(missing_root, view.artifacts)
+
+    events: list[str] = []
+    observed: list[object] = []
+    paths = SimpleNamespace(label_free_root=tmp_path, ledger_path=tmp_path / "ledger")
+    identity = SimpleNamespace(attempt_id=FIXTURE_ID)
+    monkeypatch.setattr(
+        runner,
+        "_append_phase",
+        lambda **kwargs: events.append(f"phase:{kwargs['exit_status']}"),
+    )
+    monkeypatch.setattr(
+        runner, "_append_failure", lambda **kwargs: events.append("failure")
+    )
+    monkeypatch.setattr(
+        runner, "load_fresh_generation_bundle_v024", lambda **kwargs: object()
+    )
+    monkeypatch.setattr(
+        runner, "fit_verified_generation_bundle_v024", lambda _: object()
+    )
+    monkeypatch.setattr(
+        runner,
+        "write_verified_fit_result_v024",
+        lambda **kwargs: events.append("write"),
+    )
+    monkeypatch.setattr(
+        runner,
+        "validate_whole_bundle_from_root",
+        lambda root, contract: observed.append(contract)
+        or events.append("whole")
+        or object(),
+    )
+    monkeypatch.setattr(
+        runner,
+        "commit_validated_fit_result_v024",
+        lambda **kwargs: events.append("commit") or "d" * 64,
+    )
+    monkeypatch.setattr(
+        runner, "validate_formal_exposure_log", lambda *args: {FIXTURE_ID: object()}
+    )
+    monkeypatch.setattr(
+        runner, "verify_phase_artifact_commitment", lambda *args, **kwargs: None
+    )
+
+    runner._fit_structure_stage(
+        paths=paths,
+        identity=identity,
+        view=view,
+        truth_hash="0" * 64,
+    )
+    assert observed == [view]
+    assert events == ["phase:started", "write", "whole", "commit", "phase:completed"]
 
 
 def test_member_fit_contract_error_has_a_typed_integrity_disposition() -> None:

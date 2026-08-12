@@ -700,7 +700,7 @@ def _fit_structure_stage(
         del fitted
         whole = validate_whole_bundle_from_root(
             paths.label_free_root,
-            view.artifacts,
+            view,
         )
         digest = commit_validated_fit_result_v024(
             bundle=bundle,
