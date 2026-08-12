@@ -528,14 +528,14 @@ def recompute_validated_partition_with_state_v024(
         filename="risk_bundle.csv",
         partition=partition,
         required_rows=cluster_count * 9,
-        contract=contract,
+        contract=artifact_contract,
     )
     decisions = canonicalize_partition_output(
         decisions,
         filename="decision_bundle.csv",
         partition=partition,
         required_rows=cluster_count * 2,
-        contract=contract,
+        contract=artifact_contract,
     )
     features = features.sort_values(
         ["partition", "cluster_id"], kind="stable"

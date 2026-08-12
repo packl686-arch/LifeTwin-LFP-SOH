@@ -295,6 +295,8 @@ def _artifact_path(
 def verify_formal_attempt_environment(
     identity: FormalAttemptIdentity,
     view: V024ContractView,
+    *,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> None:
     """Bind a truth-capability call to the frozen V2.4 implementation."""
 
@@ -303,7 +305,11 @@ def verify_formal_attempt_environment(
     )
 
     project_root = Path(__file__).resolve().parents[3]
-    environment = verify_formal_environment(project_root, contract_view=view)
+    environment = (
+        verify_formal_environment(project_root, contract_view=view)
+        if _environment_verifier is None
+        else _environment_verifier(project_root, view)
+    )
     if (
         environment.git_dirty
         or environment.git_commit != identity.git_commit
@@ -991,6 +997,7 @@ def open_truth_for_phase(
     prediction_commitment_path: str | Path | None = None,
     formal: bool = True,
     _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> Mapping[str, pd.DataFrame]:
     """Open only truth authorized by one V2.4 reveal phase.
 
@@ -1008,7 +1015,11 @@ def open_truth_for_phase(
     if phase not in _OPEN_PHASE_FILES:
         raise V024FirewallError("This phase has no truth-access capability")
     if formal:
-        verify_formal_attempt_environment(identity, view)
+        verify_formal_attempt_environment(
+            identity,
+            view,
+            _environment_verifier=_environment_verifier,
+        )
     physical_label = _physical_root(label_free_root, context="Label-free")
     physical_sealed = _physical_root(sealed_truth_root, context="Sealed-truth")
     try:

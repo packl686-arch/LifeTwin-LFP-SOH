@@ -7,6 +7,7 @@ sealed-truth, prediction, numeric-model-decoding, or scoring capability.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
@@ -52,6 +53,9 @@ from lifetwin.experiments.calendar_long_horizon_v019_ledger import (
 )
 from lifetwin.experiments.calendar_long_horizon_v019_signals import (
     V024CalibrationTerminalInconclusive,
+)
+from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+    V020CheckpointRegistryError,
 )
 
 
@@ -360,6 +364,18 @@ def _v024_training_reason(error: BaseException) -> TerminalReason | None:
 def classify_terminal_exception(error: BaseException) -> TerminalClassification:
     """Classify from types and registered codes, never raw exception text."""
 
+    cursor: BaseException | None = error
+    seen: set[int] = set()
+    while cursor is not None and id(cursor) not in seen:
+        seen.add(id(cursor))
+        if isinstance(cursor, V020CheckpointRegistryError):
+            return _classification(
+                error=error,
+                disposition=TerminalDisposition.INTEGRITY_FAILURE,
+                mode=ClassificationMode.PROVEN_INTEGRITY,
+                reason=TerminalReason.INTEGRITY_ARTIFACT_HASH_MISMATCH,
+            )
+        cursor = cursor.__cause__ or cursor.__context__
     if isinstance(error, V019IntegrityError):
         return _classification(
             error=error,
@@ -2043,13 +2059,16 @@ def _environment_guarded_error(
     error: BaseException,
     repo_root: str | Path | None,
     contract_view: V024ContractView,
+    environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> BaseException:
     """Convert any failed fresh environment attestation into an integrity void."""
 
     try:
-        environment = verify_formal_environment(
-            repo_root or _PROJECT_ROOT,
-            contract_view=contract_view,
+        root = Path(repo_root or _PROJECT_ROOT)
+        environment = (
+            verify_formal_environment(root, contract_view=contract_view)
+            if environment_verifier is None
+            else environment_verifier(root, contract_view)
         )
     except BaseException:
         return V019IntegrityError(TerminalReason.INTEGRITY_ENVIRONMENT_MISMATCH)
@@ -2072,6 +2091,7 @@ def publish_terminal(
     stderr: str | bytes = b"",
     repo_root: str | Path | None = None,
     _contract_view: V024ContractView | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> PublishedTermination:
     """Publish any typed/default V2.4 pre-prediction terminal disposition."""
 
@@ -2086,6 +2106,7 @@ def publish_terminal(
         error=error,
         repo_root=repo_root,
         contract_view=view,
+        environment_verifier=_environment_verifier,
     )
     classification = classify_terminal_exception(guarded_error)
     return _publish_terminal_classification(

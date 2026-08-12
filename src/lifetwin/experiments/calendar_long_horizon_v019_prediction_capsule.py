@@ -1462,6 +1462,8 @@ def _verify_training_chain_semantics(
     decoded: DecodedPredictionState,
     mask: _MaskEvidence,
     config_sha256: str,
+    protocol_id: str,
+    input_filenames_by_stage: object | None = None,
 ) -> None:
     model = payloads["model_state.json"]
     hashes = _model_substate_hashes(model)
@@ -1508,6 +1510,29 @@ def _verify_training_chain_semantics(
     center_inputs = dict(decoded.input_byte_hashes["center_development"])
     risk_inputs = dict(decoded.input_byte_hashes["risk_development"])
     calibration_inputs = dict(decoded.input_byte_hashes["calibration"])
+    if decoded.protocol_id != protocol_id:
+        raise V024PredictionCapsuleError("Training-chain protocol identity changed")
+    if input_filenames_by_stage is not None:
+        from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (  # noqa: PLC0415
+            V020CheckpointRegistryError,
+            require_input_filenames_by_stage_v020,
+        )
+
+        try:
+            expected = require_input_filenames_by_stage_v020(input_filenames_by_stage)
+        except V020CheckpointRegistryError as exc:
+            raise V024PredictionCapsuleError(
+                "Checkpoint input registry is not the canonical V0.20 object"
+            ) from exc
+        observed = {
+            "center_development": frozenset(center_inputs),
+            "risk_development": frozenset(risk_inputs),
+            "calibration": frozenset(calibration_inputs),
+        }
+        if any(observed[stage] != frozenset(expected[stage]) for stage in expected):
+            raise V024PredictionCapsuleError(
+                "Prediction state checkpoint input registry changed"
+            )
     model_center = model["center_state"]
     model_risk = model["risk_states"]
     model_calibration = model["calibration_state"]
@@ -2232,6 +2257,7 @@ def load_prediction_bundle(
     expected_protocol_id: str,
     expected_config_sha256: str,
     expected_git_commit: str,
+    _input_filenames_by_stage: object | None = None,
 ) -> PredictionBundle:
     """Load the exact pre-prediction capability without a truth path."""
 
@@ -2389,6 +2415,7 @@ def load_prediction_bundle(
         mask=mask,
         config_sha256=expected_config_sha256,
         protocol_id=expected_protocol_id,
+        input_filenames_by_stage=_input_filenames_by_stage,
     )
     model_commitment_raw = _direct_file(
         root,

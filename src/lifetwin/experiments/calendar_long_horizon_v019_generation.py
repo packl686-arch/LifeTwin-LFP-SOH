@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import stat
+from collections.abc import Callable
 from typing import Any, Mapping
 
 from lifetwin.experiments.calendar_long_horizon_v015_generation import (
@@ -340,20 +341,25 @@ def _decode_canonical_plan_commitment(raw: bytes) -> Mapping[str, object]:
     return decoded
 
 
-def _formal_environment(view: V024ContractView) -> object:
-    from lifetwin.experiments.calendar_long_horizon_v019_environment import (
-        verify_formal_environment,
-    )
+def _formal_environment(
+    view: V024ContractView,
+    verifier: Callable[[Path, V024ContractView], object] | None,
+) -> object:
+    if verifier is None:
+        from lifetwin.experiments.calendar_long_horizon_v019_environment import (  # noqa: PLC0415
+            verify_formal_environment,
+        )
 
-    return verify_formal_environment(_PROJECT_ROOT, contract_view=view)
+        return verify_formal_environment(_PROJECT_ROOT, contract_view=view)
+    return verifier(_PROJECT_ROOT, view)
 
 
-def _validate_contract_view(view: V024ContractView) -> None:
+def _validate_contract_view(view: V024ContractView, implementable_status: str) -> None:
     try:
         require_contract_view(view)
     except (TypeError, ValueError) as exc:
         raise V024GenerationError("Formal contract view is invalid") from exc
-    if view.design_status != _IMPLEMENTABLE_STATUS:
+    if view.design_status != implementable_status:
         raise V024GenerationError("Implementation has not been immutably frozen")
 
 
@@ -492,12 +498,14 @@ def commit_frozen_v024_generation_plan(
     *,
     label_free_root: str | Path,
     _contract_view: V024ContractView | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
+    _implementable_status: str = _IMPLEMENTABLE_STATUS,
 ) -> str:
     """Audit and byte-commit the full coordinate plan without consuming a seed."""
 
     view = resolve_contract_view(_contract_view)
-    _validate_contract_view(view)
-    environment = _formal_environment(view)
+    _validate_contract_view(view, _implementable_status)
+    environment = _formal_environment(view, _environment_verifier)
     _validate_environment_identity(environment, view)
 
     root = _physical_root_identity(
@@ -619,12 +627,14 @@ def generate_frozen_v024_artifacts(
     label_free_root: str | Path,
     sealed_truth_root: str | Path,
     _contract_view: V024ContractView | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
+    _implementable_status: str = _IMPLEMENTABLE_STATUS,
 ) -> WrittenV024GenerationArtifacts:
     """Generate fresh V2.4 rows only after the committed collision audit."""
 
     view = resolve_contract_view(_contract_view)
-    _validate_contract_view(view)
-    environment = _formal_environment(view)
+    _validate_contract_view(view, _implementable_status)
+    environment = _formal_environment(view, _environment_verifier)
     _validate_environment_identity(environment, view)
     label_identity, sealed_identity = _bind_generation_roots(
         label_free_root=label_free_root,

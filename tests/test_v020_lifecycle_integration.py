@@ -12,6 +12,7 @@ import pytest
 from lifetwin.experiments import calendar_long_horizon_v019_firewall as firewall
 from lifetwin.experiments import calendar_long_horizon_v019_io as io
 from lifetwin.experiments import calendar_long_horizon_v019_runner as runner
+from lifetwin.experiments import calendar_long_horizon_v020_runner as v020_runner
 from lifetwin.experiments.calendar_long_horizon_v015_io import canonical_json_bytes
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     load_v024_contract_view,
@@ -669,7 +670,11 @@ def test_internal_registry_seam_is_not_a_formal_runner_override() -> None:
     )
     assert (
         "_input_filenames_by_stage"
-        not in inspect.signature(runner.run_formal_attempt).parameters
+        in inspect.signature(runner.run_formal_attempt).parameters
+    )
+    assert (
+        "_input_filenames_by_stage"
+        not in inspect.signature(v020_runner.run_formal_attempt_v025).parameters
     )
 
 

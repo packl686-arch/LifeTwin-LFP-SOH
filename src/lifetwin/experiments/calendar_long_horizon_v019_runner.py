@@ -9,6 +9,7 @@ collision-audit record.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import hashlib
@@ -463,11 +464,14 @@ def initialize_formal_attempt(
     paths: V024RunPaths,
     attempt_id: str,
     _contract_view: V024ContractView | None = None,
+    _formal_attempt_id: str = _FORMAL_ATTEMPT_ID,
+    _environment_verifier: Callable[[Path, V024ContractView], FormalEnvironmentIdentity]
+    | None = None,
 ) -> tuple[FormalEnvironmentIdentity, V024ContractView, FormalAttemptIdentity]:
     """Attest the environment and create the sole initial ledger event."""
 
-    if attempt_id != _FORMAL_ATTEMPT_ID:
-        raise V024RunnerError(f"attempt_id must equal {_FORMAL_ATTEMPT_ID}")
+    if attempt_id != _formal_attempt_id:
+        raise V024RunnerError(f"attempt_id must equal {_formal_attempt_id}")
     expected_parent = paths.repo_root / "artifacts"
     expected_roots = {
         "label-free": expected_parent / f"{attempt_id}-label-free",
@@ -484,11 +488,15 @@ def initialize_formal_attempt(
     for context, expected in expected_roots.items():
         actual = actual_roots[context]
         if actual != expected.resolve():
-            raise V024RunnerError(f"{context} root is not the frozen V2.4 path")
+            raise V024RunnerError(f"{context} root is not the frozen attempt path")
         if actual.exists():
             raise V024RunnerError(f"{context} root must not exist before launch")
     view = resolve_contract_view(_contract_view)
-    environment = verify_formal_environment(paths.repo_root, contract_view=view)
+    environment = (
+        verify_formal_environment(paths.repo_root, contract_view=view)
+        if _environment_verifier is None
+        else _environment_verifier(paths.repo_root, view)
+    )
     if environment.config_byte_sha256 != view.artifacts.config_byte_sha256:
         raise V024RunnerError("Environment and V2.4 contract hashes differ")
     for root, context in (
@@ -507,7 +515,7 @@ def initialize_formal_attempt(
         exit_status="completed",
         truth_hash=None,
         prediction_hash=None,
-        message="Clean frozen V2.4 environment verified before generation.",
+        message="Clean frozen environment verified before generation.",
     )
     return environment, view, identity
 
@@ -517,6 +525,8 @@ def run_isolated_generation_stage(
     label_free_root: str | Path,
     sealed_truth_root: str | Path,
     _contract_view: V024ContractView | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
+    _implementable_status: str = "implementation_frozen",
 ) -> None:
     """Run the RNG-free plan audit and one-shot generation in its subprocess."""
 
@@ -524,11 +534,15 @@ def run_isolated_generation_stage(
     commit_frozen_v024_generation_plan(
         label_free_root=label_free_root,
         _contract_view=view,
+        _environment_verifier=_environment_verifier,
+        _implementable_status=_implementable_status,
     )
     generate_frozen_v024_artifacts(
         label_free_root=label_free_root,
         sealed_truth_root=sealed_truth_root,
         _contract_view=view,
+        _environment_verifier=_environment_verifier,
+        _implementable_status=_implementable_status,
     )
 
 
@@ -545,11 +559,11 @@ def _run_checked_process(arguments: Sequence[str], *, context: str) -> None:
         raise V024RunnerError(f"{context} exited with status {completed.returncode}")
 
 
-def _launch_generation_process(paths: V024RunPaths) -> None:
+def _launch_generation_process(paths: V024RunPaths, formal_script: Path) -> None:
     _run_checked_process(
         (
             sys.executable,
-            str(_FORMAL_SCRIPT),
+            str(formal_script),
             "--internal-stage",
             "generation",
             "--label-free-root",
@@ -566,11 +580,12 @@ def _launch_prediction_process(
     label_free_root: Path,
     attempt_id: str,
     repo_root: Path,
+    formal_script: Path,
 ) -> None:
     _run_checked_process(
         (
             sys.executable,
-            str(_FORMAL_SCRIPT),
+            str(formal_script),
             "--internal-stage",
             "prediction",
             "--label-free-root",
@@ -933,6 +948,7 @@ def _fit_center_stage(
     frames: WholeBundleValidated,
     truth_hash: str,
     _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> tuple[CenterDevelopmentState, Mapping[str, bytes], str]:
     partition = "center_development"
     probe, _ = _apply_partition(
@@ -950,6 +966,8 @@ def _fit_center_stage(
         label_free_root=paths.label_free_root,
         phase="center_truth_opened",
         created_utc=_utc_now(),
+        _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )["center_development_truth.csv"]
     phase = "center_state_committed"
     _append_phase(
@@ -1048,6 +1066,7 @@ def _fit_risk_stage(
     center_checkpoint_hash: str,
     truth_hash: str,
     _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> tuple[RiskDevelopmentState, Mapping[str, bytes], str]:
     if (
         _file_hash(paths.label_free_root / "center_state_checkpoint.json")
@@ -1071,6 +1090,7 @@ def _fit_risk_stage(
         phase="risk_truth_opened",
         created_utc=_utc_now(),
         _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )["risk_development_truth.csv"]
     phase = "risk_state_committed"
     _append_phase(
@@ -1476,6 +1496,7 @@ def _fit_calibration_stage(
     risk_checkpoint_hash: str,
     truth_hash: str,
     _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> tuple[
     CalibrationDevelopmentState,
     V024CalibrationAudit,
@@ -1564,6 +1585,7 @@ def _fit_calibration_stage(
             paths.label_free_root / "calibration_mask_commitment.json"
         ),
         _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )["calibration_truth.csv"]
     model_phase = "model_state_committed"
     _append_phase(
@@ -1706,6 +1728,7 @@ def _fit_training_stages(
     frames: WholeBundleValidated,
     truth_hash: str,
     _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> _TrainingArtifacts:
     center, center_inputs, center_hash = _fit_center_stage(
         paths=paths,
@@ -1714,6 +1737,7 @@ def _fit_training_stages(
         frames=frames,
         truth_hash=truth_hash,
         _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )
     risk, risk_inputs, risk_hash = _fit_risk_stage(
         paths=paths,
@@ -1725,6 +1749,7 @@ def _fit_training_stages(
         center_checkpoint_hash=center_hash,
         truth_hash=truth_hash,
         _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )
     calibration, audit, mask, calibration_inputs, _ = _fit_calibration_stage(
         paths=paths,
@@ -1738,6 +1763,7 @@ def _fit_training_stages(
         risk_checkpoint_hash=risk_hash,
         truth_hash=truth_hash,
         _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )
     return _TrainingArtifacts(
         center=center,
@@ -1757,6 +1783,8 @@ def _prediction_and_commitment(
     identity: FormalAttemptIdentity,
     view: V024ContractView,
     truth_hash: str,
+    formal_script: Path = _FORMAL_SCRIPT,
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[
     str,
     V024CommittedModelStateEnvelope,
@@ -1782,12 +1810,14 @@ def _prediction_and_commitment(
             label_free_root=paths.label_free_root,
             attempt_id=identity.attempt_id,
             contract_view=view,
+            _input_filenames_by_stage=_input_filenames_by_stage,
         )
         model = bundle.model_state
         _launch_prediction_process(
             label_free_root=paths.label_free_root,
             attempt_id=identity.attempt_id,
             repo_root=paths.repo_root,
+            formal_script=formal_script,
         )
         precommit_evidence = create_prediction_commitment_v024(
             bundle,
@@ -1877,6 +1907,8 @@ def _score_and_write(
     prediction_frames: Mapping[str, pd.DataFrame],
     model: V024CommittedModelStateEnvelope,
     prediction_envelope: object,
+    _input_filenames_by_stage: object | None = None,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> object:
     truth_frames = open_truth_for_phase(
         ledger_path=paths.ledger_path,
@@ -1891,6 +1923,8 @@ def _score_and_write(
             paths.label_free_root / "calibration_mask_commitment.json"
         ),
         prediction_commitment_path=paths.prediction_commitment_path,
+        _input_filenames_by_stage=_input_filenames_by_stage,
+        _environment_verifier=_environment_verifier,
     )
     phase = "scoring_completed"
     _append_phase(
@@ -1955,6 +1989,7 @@ def _publish_preprediction_failure(
     view: V024ContractView,
     attempt_id: str,
     attempt_created_utc: str,
+    _environment_verifier: Callable[[Path, V024ContractView], object] | None = None,
 ) -> None:
     """Publish the exact terminal registry only before prediction commitment."""
 
@@ -1988,6 +2023,7 @@ def _publish_preprediction_failure(
             error=error,
             repo_root=paths.repo_root,
             _contract_view=view,
+            _environment_verifier=_environment_verifier,
         )
     except BaseException as publication_error:
         error.add_note(
@@ -2006,6 +2042,12 @@ def run_formal_attempt(
     termination_root: str | Path,
     repo_root: str | Path = _PROJECT_ROOT,
     _contract_view: V024ContractView | None = None,
+    _formal_attempt_id: str = _FORMAL_ATTEMPT_ID,
+    _formal_script: str | Path = _FORMAL_SCRIPT,
+    _environment_verifier: Callable[[Path, V024ContractView], FormalEnvironmentIdentity]
+    | None = None,
+    _implementable_status: str = "implementation_frozen",
+    _input_filenames_by_stage: object | None = None,
 ) -> V024FormalRunResult:
     """Execute the fixed V2.4 lifecycle without a scientific override surface."""
 
@@ -2022,11 +2064,21 @@ def run_formal_attempt(
         paths=paths,
         attempt_id=attempt_id,
         _contract_view=_contract_view,
+        _formal_attempt_id=_formal_attempt_id,
+        _environment_verifier=_environment_verifier,
     )
     try:
-        if view.design_status != "implementation_frozen":
-            raise V024RunnerError("V2.4 design is not implementation_frozen")
-        _launch_generation_process(paths)
+        if view.design_status != _implementable_status:
+            raise V024RunnerError("Design status is not frozen for this profile")
+        formal_script = Path(_formal_script).resolve()
+        if (
+            not formal_script.is_file()
+            or formal_script.parent != paths.repo_root / "scripts"
+        ):
+            raise V024RunnerError(
+                "Formal script is outside the repository scripts root"
+            )
+        _launch_generation_process(paths, formal_script)
         progress = validate_formal_exposure_log(
             paths.ledger_path,
             view.artifacts,
@@ -2059,6 +2111,8 @@ def run_formal_attempt(
             view=view,
             frames=frames,
             truth_hash=truth_hash,
+            _input_filenames_by_stage=_input_filenames_by_stage,
+            _environment_verifier=_environment_verifier,
         )
         prediction_hash, model, prediction_frames, prediction_envelope = (
             _prediction_and_commitment(
@@ -2066,6 +2120,8 @@ def run_formal_attempt(
                 identity=identity,
                 view=view,
                 truth_hash=truth_hash,
+                formal_script=formal_script,
+                _input_filenames_by_stage=_input_filenames_by_stage,
             )
         )
         score_status = _score_and_write(
@@ -2077,6 +2133,8 @@ def run_formal_attempt(
             prediction_frames=prediction_frames,
             model=model,
             prediction_envelope=prediction_envelope,
+            _input_filenames_by_stage=_input_filenames_by_stage,
+            _environment_verifier=_environment_verifier,
         )
         final = validate_formal_exposure_log(
             paths.ledger_path,
@@ -2095,6 +2153,7 @@ def run_formal_attempt(
             view=view,
             attempt_id=attempt_id,
             attempt_created_utc=attempt_created_utc,
+            _environment_verifier=_environment_verifier,
         )
         raise
     return V024FormalRunResult(

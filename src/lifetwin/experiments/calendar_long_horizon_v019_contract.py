@@ -303,6 +303,21 @@ def _load_bound_amendment(view: V024ContractView) -> Mapping[str, Any]:
     if hashlib.sha256(canonical).hexdigest() != view.config_canonical_sha256:
         raise V024ContractError("Adapted canonical config commitment drifted")
 
+    if payload.get("protocol_id") != V024_PROTOCOL_ID:
+        from lifetwin.experiments.calendar_long_horizon_v020_protocol import (  # noqa: PLC0415
+            V025_PROTOCOL_ID,
+            load_v025_design,
+        )
+
+        if payload.get("protocol_id") == V025_PROTOCOL_ID:
+            design = load_v025_design(view.artifacts.config_path)
+            if (
+                design.config_byte_sha256 != view.artifacts.config_byte_sha256
+                or design.config_semantic_sha256 != view.config_canonical_sha256
+            ):
+                raise V024ContractError("V2.5 design and contract commitments disagree")
+            return payload
+
     load_v024_design(DEFAULT_V024_AMENDMENT_PATH)
     frozen = json.loads(DEFAULT_V024_AMENDMENT_PATH.read_text(encoding="utf-8"))
     restored = json.loads(json.dumps(payload, ensure_ascii=True, allow_nan=False))
@@ -438,8 +453,14 @@ def require_contract_view(value: object) -> V024ContractView:
         or tuple(amendment_roots.items()) != roots
     ):
         raise V024ContractError("Adapted amendment seed roots drifted")
-    whole_contract = amendment.get("whole_bundle_contract")
-    partition_contract = amendment.get("partition_contract")
+    row_contract_source = amendment
+    if "whole_bundle_contract" not in row_contract_source:
+        load_v024_design(DEFAULT_V024_AMENDMENT_PATH)
+        row_contract_source = json.loads(
+            DEFAULT_V024_AMENDMENT_PATH.read_text(encoding="utf-8")
+        )
+    whole_contract = row_contract_source.get("whole_bundle_contract")
+    partition_contract = row_contract_source.get("partition_contract")
     if not isinstance(whole_contract, Mapping) or not isinstance(
         partition_contract, Mapping
     ):

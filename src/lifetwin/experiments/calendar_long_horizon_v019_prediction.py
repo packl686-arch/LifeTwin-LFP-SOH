@@ -7,6 +7,7 @@ state, or caller-reported hash parameter.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
@@ -280,6 +281,8 @@ def run_isolated_prediction_process_v024(
     label_free_root: str | Path,
     attempt_id: str,
     repo_root: str | Path,
+    _environment_verifier: Callable[[str | Path], object] | None = None,
+    _input_filenames_by_stage: object | None = None,
 ) -> V024PredictionWriteResult:
     """Attest one isolated process, load its attempt, and predict."""
 
@@ -295,13 +298,18 @@ def run_isolated_prediction_process_v024(
     )
 
     try:
-        environment = verify_prediction_environment(repo_root)
+        environment = (
+            verify_prediction_environment(repo_root)
+            if _environment_verifier is None
+            else _environment_verifier(repo_root)
+        )
         bundle = load_prediction_bundle(
             label_free_root=label_free_root,
             attempt_id=attempt_id,
             expected_protocol_id=environment.protocol_id,
             expected_config_sha256=environment.config_byte_sha256,
             expected_git_commit=environment.git_commit,
+            _input_filenames_by_stage=_input_filenames_by_stage,
         )
         output = run_prediction_bundle(bundle, formal=True)
         artifacts = write_prediction_outputs(
@@ -311,6 +319,7 @@ def run_isolated_prediction_process_v024(
     except (
         V024PredictionCapsuleError,
         V024PredictionEnvironmentError,
+        RuntimeError,
     ) as exc:
         raise V024PredictionError(
             "The isolated prediction environment or attempt was rejected"
