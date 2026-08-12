@@ -16,14 +16,12 @@ from typing import Mapping
 
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-    load_v024_contract_view,
+    require_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
     V021_SEED_ROOTS,
     V022_SEED_ROOTS,
-    V024_AMENDMENT_SEMANTIC_SHA256,
-    V024_EXPECTED_SEED_ROOTS,
-    V024_PROTOCOL_ID,
     V2_SEED_ROOTS,
 )
 
@@ -1649,17 +1647,12 @@ def build_formal_plan_specs(
 ) -> tuple[GenerationPlanSpec, GenerationPlanSpec]:
     """Build, but do not enumerate, the frozen-size V2.4 and V2 plans."""
 
-    contract = load_v024_contract_view() if view is None else view
-    if type(contract) is not V024ContractView:
-        raise V024CollisionError("Formal contract view has an invalid type")
+    try:
+        contract = require_contract_view(resolve_contract_view(view))
+    except (TypeError, ValueError) as exc:
+        raise V024CollisionError("Formal contract view is invalid") from exc
     protocol = contract.protocol
-    if protocol.protocol_id != V024_PROTOCOL_ID:
-        raise V024CollisionError("Formal current protocol identity is not V2.4")
-    if protocol.config_sha256 != contract.artifacts.config_byte_sha256:
-        raise V024CollisionError("Formal V2.4 amendment commitments disagree")
     current_roots = tuple(protocol.seed_roots)
-    if current_roots != tuple(V024_EXPECTED_SEED_ROOTS.items()):
-        raise V024CollisionError("Formal V2.4 seed roots changed")
     if set(dict(current_roots).values()).intersection(
         (*V2_SEED_ROOTS, *V021_SEED_ROOTS, *V022_SEED_ROOTS)
     ):
@@ -1718,7 +1711,7 @@ def build_formal_plan_specs(
     current = GenerationPlanSpec(
         protocol_id=protocol.protocol_id,
         protocol_byte_sha256=protocol.config_sha256,
-        protocol_semantic_sha256=V024_AMENDMENT_SEMANTIC_SHA256,
+        protocol_semantic_sha256=contract.config_canonical_sha256,
         seed_roots=current_roots,
         **common,
     )

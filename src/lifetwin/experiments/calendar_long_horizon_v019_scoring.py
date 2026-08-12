@@ -75,7 +75,8 @@ from lifetwin.experiments.calendar_long_horizon_v019_analysis import (
 )
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-    load_v024_contract_view,
+    require_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_io import (
     V024IOError,
@@ -85,10 +86,6 @@ from lifetwin.experiments.calendar_long_horizon_v019_io import (
 from lifetwin.experiments.calendar_long_horizon_v019_pipeline import (
     V024PipelineError,
     recompute_label_free_pipeline_v024,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_EXPECTED_SEED_ROOTS,
-    V024_PROTOCOL_ID,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_provenance import (
     V024CommittedModelStateEnvelope,
@@ -126,7 +123,7 @@ ARTIFACT_METADATA_KEYS = _v015.ARTIFACT_METADATA_KEYS
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMPONENT = re.compile(r"^[A-Za-z0-9_.-]+$")
-_ATTEMPT_ID = re.compile(r"^v024-[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$")
+_ATTEMPT_ID = re.compile(r"^v[0-9]{3}-[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$")
 _PREDICTION_FRAME_FILENAMES = (
     "prefix_pack.csv",
     "forecast_coordinates.csv",
@@ -175,12 +172,6 @@ if _FORMAL_ANALYSIS_COUNTS != _AnalysisCounts(
     STRESS_PERMUTATIONS,
 ):
     raise RuntimeError("V2.4 formal analysis cardinalities drifted")
-if (
-    V024_EXPECTED_SEED_ROOTS["random_rankings"] != 202608100410
-    or V024_EXPECTED_SEED_ROOTS["bootstrap"] != 202608100411
-    or V024_EXPECTED_SEED_ROOTS["stress_permutations"] != 202608100412
-):
-    raise RuntimeError("V2.4 formal stochastic roots drifted")
 
 
 @dataclass(frozen=True, slots=True)
@@ -310,16 +301,10 @@ def _component(value: object, *, context: str) -> str:
 
 
 def _contract(view: V024ContractView | None = None) -> V024ContractView:
-    contract = load_v024_contract_view() if view is None else view
-    if type(contract) is not V024ContractView:
-        raise V024ScoringError("The V2.4 contract view has an invalid type")
-    if (
-        contract.protocol.protocol_id != V024_PROTOCOL_ID
-        or contract.artifacts.protocol_id != V024_PROTOCOL_ID
-        or contract.protocol.config_sha256 != contract.artifacts.config_byte_sha256
-    ):
-        raise V024ScoringError("The active artifact contract is not exact V2.4")
-    return contract
+    try:
+        return require_contract_view(resolve_contract_view(view))
+    except (TypeError, ValueError) as exc:
+        raise V024ScoringError("The active contract view is invalid") from exc
 
 
 def _canonical_prediction_metadata(
@@ -438,7 +423,7 @@ def _issue_prediction_commitment_envelope_v024(
     except V024ProvenanceError as exc:
         raise V024ScoringError(str(exc)) from exc
     if (
-        model.protocol_id != V024_PROTOCOL_ID
+        model.protocol_id != view.protocol.protocol_id
         or model.config_sha256 != view.artifacts.config_byte_sha256
     ):
         raise V024ScoringError("Committed model identity differs from V2.4")
@@ -479,7 +464,7 @@ def _issue_prediction_commitment_envelope_v024(
     )
     return V024PredictionCommitmentEnvelope(
         _issuer_key=_PREDICTION_ENVELOPE_KEY,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         config_sha256=view.artifacts.config_byte_sha256,
         attempt_id=model.attempt_id,
         evidence=evidence,
@@ -503,7 +488,7 @@ def _require_prediction_envelope(
         raise V024ScoringError("An exact V024PredictionCommitmentEnvelope is required")
     envelope = value
     if (
-        envelope.protocol_id != V024_PROTOCOL_ID
+        envelope.protocol_id != view.protocol.protocol_id
         or envelope.config_sha256 != view.artifacts.config_byte_sha256
         or envelope.attempt_id != model.attempt_id
     ):
@@ -621,7 +606,7 @@ def validate_and_recompute_committed_predictions_v024(
         member_fit_diagnostics=prediction_frames["member_fit_diagnostics.csv"],
         member_forecast_bundle=prediction_frames["member_forecast_bundle.csv"],
         model_state_envelope=model,
-        contract=view.artifacts,
+        contract=view,
     )
     for filename, committed, expected in (
         (
@@ -656,6 +641,7 @@ def _policy_comparison_v024(
     *,
     issue_count: int,
     partition: str,
+    view: V024ContractView,
 ) -> tuple[pd.DataFrame, dict[str, RiskReduction]]:
     if len(random_rankings) < 1:
         raise V024ScoringError("Random-ranking table is empty")
@@ -674,7 +660,8 @@ def _policy_comparison_v024(
     for score_id in RISK_SCORE_IDS:
         issued = rank_policy(
             frame,
-            protocol_id=V024_PROTOCOL_ID,
+            protocol_id=view.protocol.protocol_id,
+            contract_view=view,
             arm=score_id,
             score_column=f"risk_{score_id}",
             predictor_hash_column=f"risk_hash_{score_id}",
@@ -706,7 +693,11 @@ def _policy_comparison_v024(
     return pd.DataFrame(rows), reductions
 
 
-def _risk_coverage_curves_v024(test: pd.DataFrame) -> list[dict[str, Any]]:
+def _risk_coverage_curves_v024(
+    test: pd.DataFrame,
+    *,
+    view: V024ContractView,
+) -> list[dict[str, Any]]:
     source_count = len(test)
     eligible = test["hard_eligible_visible_stress"].astype(bool)
     eligible_count = int(eligible.sum())
@@ -733,7 +724,8 @@ def _risk_coverage_curves_v024(test: pd.DataFrame) -> list[dict[str, Any]]:
             else:
                 issued = rank_policy(
                     test,
-                    protocol_id=V024_PROTOCOL_ID,
+                    protocol_id=view.protocol.protocol_id,
+                    contract_view=view,
                     arm=score_id,
                     score_column=f"risk_{score_id}",
                     predictor_hash_column=f"risk_hash_{score_id}",
@@ -878,7 +870,11 @@ def canonicalize_score_frame_v024(
     filename: str,
     *,
     allow_empty: bool = False,
+    protocol_id: str | None = None,
 ) -> pd.DataFrame:
+    expected_protocol_id = (
+        _contract().protocol.protocol_id if protocol_id is None else protocol_id
+    )
     try:
         result = _v015.canonicalize_score_frame(
             frame,
@@ -888,7 +884,7 @@ def canonicalize_score_frame_v024(
     except _v015.V015ScoringError as exc:
         raise V024ScoringError(str(exc)) from exc
     if "protocol_id" in result.columns and not result.empty:
-        if set(result["protocol_id"].astype(str)) != {V024_PROTOCOL_ID}:
+        if set(result["protocol_id"].astype(str)) != {expected_protocol_id}:
             raise V024ScoringError(f"{filename} protocol_id changed")
     return result
 
@@ -898,11 +894,13 @@ def canonical_score_csv_bytes_v024(
     filename: str,
     *,
     allow_empty: bool = False,
+    protocol_id: str | None = None,
 ) -> bytes:
     ordered = canonicalize_score_frame_v024(
         frame,
         filename,
         allow_empty=allow_empty,
+        protocol_id=protocol_id,
     )
     try:
         return _v015.canonical_score_csv_bytes(
@@ -914,10 +912,17 @@ def canonical_score_csv_bytes_v024(
         raise V024ScoringError(str(exc)) from exc
 
 
-def canonical_result_summary_bytes_v024(payload: Mapping[str, Any]) -> bytes:
+def canonical_result_summary_bytes_v024(
+    payload: Mapping[str, Any],
+    *,
+    protocol_id: str | None = None,
+) -> bytes:
+    expected_protocol_id = (
+        _contract().protocol.protocol_id if protocol_id is None else protocol_id
+    )
     if set(payload) != SCORE_REPORT_KEYS:
         raise V024ScoringError("score_report.json keys changed")
-    if payload.get("protocol_id") != V024_PROTOCOL_ID:
+    if payload.get("protocol_id") != expected_protocol_id:
         raise V024ScoringError("score_report.json protocol_id changed")
     return canonical_json_bytes(payload)
 
@@ -927,10 +932,11 @@ def _json_artifact_bytes(
     *,
     filename: str,
     expected_keys: frozenset[str],
+    protocol_id: str,
 ) -> bytes:
     if set(payload) != expected_keys:
         raise V024ScoringError(f"{filename} keys changed")
-    if payload.get("protocol_id") != V024_PROTOCOL_ID:
+    if payload.get("protocol_id") != protocol_id:
         raise V024ScoringError(f"{filename} protocol_id changed")
     return canonical_json_bytes(payload)
 
@@ -952,6 +958,9 @@ def _artifacts_without_manifest(
 
 
 def _payloads_without_manifest(result: V024ScoringResult) -> dict[str, bytes]:
+    protocol_id = result.score_report.get("protocol_id")
+    if not isinstance(protocol_id, str):
+        raise V024ScoringError("score_report.json protocol_id is invalid")
     status = result.score_report.get("status")
     allow_empty = isinstance(status, Mapping) and status.get("status") in {
         "void",
@@ -966,15 +975,20 @@ def _payloads_without_manifest(result: V024ScoringResult) -> dict[str, bytes]:
                 value,
                 filename,
                 allow_empty=allow_empty,
+                protocol_id=protocol_id,
             )
         elif filename == "negative_control_metrics.json":
             payloads[filename] = _json_artifact_bytes(
                 value,
                 filename=filename,
                 expected_keys=NEGATIVE_CONTROL_METRICS_KEYS,
+                protocol_id=protocol_id,
             )
         else:
-            payloads[filename] = canonical_result_summary_bytes_v024(value)
+            payloads[filename] = canonical_result_summary_bytes_v024(
+                value,
+                protocol_id=protocol_id,
+            )
     if tuple(payloads) != REQUIRED_SCORE_ARTIFACTS[:-1]:
         raise V024ScoringError("V2.4 score artifact registry changed")
     return payloads
@@ -1002,7 +1016,7 @@ def _finalize_registry(
     ]
     manifest = {
         "schema_version": "lifetwin.v024.scored_registry.v1",
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "config_sha256": view.artifacts.config_byte_sha256,
         "attempt_id": model.attempt_id,
         "model_state_byte_sha256": model.validated_model_state.model_state_byte_sha256,
@@ -1024,12 +1038,15 @@ def _finalize_registry(
 
 def required_score_artifact_payloads_v024(
     result: V024ScoringResult,
+    *,
+    contract_view: V024ContractView | None = None,
 ) -> dict[str, bytes]:
     """Return all ten committed V2.4 score artifacts as canonical bytes."""
 
     if type(result) is not V024ScoringResult:
         raise V024ScoringError("An exact V024ScoringResult is required")
     manifest = result.run_manifest
+    view = _contract(contract_view)
     if not isinstance(manifest, Mapping) or set(manifest) != _RUN_MANIFEST_KEYS:
         raise V024ScoringError("run_manifest.json is not finalized")
     attempt_id = manifest.get("attempt_id")
@@ -1040,9 +1057,8 @@ def required_score_artifact_payloads_v024(
     }
     if (
         manifest.get("schema_version") != "lifetwin.v024.scored_registry.v1"
-        or manifest.get("protocol_id") != V024_PROTOCOL_ID
-        or manifest.get("config_sha256")
-        != load_v024_contract_view().artifacts.config_byte_sha256
+        or manifest.get("protocol_id") != view.protocol.protocol_id
+        or manifest.get("config_sha256") != view.artifacts.config_byte_sha256
         or not isinstance(attempt_id, str)
         or _ATTEMPT_ID.fullmatch(attempt_id) is None
         or _sha256(
@@ -1086,6 +1102,7 @@ def required_score_artifact_payloads_v024(
         manifest,
         filename="run_manifest.json",
         expected_keys=_RUN_MANIFEST_KEYS,
+        protocol_id=view.protocol.protocol_id,
     )
     if tuple(payloads) != REQUIRED_SCORE_ARTIFACTS:
         raise V024ScoringError("The complete V2.4 score registry changed")
@@ -1119,7 +1136,7 @@ def _terminal_result(
     )
     gate_frame = _v015._gate_frame(gates)
     score_report = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "model_state_byte_sha256": model.validated_model_state.model_state_byte_sha256,
         "analysis_counts": {
             "random_rankings": 10_000,
@@ -1147,7 +1164,7 @@ def _terminal_result(
         "protocol_deviations": [],
     }
     negative_controls = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "available": False,
         "unavailable_reason": unavailable,
         "placebo_point_increment": None,
@@ -1231,8 +1248,9 @@ def _score_committed_artifacts_v024(
     random_rankings = deterministic_random_rankings(
         test,
         issue_count=TEST_ISSUE_COUNT,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         rankings=counts.random_rankings,
+        contract_view=view,
     )
     random_rankings.insert(0, "partition", "test")
     policy_test, test_reductions = _policy_comparison_v024(
@@ -1240,13 +1258,15 @@ def _score_committed_artifacts_v024(
         random_rankings,
         issue_count=TEST_ISSUE_COUNT,
         partition="test",
+        view=view,
     )
     audit = trajectories.loc[trajectories["partition"].eq("audit")].copy()
     audit_random = deterministic_random_rankings(
         audit,
         issue_count=AUDIT_ISSUE_COUNT,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         rankings=counts.random_rankings,
+        contract_view=view,
     )
     audit_random.insert(0, "partition", "audit")
     policy_audit, _ = _policy_comparison_v024(
@@ -1254,6 +1274,7 @@ def _score_committed_artifacts_v024(
         audit_random,
         issue_count=AUDIT_ISSUE_COUNT,
         partition="audit",
+        view=view,
     )
     policy = pd.concat((policy_test, policy_audit), ignore_index=True)
     random_ranking_metrics = pd.concat(
@@ -1263,9 +1284,10 @@ def _score_committed_artifacts_v024(
 
     bootstrap = bootstrap_risk_reductions(
         test,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         issue_count=TEST_ISSUE_COUNT,
         resamples=counts.bootstrap_resamples,
+        contract_view=view,
     )
     bootstrap_summary = _bootstrap_summary_v024(
         bootstrap,
@@ -1330,11 +1352,11 @@ def _score_committed_artifacts_v024(
     )
     test_subset, test_gates = evaluate_test_safety_gates(
         trajectories,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
     )
     audit_subset, audit_gates = evaluate_audit_directional_gates(
         trajectories,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         issued_center_minus_baseline_iae_pp=audit_iae_delta,
     )
     subset_metrics = pd.concat((test_subset, audit_subset), ignore_index=True)
@@ -1385,11 +1407,12 @@ def _score_committed_artifacts_v024(
         prediction_frames["prefix_pack.csv"],
         prediction_frames["forecast_coordinates.csv"],
         visible_stress_state=decoded.frozen_label_free_state.visible_stress_risk,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         random_expected_catastrophic_rate=(visible.random_expected_catastrophic_rate),
         observed_prefix_only_risk_reduction=prefix.relative_risk_reduction,
         issue_count=TEST_ISSUE_COUNT,
         permutations=counts.stress_permutations,
+        contract_view=view,
     )
     permutation_summary = summarize_stress_permutations(
         permutations,
@@ -1449,7 +1472,7 @@ def _score_committed_artifacts_v024(
     gate_frame = _v015._gate_frame(gates).loc[:, GATE_COLUMNS]
     policy_frame = policy.loc[:, POLICY_COMPARISON_COLUMNS]
     coverage_frame = coverage.loc[:, COVERAGE_METRIC_COLUMNS]
-    risk_coverage_curves = _risk_coverage_curves_v024(test)
+    risk_coverage_curves = _risk_coverage_curves_v024(test, view=view)
     calibration_audit = (
         model_state_envelope.validated_model_state.training_provenance.calibration_audit
     )
@@ -1479,7 +1502,7 @@ def _score_committed_artifacts_v024(
     }
     model_hash = model_state_envelope.validated_model_state.model_state_byte_sha256
     score_report = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "model_state_byte_sha256": model_hash,
         "analysis_counts": {
             "random_rankings": counts.random_rankings,
@@ -1515,7 +1538,7 @@ def _score_committed_artifacts_v024(
         "protocol_deviations": [],
     }
     negative_controls = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "available": bootstrap_summary is not None,
         "unavailable_reason": (
             "" if bootstrap_summary is not None else "bootstrap is undefined"
@@ -1565,10 +1588,17 @@ def _score_committed_artifacts_v024(
         "stress_permutation_metrics.csv": permutations.loc[:, PERMUTATION_COLUMNS],
     }
     canonical = {
-        name: canonicalize_score_frame_v024(frame, name)
+        name: canonicalize_score_frame_v024(
+            frame,
+            name,
+            protocol_id=view.protocol.protocol_id,
+        )
         for name, frame in frames.items()
     }
-    canonical_result_summary_bytes_v024(score_report)
+    canonical_result_summary_bytes_v024(
+        score_report,
+        protocol_id=view.protocol.protocol_id,
+    )
     result = V024ScoringResult(
         point_scores=canonical["point_scores.csv"],
         trajectory_scores=canonical["trajectory_scores.csv"],
@@ -1601,10 +1631,11 @@ def score_committed_artifacts(
     truth_frames: Mapping[str, pd.DataFrame],
     model_state_envelope: V024CommittedModelStateEnvelope,
     prediction_commitment_envelope: V024PredictionCommitmentEnvelope,
+    _contract_view: V024ContractView | None = None,
 ) -> V024ScoringResult:
     """Run the formal V2.4 10k/5k/10k committed-artifact scorer."""
 
-    view = _contract()
+    view = _contract(_contract_view)
     try:
         model = _require_committed_model_state_envelope(model_state_envelope)
     except V024ProvenanceError as exc:
@@ -1662,14 +1693,17 @@ def _run_stochastic_fixture_analyses_v024(
     *,
     issue_count: int,
     counts: _AnalysisCounts,
+    contract_view: V024ContractView | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Private small-fixture hook that cannot alter the formal scorer."""
 
+    view = _contract(contract_view)
     random = deterministic_random_rankings(
         trajectories,
         issue_count=issue_count,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         rankings=counts.random_rankings,
+        contract_view=view,
     )
     families = tuple(
         family
@@ -1678,10 +1712,11 @@ def _run_stochastic_fixture_analyses_v024(
     )
     bootstrap = bootstrap_risk_reductions(
         trajectories,
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         issue_count=issue_count,
         resamples=counts.bootstrap_resamples,
         families=families,
+        contract_view=view,
     )
     return random, bootstrap
 

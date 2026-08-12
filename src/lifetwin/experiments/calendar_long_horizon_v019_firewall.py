@@ -41,9 +41,9 @@ from lifetwin.experiments.calendar_long_horizon_v019_ledger import (
     read_exposure_log as read_v024_exposure_log,
     validate_exposure_events,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_EXPECTED_SEED_ROOTS,
-    V024_PROTOCOL_ID,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    resolve_contract_view,
 )
 
 
@@ -292,7 +292,10 @@ def _artifact_path(
     return candidate
 
 
-def verify_formal_attempt_environment(identity: FormalAttemptIdentity) -> None:
+def verify_formal_attempt_environment(
+    identity: FormalAttemptIdentity,
+    view: V024ContractView,
+) -> None:
     """Bind a truth-capability call to the frozen V2.4 implementation."""
 
     from lifetwin.experiments.calendar_long_horizon_v019_environment import (
@@ -300,12 +303,12 @@ def verify_formal_attempt_environment(identity: FormalAttemptIdentity) -> None:
     )
 
     project_root = Path(__file__).resolve().parents[3]
-    environment = verify_formal_environment(project_root)
+    environment = verify_formal_environment(project_root, contract_view=view)
     if (
         environment.git_dirty
         or environment.git_commit != identity.git_commit
         or environment.config_byte_sha256 != identity.config_byte_sha256
-        or environment.protocol_id != V024_PROTOCOL_ID
+        or environment.protocol_id != view.protocol.protocol_id
     ):
         raise V024FirewallError(
             "Current formal environment differs from the V2.4 attempt identity"
@@ -319,8 +322,6 @@ def validate_formal_exposure_events(
 ) -> Mapping[str, AttemptProgress]:
     """Validate all interleaved V2.4 attempts in one publication ledger."""
 
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024FirewallError("Firewall requires the V2.4 artifact contract")
     try:
         return validate_exposure_events(
             events,
@@ -337,8 +338,6 @@ def validate_formal_exposure_log(
 ) -> Mapping[str, AttemptProgress]:
     """Read canonical JSONL and enforce the complete V2.4 state machine."""
 
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024FirewallError("Firewall requires the V2.4 artifact contract")
     try:
         _, states, _ = read_v024_exposure_log(
             path,
@@ -377,8 +376,6 @@ def append_formal_exposure_event(
         "exit_status": exit_status,
         "message": message,
     }
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024FirewallError("Firewall requires the V2.4 artifact contract")
     try:
         return append_exposure_event_cas(
             path,
@@ -451,8 +448,9 @@ def _verify_generation_plan(
     *,
     label_root: Path,
     progress: AttemptProgress,
-    contract: FrozenArtifactContract,
+    view: V024ContractView,
 ) -> None:
+    contract = view.artifacts
     expected = progress.generation_plan_commitment_byte_sha256
     path = _require_direct_commitment(
         label_root=label_root,
@@ -471,20 +469,12 @@ def _verify_generation_plan(
             audit_formal_v024_generation_plan,
             verify_generation_plan_commitment,
         )
-        from lifetwin.experiments.calendar_long_horizon_v019_contract import (
-            load_v024_contract_view,
-        )
 
-        view = load_v024_contract_view()
-        if view.artifacts != contract:
-            raise V024FirewallError(
-                "Generation plan uses a different V2.4 artifact contract"
-            )
         assert expected is not None
         verify_generation_plan_commitment(
             payload,
             expected_byte_sha256=expected,
-            expected_current_protocol_id=V024_PROTOCOL_ID,
+            expected_current_protocol_id=view.protocol.protocol_id,
             expected_current_protocol_byte_sha256=contract.config_byte_sha256,
             expected_predecessor_protocol_id=(
                 "synthetic_long_horizon_identifiability_v2"
@@ -508,6 +498,7 @@ def _verify_actual_analysis_hash_ledger(
     *,
     label_root: Path,
     progress: AttemptProgress,
+    view: V024ContractView,
 ) -> None:
     path = _require_direct_commitment(
         label_root=label_root,
@@ -528,14 +519,13 @@ def _verify_actual_analysis_hash_ledger(
 
         expected = progress.actual_analysis_hash_ledger_commitment_byte_sha256
         assert expected is not None
+        roots = dict(view.protocol.seed_roots)
         verify_actual_analysis_hash_ledger_commitment(
             payload,
             expected_byte_sha256=expected,
-            expected_protocol_id=V024_PROTOCOL_ID,
-            expected_random_ranking_root=V024_EXPECTED_SEED_ROOTS["random_rankings"],
-            expected_stress_permutation_root=V024_EXPECTED_SEED_ROOTS[
-                "stress_permutations"
-            ],
+            expected_protocol_id=view.protocol.protocol_id,
+            expected_random_ranking_root=roots["random_rankings"],
+            expected_stress_permutation_root=roots["stress_permutations"],
         )
     except (TypeError, ValueError) as exc:
         raise V024FirewallError(
@@ -564,7 +554,7 @@ def _verify_fit_commitment(
     )
     if (
         set(payload) != _FIT_COMMITMENT_KEYS
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != contract.protocol_id
         or payload.get("config_sha256") != contract.config_byte_sha256
         or payload.get("git_commit") != progress.identity.git_commit
         or payload.get("worker_count") != 6
@@ -728,7 +718,7 @@ def _verify_center_checkpoint(
     beta = payload.get("center_beta")
     if (
         set(payload) != _CENTER_CHECKPOINT_KEYS
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != contract.protocol_id
         or payload.get("config_sha256") != contract.config_byte_sha256
         or payload.get("state_kind") != "center_development"
         or not isinstance(beta, (int, float))
@@ -802,7 +792,7 @@ def _verify_training_manifest(
         ) from exc
     if (
         set(payload) != expected_keys
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != contract.protocol_id
         or payload.get("config_sha256") != contract.config_byte_sha256
         or payload.get("opened_truth_files")
         != ["center_development_truth.csv", "risk_development_truth.csv"]
@@ -848,7 +838,7 @@ def _verify_risk_checkpoint(
     )
     if (
         set(payload) != _RISK_CHECKPOINT_KEYS
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != contract.protocol_id
         or payload.get("config_sha256") != contract.config_byte_sha256
         or payload.get("state_kind") != "risk_development"
         or payload.get("center_checkpoint_byte_sha256")
@@ -935,6 +925,7 @@ def _verify_reveal_prerequisites(
     label_root: Path,
     sealed_root: Path,
     progress: AttemptProgress,
+    view: V024ContractView,
     contract: FrozenArtifactContract,
     formal: bool,
     calibration_mask_commitment_path: str | Path | None,
@@ -949,11 +940,12 @@ def _verify_reveal_prerequisites(
     _verify_generation_plan(
         label_root=label_root,
         progress=progress,
-        contract=contract,
+        view=view,
     )
     _verify_actual_analysis_hash_ledger(
         label_root=label_root,
         progress=progress,
+        view=view,
     )
     _verify_fit_commitment(
         label_root=label_root,
@@ -989,7 +981,7 @@ def open_truth_for_phase(
     *,
     ledger_path: str | Path,
     identity: FormalAttemptIdentity,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
     commitment_path: str | Path,
     sealed_truth_root: str | Path,
     label_free_root: str | Path,
@@ -1008,10 +1000,15 @@ def open_truth_for_phase(
     sealed file is read.
     """
 
+    try:
+        view = resolve_contract_view(contract)
+    except (TypeError, ValueError) as exc:
+        raise V024FirewallError("Truth capability contract is invalid") from exc
+    artifacts = view.artifacts
     if phase not in _OPEN_PHASE_FILES:
         raise V024FirewallError("This phase has no truth-access capability")
     if formal:
-        verify_formal_attempt_environment(identity)
+        verify_formal_attempt_environment(identity, view)
     physical_label = _physical_root(label_free_root, context="Label-free")
     physical_sealed = _physical_root(sealed_truth_root, context="Sealed-truth")
     try:
@@ -1027,7 +1024,7 @@ def open_truth_for_phase(
         filename="truth_commitments.json",
         context="Truth commitment",
     )
-    states = validate_formal_exposure_log(ledger, contract)
+    states = validate_formal_exposure_log(ledger, artifacts)
     try:
         prior = states[identity.attempt_id]
     except KeyError as exc:
@@ -1054,7 +1051,8 @@ def open_truth_for_phase(
         label_root=label_root,
         sealed_root=sealed_root,
         progress=prior,
-        contract=contract,
+        view=view,
+        contract=artifacts,
         formal=formal,
         calibration_mask_commitment_path=calibration_mask_commitment_path,
         _input_filenames_by_stage=_input_filenames_by_stage,
@@ -1074,7 +1072,7 @@ def open_truth_for_phase(
             verify_prediction_commitment(
                 commitment_path=prediction_path,
                 label_free_root=label_root,
-                contract=contract,
+                contract=artifacts,
                 formal=formal,
             )
         except V015ArtifactError as exc:
@@ -1089,7 +1087,7 @@ def open_truth_for_phase(
     if _sha256_file(commitment) != truth_hash:
         raise V024FirewallError("Truth capability does not match its ledger commitment")
     try:
-        payload = read_truth_commitments(commitment, contract, formal=formal)
+        payload = read_truth_commitments(commitment, artifacts, formal=formal)
     except V015ArtifactError as exc:
         raise V024FirewallError(
             "Truth commitment failed its canonical semantic decoder"
@@ -1098,7 +1096,7 @@ def open_truth_for_phase(
     append_formal_exposure_event(
         path=ledger,
         identity=identity,
-        contract=contract,
+        contract=artifacts,
         created_utc=created_utc,
         phase=phase,
         exit_status="started",
@@ -1120,7 +1118,7 @@ def open_truth_for_phase(
                 "calibration_truth_opened": "risk_development",
             }.get(phase)
             if checkpoint_stage is None or checkpoint_payload is None:
-                frame = read_canonical_csv(path, contract, formal=formal)
+                frame = read_canonical_csv(path, artifacts, formal=formal)
             else:
                 frame = _open_after_checkpoint_registry_v020(
                     stage=checkpoint_stage,
@@ -1130,7 +1128,7 @@ def open_truth_for_phase(
                     _input_filenames_by_stage=_input_filenames_by_stage,
                     opener=lambda: read_canonical_csv(
                         path,
-                        contract,
+                        artifacts,
                         formal=formal,
                     ),
                 )
@@ -1149,7 +1147,7 @@ def open_truth_for_phase(
             error=exc,
             ledger_path=ledger,
             identity=identity,
-            contract=contract,
+            contract=artifacts,
             created_utc=created_utc,
             phase=phase,
             exit_status="interrupted",
@@ -1163,7 +1161,7 @@ def open_truth_for_phase(
             error=exc,
             ledger_path=ledger,
             identity=identity,
-            contract=contract,
+            contract=artifacts,
             created_utc=created_utc,
             phase=phase,
             exit_status="failed",
@@ -1176,7 +1174,7 @@ def open_truth_for_phase(
     append_formal_exposure_event(
         path=ledger,
         identity=identity,
-        contract=contract,
+        contract=artifacts,
         created_utc=created_utc,
         phase=phase,
         exit_status="completed",
@@ -1191,7 +1189,7 @@ def reopen_authorized_truth_for_recovery(
     *,
     ledger_path: str | Path,
     identity: FormalAttemptIdentity,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
     commitment_path: str | Path,
     sealed_truth_root: str | Path,
     label_free_root: str | Path,
@@ -1201,16 +1199,21 @@ def reopen_authorized_truth_for_recovery(
 ) -> Mapping[str, pd.DataFrame]:
     """Reread only truth already exposed for a pending deterministic phase."""
 
+    try:
+        view = resolve_contract_view(contract)
+    except (TypeError, ValueError) as exc:
+        raise V024FirewallError("Recovery contract is invalid") from exc
+    artifacts = view.artifacts
     requested = tuple(filenames)
     if (
         not requested
         or any(not isinstance(name, str) for name in requested)
         or len(set(requested)) != len(requested)
-        or any(name not in contract.sealed_filenames for name in requested)
+        or any(name not in artifacts.sealed_filenames for name in requested)
     ):
         raise V024FirewallError("Recovery truth-file request is invalid")
     if formal:
-        verify_formal_attempt_environment(identity)
+        verify_formal_attempt_environment(identity, view)
     physical_label = _physical_root(label_free_root, context="Label-free")
     physical_sealed = _physical_root(sealed_truth_root, context="Sealed-truth")
     try:
@@ -1226,7 +1229,7 @@ def reopen_authorized_truth_for_recovery(
         filename="truth_commitments.json",
         context="Truth commitment",
     )
-    states = validate_formal_exposure_log(ledger, contract)
+    states = validate_formal_exposure_log(ledger, artifacts)
     try:
         progress = states[identity.attempt_id]
     except KeyError as exc:
@@ -1255,16 +1258,17 @@ def reopen_authorized_truth_for_recovery(
     _verify_generation_plan(
         label_root=label_root,
         progress=progress,
-        contract=contract,
+        view=view,
     )
     _verify_actual_analysis_hash_ledger(
         label_root=label_root,
         progress=progress,
+        view=view,
     )
     _verify_fit_commitment(
         label_root=label_root,
         progress=progress,
-        contract=contract,
+        contract=artifacts,
         formal=formal,
     )
     if any(
@@ -1275,14 +1279,14 @@ def reopen_authorized_truth_for_recovery(
             label_root=label_root,
             sealed_root=sealed_root,
             progress=progress,
-            contract=contract,
+            contract=artifacts,
         )
     if "calibration_truth.csv" in requested:
         _verify_risk_checkpoint(
             label_root=label_root,
             sealed_root=sealed_root,
             progress=progress,
-            contract=contract,
+            contract=artifacts,
         )
     truth_hash = progress.truth_commitments_byte_sha256
     if truth_hash is None or _sha256_file(commitment) != truth_hash:
@@ -1290,7 +1294,7 @@ def reopen_authorized_truth_for_recovery(
             "Recovery truth commitment differs from the attempt ledger"
         )
 
-    payload = read_truth_commitments(commitment, contract, formal=formal)
+    payload = read_truth_commitments(commitment, artifacts, formal=formal)
     entries = {str(item["path"]): item for item in payload["files"]}
     opened: dict[str, pd.DataFrame] = {}
     for filename in requested:
@@ -1298,7 +1302,7 @@ def reopen_authorized_truth_for_recovery(
         path = (sealed_root / filename).resolve()
         if path.parent != sealed_root:
             raise V024FirewallError("Recovery truth path escaped its root")
-        frame = read_canonical_csv(path, contract, formal=formal)
+        frame = read_canonical_csv(path, artifacts, formal=formal)
         raw = path.read_bytes()
         if (
             len(frame) != int(entry["row_count"])

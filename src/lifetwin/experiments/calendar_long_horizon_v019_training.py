@@ -46,6 +46,9 @@ from lifetwin.experiments.calendar_long_horizon_v015_training import (
     CalibrationDevelopmentState,
     RiskDevelopmentState,
 )
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    resolve_contract_view,
+)
 from lifetwin.experiments.calendar_long_horizon_v019_signals import (
     V024CalibrationTerminalInconclusive,
 )
@@ -59,8 +62,8 @@ _MAXIMUM_STRUCTURE_FAMILY_COUNT = 7
 _MASK_HASH_DOMAIN = b"lifetwin-v024-calibration-mask-v2\0"
 _ROW_HASH_DOMAIN = b"lifetwin-v024-calibration-row-v2\0"
 _SUPPORT_HASH_DOMAIN = b"lifetwin-v024-structural-support-v1\0"
-_V024_PROTOCOL_ID = "synthetic_long_horizon_identifiability_v2_4"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_PROTOCOL_ID = re.compile(r"^[a-z0-9_]+$")
 _CLUSTER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _LABEL_FREE_INELIGIBILITY_REASONS = frozenset(
     {
@@ -133,7 +136,7 @@ class V024PretruthMaskCommitment:
     eligibility_mask_sha256: str
 
     def __post_init__(self) -> None:
-        if self.protocol_id != _V024_PROTOCOL_ID:
+        if _PROTOCOL_ID.fullmatch(self.protocol_id) is None:
             raise ValueError("Pretruth mask protocol_id is invalid")
         if self.source_calibration_count != CALIBRATION_COUNT:
             raise ValueError("Pretruth mask source count must be 900")
@@ -444,6 +447,7 @@ def _verify_primary_scores(
 
 def _derive_pretruth_evidence(
     *,
+    protocol_id: str,
     risk_state: RiskDevelopmentState,
     cluster_ids: Sequence[str],
     arm_a_predictor_content_sha256: Sequence[str],
@@ -776,7 +780,7 @@ def _derive_pretruth_evidence(
         commitment_hasher.update(bytes.fromhex(row.label_free_row_sha256))
         commitment_hasher.update(struct.pack("<B", int(row.eligible)))
     commitment = V024PretruthMaskCommitment(
-        protocol_id=_V024_PROTOCOL_ID,
+        protocol_id=protocol_id,
         source_calibration_count=CALIBRATION_COUNT,
         rows=canonical_rows,
         eligibility_mask_sha256=commitment_hasher.hexdigest(),
@@ -807,6 +811,7 @@ def _derive_pretruth_evidence(
 
 def derive_calibration_mask_commitment_v024(
     *,
+    protocol_id: str | None = None,
     risk_state: RiskDevelopmentState,
     cluster_ids: Sequence[str],
     arm_a_predictor_content_sha256: Sequence[str],
@@ -832,6 +837,11 @@ def derive_calibration_mask_commitment_v024(
     """Derive the exact calibration mask from label-free evidence only."""
 
     evidence = _derive_pretruth_evidence(
+        protocol_id=(
+            resolve_contract_view(None).protocol.protocol_id
+            if protocol_id is None
+            else protocol_id
+        ),
         risk_state=risk_state,
         cluster_ids=cluster_ids,
         arm_a_predictor_content_sha256=arm_a_predictor_content_sha256,
@@ -940,6 +950,7 @@ def _align_calibration_targets(
 def fit_calibration_development_state_v024(
     *,
     pretruth_commitment: V024PretruthMaskCommitment,
+    protocol_id: str | None = None,
     risk_state: RiskDevelopmentState,
     cluster_ids: Sequence[str],
     arm_a_predictor_content_sha256: Sequence[str],
@@ -968,6 +979,11 @@ def fit_calibration_development_state_v024(
     """Verify a pretruth mask, then fit isotonic and conformal calibration."""
 
     evidence = _derive_pretruth_evidence(
+        protocol_id=(
+            resolve_contract_view(None).protocol.protocol_id
+            if protocol_id is None
+            else protocol_id
+        ),
         risk_state=risk_state,
         cluster_ids=cluster_ids,
         arm_a_predictor_content_sha256=arm_a_predictor_content_sha256,

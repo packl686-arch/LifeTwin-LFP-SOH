@@ -12,6 +12,8 @@ from dataclasses import dataclass, fields, replace
 import hashlib
 import json
 from pathlib import Path
+import re
+from types import MappingProxyType
 from typing import Any, Mapping
 
 from lifetwin.experiments.calendar_long_horizon_v015_io import (
@@ -31,6 +33,7 @@ from lifetwin.experiments.calendar_long_horizon_v015_protocol import (
 from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
     DEFAULT_V024_AMENDMENT_PATH,
     V024_ALLOWED_DESIGN_STATUSES,
+    V024_AMENDMENT_SEMANTIC_SHA256,
     V024_EXPECTED_SEED_ROOTS,
     V024_PROTOCOL_ID,
     ValidatedV024Design,
@@ -44,6 +47,8 @@ _PROTOCOL_ADAPTED_FIELDS = frozenset(
 _ARTIFACT_ADAPTED_FIELDS = frozenset(
     {"protocol_id", "config_path", "config_byte_sha256"}
 )
+_PROTOCOL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 class V024ContractError(ValueError):
@@ -63,11 +68,14 @@ class V024ContractView:
     protocol: ValidatedV015Protocol
     artifacts: FrozenArtifactContract
     design_status: str
+    config_canonical_sha256: str
+    whole_rows: Mapping[str, int]
+    partition_rows: Mapping[str, tuple[int, ...]]
     base_config_canonical_sha256: str
     base_config_byte_sha256: str
 
     def __post_init__(self) -> None:
-        _validate_adapted_view(self)
+        require_contract_view(self)
 
 
 def _file_sha256(path: Path, *, context: str) -> str:
@@ -222,47 +230,99 @@ def _assert_only_allowed_dataclass_changes(
             )
 
 
-def _validate_adapted_view(view: V024ContractView) -> None:
+def require_contract_view(value: object) -> V024ContractView:
+    """Validate one immutable identity/config/seed source of truth."""
+
+    if type(value) is not V024ContractView:
+        raise V024ContractError("contract view must have exact V024ContractView type")
+    view = value
     _require_exact_type(
         view.protocol, ValidatedV015Protocol, context="adapted protocol"
     )
     _require_exact_type(
         view.artifacts, FrozenArtifactContract, context="adapted artifacts"
     )
-    if view.protocol.protocol_id != V024_PROTOCOL_ID:
-        raise V024ContractError("Adapted protocol identity is not V2.4")
-    if view.artifacts.protocol_id != V024_PROTOCOL_ID:
-        raise V024ContractError("Adapted artifact identity is not V2.4")
+    protocol_id = view.protocol.protocol_id
+    if (
+        not isinstance(protocol_id, str)
+        or _PROTOCOL_ID.fullmatch(protocol_id) is None
+        or view.artifacts.protocol_id != protocol_id
+    ):
+        raise V024ContractError("Adapted protocol identities disagree")
     if view.protocol.config_sha256 != view.artifacts.config_byte_sha256:
         raise V024ContractError("Adapted config commitments disagree")
-    if view.protocol.config_sha256 != _file_sha256(
-        view.artifacts.config_path, context="adapted amendment"
+    config_sha256 = view.protocol.config_sha256
+    if (
+        not isinstance(config_sha256, str)
+        or _SHA256.fullmatch(config_sha256) is None
+        or config_sha256
+        != _file_sha256(view.artifacts.config_path, context="adapted amendment")
     ):
         raise V024ContractError("Adapted config commitment is not the amendment")
-    if view.protocol.seed_roots != tuple(V024_EXPECTED_SEED_ROOTS.items()):
-        raise V024ContractError("Adapted protocol roots are not the fresh V2.4 roots")
+    if (
+        not isinstance(view.config_canonical_sha256, str)
+        or _SHA256.fullmatch(view.config_canonical_sha256) is None
+    ):
+        raise V024ContractError("Adapted canonical config commitment is invalid")
+    roots = view.protocol.seed_roots
+    if (
+        len(roots) != 13
+        or len({name for name, _ in roots}) != 13
+        or len({root for _, root in roots}) != 13
+        or any(
+            not isinstance(name, str) or type(root) is not int for name, root in roots
+        )
+    ):
+        raise V024ContractError("Adapted seed-root registry is not exact")
+    if (
+        not isinstance(view.whole_rows, Mapping)
+        or set(view.whole_rows)
+        != {
+            "prefix_pack.csv",
+            "forecast_coordinates.csv",
+            "operating_pack.csv",
+            "member_fit_diagnostics.csv",
+            "member_forecast_bundle.csv",
+        }
+        or any(
+            type(count) is not int or count < 1 for count in view.whole_rows.values()
+        )
+    ):
+        raise V024ContractError("Adapted whole-row registry is invalid")
+    if (
+        not isinstance(view.partition_rows, Mapping)
+        or tuple(view.partition_rows) != view.artifacts.partitions
+        or any(
+            not isinstance(counts, tuple)
+            or len(counts) != 6
+            or any(type(count) is not int or count < 1 for count in counts)
+            for counts in view.partition_rows.values()
+        )
+    ):
+        raise V024ContractError("Adapted partition-row registry is invalid")
     if view.protocol.prefix_days != view.artifacts.prefix_days:
         raise V024ContractError("Adapted prefix grids disagree")
     if view.protocol.forecast_days != view.artifacts.forecast_days:
         raise V024ContractError("Adapted forecast grids disagree")
-    if view.design_status not in V024_ALLOWED_DESIGN_STATUSES:
-        raise V024ContractError("Adapted design status drifted")
+    if not isinstance(view.design_status, str) or not view.design_status:
+        raise V024ContractError("Adapted design status is invalid")
     if view.base_config_canonical_sha256 != FROZEN_CONFIG_CANONICAL_SHA256:
         raise V024ContractError("Base canonical provenance drifted")
     if view.base_config_byte_sha256 != FROZEN_CONFIG_BYTE_SHA256:
         raise V024ContractError("Base byte provenance drifted")
 
     adapted_config = view.protocol.config()
-    if adapted_config.get("protocol_id") != V024_PROTOCOL_ID:
+    if adapted_config.get("protocol_id") != protocol_id:
         raise V024ContractError("Adapted protocol JSON identity drifted")
     design_partitions = adapted_config.get("design_partitions")
     if not isinstance(design_partitions, Mapping):
         raise V024ContractError("Adapted design_partitions is not an object")
-    roots = design_partitions.get("seed_roots")
-    if not isinstance(roots, Mapping):
+    config_roots = design_partitions.get("seed_roots")
+    if not isinstance(config_roots, Mapping):
         raise V024ContractError("Adapted seed_roots is not an object")
-    if tuple(roots.items()) != view.protocol.seed_roots:
+    if tuple(config_roots.items()) != roots:
         raise V024ContractError("Adapted JSON and parsed roots disagree")
+    return view
 
 
 def adapt_v024_contract_view(
@@ -310,10 +370,30 @@ def adapt_v024_contract_view(
         allowed=_ARTIFACT_ADAPTED_FIELDS,
         context="artifacts",
     )
+    whole_contract = design.raw.get("whole_bundle_contract")
+    partition_contract = design.raw.get("partition_contract")
+    if not isinstance(whole_contract, Mapping) or not isinstance(
+        partition_contract, Mapping
+    ):
+        raise V024ContractError("Design row contracts are absent")
+    whole_rows = whole_contract.get("required_tables")
+    partition_rows = partition_contract.get("cardinality")
+    if not isinstance(whole_rows, Mapping) or not isinstance(partition_rows, Mapping):
+        raise V024ContractError("Design row registries are absent")
     return V024ContractView(
         protocol=protocol,
         artifacts=artifacts,
         design_status=design.status,
+        config_canonical_sha256=V024_AMENDMENT_SEMANTIC_SHA256,
+        whole_rows=MappingProxyType(
+            {str(name): int(count) for name, count in whole_rows.items()}
+        ),
+        partition_rows=MappingProxyType(
+            {
+                str(name): tuple(int(count) for count in counts)
+                for name, counts in partition_rows.items()
+            }
+        ),
         base_config_canonical_sha256=base_protocol.config_sha256,
         base_config_byte_sha256=base_artifacts.config_byte_sha256,
     )
@@ -335,9 +415,27 @@ def load_v024_contract_view(
     )
 
 
+def resolve_contract_view(
+    value: FrozenArtifactContract | V024ContractView | None,
+) -> V024ContractView:
+    """Resolve a generic view or the exact legacy V2.4 artifact boundary."""
+
+    if value is None:
+        return load_v024_contract_view()
+    if type(value) is V024ContractView:
+        return require_contract_view(value)
+    if type(value) is FrozenArtifactContract:
+        legacy = load_v024_contract_view()
+        if value == legacy.artifacts:
+            return legacy
+    raise V024ContractError("Artifact contract has no authenticated contract view")
+
+
 __all__ = [
     "V024ContractError",
     "V024ContractView",
     "adapt_v024_contract_view",
     "load_v024_contract_view",
+    "require_contract_view",
+    "resolve_contract_view",
 ]

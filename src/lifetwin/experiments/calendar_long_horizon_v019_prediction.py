@@ -299,6 +299,7 @@ def run_isolated_prediction_process_v024(
         bundle = load_prediction_bundle(
             label_free_root=label_free_root,
             attempt_id=attempt_id,
+            expected_protocol_id=environment.protocol_id,
             expected_config_sha256=environment.config_byte_sha256,
             expected_git_commit=environment.git_commit,
         )

@@ -19,9 +19,8 @@ from typing import Any, Mapping
 from lifetwin.experiments import calendar_long_horizon_v015_training as _v015
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
+    require_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_provenance import (
     V024ProvenanceError,
@@ -43,6 +42,7 @@ class V024StateCodecError(ValueError):
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_PROTOCOL_ID = re.compile(r"^[a-z0-9_]+$")
 _UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 _IDENTITY_FIELDS = frozenset({"protocol_id", "config_sha256"})
 _MASK_INPUT_NAME = "calibration_mask_commitment.json"
@@ -116,24 +116,18 @@ class DecodedV024CalibrationPopulationAudit:
 
 
 def _require_contract_identity(contract_view: object) -> tuple[str, str]:
-    if type(contract_view) is not V024ContractView:
-        raise V024StateCodecError(
-            "contract_view must be an exact validated V024ContractView"
-        )
-    view = contract_view
-    if (
-        view.protocol.protocol_id != V024_PROTOCOL_ID
-        or view.artifacts.protocol_id != V024_PROTOCOL_ID
-    ):
-        raise V024StateCodecError("Validated V2.4 protocol identity changed")
+    try:
+        view = require_contract_view(contract_view)
+    except (TypeError, ValueError) as exc:
+        raise V024StateCodecError("contract_view is invalid") from exc
     amendment_hash = view.artifacts.config_byte_sha256
     if (
         not isinstance(amendment_hash, str)
         or _SHA256.fullmatch(amendment_hash) is None
         or view.protocol.config_sha256 != amendment_hash
     ):
-        raise V024StateCodecError("Validated V2.4 amendment byte hash changed")
-    return V024_PROTOCOL_ID, amendment_hash
+        raise V024StateCodecError("Validated amendment byte hash changed")
+    return view.protocol.protocol_id, amendment_hash
 
 
 def _require_bound_identity(
@@ -143,11 +137,15 @@ def _require_bound_identity(
 ) -> tuple[str, str]:
     """Validate the scalar identity retained by a sealed provenance envelope."""
 
-    if protocol_id != V024_PROTOCOL_ID:
-        raise V024StateCodecError("Validated V2.4 protocol identity changed")
+    if not isinstance(protocol_id, str) or _PROTOCOL_ID.fullmatch(protocol_id) is None:
+        raise V024StateCodecError("Validated protocol identity is invalid")
     if not isinstance(config_sha256, str) or _SHA256.fullmatch(config_sha256) is None:
-        raise V024StateCodecError("Validated V2.4 amendment byte hash changed")
-    return V024_PROTOCOL_ID, config_sha256
+        raise V024StateCodecError("Validated amendment byte hash changed")
+    return protocol_id, config_sha256
+
+
+def _default_protocol_id() -> str:
+    return require_contract_view(resolve_contract_view(None)).protocol.protocol_id
 
 
 def _exact_object(
@@ -447,7 +445,7 @@ def validate_calibration_mask_commitment_v024(
         for index, row in enumerate(commitment.rows)
     )
     if (
-        commitment.protocol_id != V024_PROTOCOL_ID
+        _PROTOCOL_ID.fullmatch(commitment.protocol_id) is None
         or commitment.source_calibration_count != _v015.CALIBRATION_COUNT
         or len(rows) != commitment.source_calibration_count
     ):
@@ -482,6 +480,7 @@ def validate_calibration_mask_commitment_v024(
 def build_calibration_mask_commitment_v024(
     *,
     rows: tuple[V024CommittedMaskRow, ...],
+    protocol_id: str | None = None,
 ) -> V024PretruthMaskCommitment:
     """Build the immutable commitment from already-computed label-free rows."""
 
@@ -493,7 +492,7 @@ def build_calibration_mask_commitment_v024(
     digest = _mask_digest(canonical_rows, source_count=len(canonical_rows))
     try:
         commitment = V024PretruthMaskCommitment(
-            protocol_id=V024_PROTOCOL_ID,
+            protocol_id=_default_protocol_id() if protocol_id is None else protocol_id,
             source_calibration_count=len(canonical_rows),
             rows=canonical_rows,
             eligibility_mask_sha256=digest,
@@ -532,8 +531,11 @@ def deserialize_calibration_mask_commitment_json_v024(
     )
     if top["schema_version"] != _MASK_SCHEMA_VERSION:
         raise V024StateCodecError("Mask commitment schema changed")
-    if top["protocol_id"] != V024_PROTOCOL_ID:
-        raise V024StateCodecError("Mask commitment protocol_id changed")
+    if (
+        not isinstance(top["protocol_id"], str)
+        or _PROTOCOL_ID.fullmatch(top["protocol_id"]) is None
+    ):
+        raise V024StateCodecError("Mask commitment protocol_id is invalid")
     source_count = _integer(
         top["source_calibration_count"],
         context="mask source_calibration_count",
@@ -1123,7 +1125,7 @@ def _validate_calibration_population_audit_payload(
         raise V024StateCodecError("Calibration audit selected baseline mismatch")
     created = _created_utc(top["created_utc"])
     return DecodedV024CalibrationPopulationAudit(
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=provenance.protocol_id,
         config_sha256=provenance.config_sha256,
         audit=audit,
         eligibility_mask_cluster_ids=expected_identifiers,

@@ -24,9 +24,9 @@ from lifetwin.experiments.calendar_long_horizon_v015_io import (
     canonicalize_frame,
     read_canonical_csv,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
-    load_v024_design,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_numeric_contract import (
     V024MemberFitNumericContractError,
@@ -69,37 +69,30 @@ def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def _partition_counts() -> Mapping[str, Mapping[str, int]]:
-    design = load_v024_design()
-    raw = design.raw["partition_contract"]["cardinality"]
+def _partition_counts(
+    view: V024ContractView,
+) -> Mapping[str, Mapping[str, int]]:
     result: dict[str, Mapping[str, int]] = {}
-    for partition, values in raw.items():
-        if not isinstance(partition, str) or len(values) != len(_COUNT_ORDER):
-            raise V024PartitionContractError("Partition cardinality registry changed")
-        parsed = {
-            name: int(value) for name, value in zip(_COUNT_ORDER, values, strict=True)
-        }
+    for partition, values in view.partition_rows.items():
+        parsed = {name: value for name, value in zip(_COUNT_ORDER, values, strict=True)}
         if any(value <= 0 for value in parsed.values()):
             raise V024PartitionContractError("Partition cardinality is not positive")
         result[partition] = MappingProxyType(parsed)
     return MappingProxyType(result)
 
 
-PARTITION_COUNTS = _partition_counts()
+_DEFAULT_VIEW = resolve_contract_view(None)
+PARTITION_COUNTS = _partition_counts(_DEFAULT_VIEW)
 
 
-def _whole_counts() -> Mapping[str, int]:
-    design = load_v024_design()
-    raw = design.raw["whole_bundle_contract"]["required_tables"]
-    if set(raw) != set(INPUT_FILENAMES):
-        raise V024WholeBundleContractError("Whole-bundle table registry changed")
-    parsed = {name: int(raw[name]) for name in INPUT_FILENAMES}
+def _whole_counts(view: V024ContractView) -> Mapping[str, int]:
+    parsed = {name: int(view.whole_rows[name]) for name in INPUT_FILENAMES}
     if any(value <= 0 for value in parsed.values()):
         raise V024WholeBundleContractError("Whole-bundle cardinality is not positive")
     return MappingProxyType(parsed)
 
 
-WHOLE_COUNTS = _whole_counts()
+WHOLE_COUNTS = _whole_counts(_DEFAULT_VIEW)
 
 
 class WholeBundleValidated:
@@ -178,11 +171,13 @@ class ValidatedPartitionView:
         return self._source_hashes
 
 
-def _require_contract(contract: FrozenArtifactContract) -> None:
-    if type(contract) is not FrozenArtifactContract:
-        raise V024PartitionCapabilityError("Artifact contract has the wrong exact type")
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024PartitionCapabilityError("Artifact contract is not V2.4")
+def _resolve_contract(
+    value: FrozenArtifactContract | V024ContractView,
+) -> V024ContractView:
+    try:
+        return resolve_contract_view(value)
+    except (TypeError, ValueError) as exc:
+        raise V024PartitionCapabilityError("Contract view is invalid") from exc
 
 
 def _direct_file(root: Path, filename: str) -> Path:
@@ -218,11 +213,12 @@ def _validate_member_tables(
 
 def validate_whole_bundle_from_root(
     root: str | Path,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
 ) -> WholeBundleValidated:
     """Validate and bind the five authoritative complete label-free files."""
 
-    _require_contract(contract)
+    view = _resolve_contract(contract)
+    artifacts = view.artifacts
     source_root = Path(root).resolve()
     if not source_root.is_dir() or source_root.is_symlink():
         raise V024WholeBundleContractError(
@@ -231,10 +227,11 @@ def validate_whole_bundle_from_root(
     frames: dict[str, pd.DataFrame] = {}
     hashes: dict[str, str] = {}
     sizes: dict[str, int] = {}
+    whole_counts = _whole_counts(view)
     for filename in INPUT_FILENAMES:
         path = _direct_file(source_root, filename)
         try:
-            frames[filename] = read_canonical_csv(path, contract, formal=True)
+            frames[filename] = read_canonical_csv(path, artifacts, formal=True)
         except V015ArtifactError as exc:
             raise V024WholeBundleContractError(str(exc)) from exc
         if filename not in _MEMBER_TABLES:
@@ -242,9 +239,9 @@ def validate_whole_bundle_from_root(
                 _require_finite_numeric(frames[filename], filename=filename)
             except V024PartitionContractError as exc:
                 raise V024WholeBundleContractError(str(exc)) from exc
-        if len(frames[filename]) != WHOLE_COUNTS[filename]:
+        if len(frames[filename]) != whole_counts[filename]:
             raise V024WholeBundleContractError(
-                f"{filename} must contain exactly {WHOLE_COUNTS[filename]} rows"
+                f"{filename} must contain exactly {whole_counts[filename]} rows"
             )
         raw = path.read_bytes()
         hashes[filename] = _sha256(raw)
@@ -254,7 +251,7 @@ def validate_whole_bundle_from_root(
     _validate_member_tables(frames, error_type=None)
     return WholeBundleValidated(
         issuer=_ISSUER,
-        contract_hash=contract.config_byte_sha256,
+        contract_hash=artifacts.config_byte_sha256,
         frames=frames,
         source_hashes=hashes,
         source_sizes=sizes,
@@ -311,18 +308,20 @@ def derive_partition_view(
     whole: WholeBundleValidated,
     *,
     partition: str,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
 ) -> ValidatedPartitionView:
     """Derive one exact formal partition only from a valid whole capability."""
 
-    _require_contract(contract)
+    view = _resolve_contract(contract)
+    artifacts = view.artifacts
     if type(whole) is not WholeBundleValidated:
         raise V024PartitionCapabilityError("Whole bundle capability has wrong type")
-    if whole._contract_hash != contract.config_byte_sha256:
+    if whole._contract_hash != artifacts.config_byte_sha256:
         raise V024PartitionCapabilityError("Whole capability contract binding changed")
-    if partition not in PARTITION_COUNTS:
+    partition_counts = _partition_counts(view)
+    if partition not in partition_counts:
         raise V024PartitionContractError(f"Unknown frozen partition: {partition}")
-    counts = PARTITION_COUNTS[partition]
+    counts = partition_counts[partition]
     selected: dict[str, pd.DataFrame] = {}
     hashes: dict[str, str] = {}
     for filename in INPUT_FILENAMES:
@@ -333,7 +332,7 @@ def derive_partition_view(
             filename=filename,
             partition=partition,
             required_rows=counts[filename],
-            contract=contract,
+            contract=artifacts,
             require_all_numeric_finite=filename not in _MEMBER_TABLES,
         )
         selected[filename] = canonical
@@ -342,7 +341,7 @@ def derive_partition_view(
     return ValidatedPartitionView(
         issuer=_ISSUER,
         partition=partition,
-        contract_hash=contract.config_byte_sha256,
+        contract_hash=artifacts.config_byte_sha256,
         frames=selected,
         frame_hashes=hashes,
         source_hashes=whole.source_hashes,
@@ -352,16 +351,17 @@ def derive_partition_view(
 def consume_partition_frames(
     view: ValidatedPartitionView,
     *,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
 ) -> Mapping[str, pd.DataFrame]:
     """Revalidate mutation guards and return isolated consumer copies."""
 
-    _require_contract(contract)
+    contract_view = _resolve_contract(contract)
+    artifacts = contract_view.artifacts
     if type(view) is not ValidatedPartitionView:
         raise V024PartitionCapabilityError("Partition capability has wrong type")
-    if view._contract_hash != contract.config_byte_sha256:
+    if view._contract_hash != artifacts.config_byte_sha256:
         raise V024PartitionCapabilityError("Partition capability contract changed")
-    counts = PARTITION_COUNTS.get(view.partition)
+    counts = _partition_counts(contract_view).get(view.partition)
     if counts is None:
         raise V024PartitionCapabilityError("Partition capability identity changed")
     result: dict[str, pd.DataFrame] = {}
@@ -371,7 +371,7 @@ def consume_partition_frames(
             filename=filename,
             partition=view.partition,
             required_rows=counts[filename],
-            contract=contract,
+            contract=artifacts,
             require_all_numeric_finite=filename not in _MEMBER_TABLES,
         )
         if digest != view._frame_hashes[filename]:

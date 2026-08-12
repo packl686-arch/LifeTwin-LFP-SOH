@@ -21,9 +21,7 @@ from typing import Any, Mapping
 from lifetwin.experiments import calendar_long_horizon_v015_training as _v015
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
+    require_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_training import (
     V024CalibrationAudit,
@@ -36,7 +34,7 @@ class V024ProvenanceError(ValueError):
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_ATTEMPT_ID = re.compile(r"^v024-[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$")
+_ATTEMPT_ID = re.compile(r"^v[0-9]{3}-[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$")
 _INPUT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$")
 _ISSUER_KEY = object()
 _TRAINING_DOMAIN = b"lifetwin-v024-training-provenance-v1\0"
@@ -161,20 +159,17 @@ def _audit_payload(audit: V024CalibrationAudit) -> dict[str, object]:
 
 
 def _require_contract(contract_view: object) -> V024ContractView:
-    if type(contract_view) is not V024ContractView:
-        raise V024ProvenanceError(
-            "contract_view must be an exact validated V024ContractView"
-        )
-    view = contract_view
+    try:
+        view = require_contract_view(contract_view)
+    except (TypeError, ValueError) as exc:
+        raise V024ProvenanceError("contract_view is invalid") from exc
     config_hash = view.artifacts.config_byte_sha256
     if (
-        view.protocol.protocol_id != V024_PROTOCOL_ID
-        or view.artifacts.protocol_id != V024_PROTOCOL_ID
-        or view.protocol.config_sha256 != config_hash
+        view.protocol.config_sha256 != config_hash
         or not isinstance(config_hash, str)
         or _SHA256.fullmatch(config_hash) is None
     ):
-        raise V024ProvenanceError("Validated V2.4 contract identity changed")
+        raise V024ProvenanceError("Validated contract identity changed")
     return view
 
 
@@ -278,7 +273,7 @@ class V024TrainingProvenanceEnvelope:
                 "training provenance factory"
             )
         object.__setattr__(self, "_issuer_key", _issuer_key)
-        object.__setattr__(self, "_protocol_id", V024_PROTOCOL_ID)
+        object.__setattr__(self, "_protocol_id", contract_view.protocol.protocol_id)
         object.__setattr__(
             self,
             "_config_sha256",
@@ -549,6 +544,8 @@ def _issue_v024_training_provenance_from_fresh_bytes(
     )
 
     try:
+        if mask_commitment.protocol_id != view.protocol.protocol_id:
+            raise V024ProvenanceError("Calibration mask protocol identity changed")
         validated_mask = _state_codec.validate_calibration_mask_commitment_v024(
             mask_commitment
         )
@@ -626,7 +623,7 @@ def _issue_v024_training_provenance_from_fresh_bytes(
         ("calibration", calibration_inputs),
     )
     payload = _training_payload(
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         config_sha256=view.artifacts.config_byte_sha256,
         attempt_id=attempt_id,
         commitments=commitments,
@@ -699,6 +696,8 @@ def _rehydrate_v024_training_provenance_after_strict_io(
     )
 
     try:
+        if mask_commitment.protocol_id != view.protocol.protocol_id:
+            raise V024ProvenanceError("Calibration mask protocol identity changed")
         validated_mask = _state_codec.validate_calibration_mask_commitment_v024(
             mask_commitment
         )
@@ -776,7 +775,7 @@ def _rehydrate_v024_training_provenance_after_strict_io(
         ("calibration", calibration_inputs),
     )
     payload = _training_payload(
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         config_sha256=view.artifacts.config_byte_sha256,
         attempt_id=attempt_id,
         commitments=commitments,
@@ -1021,14 +1020,12 @@ def _require_committed_model_state_envelope(
 def _extract_label_free_state_for_formal_v024(
     value: object,
     *,
+    protocol_id: str,
     config_sha256: str,
 ) -> _v015.FrozenLabelFreeState:
     committed = _require_committed_model_state_envelope(value)
     envelope = committed.validated_model_state
-    if (
-        envelope.protocol_id != V024_PROTOCOL_ID
-        or envelope.config_sha256 != config_sha256
-    ):
+    if envelope.protocol_id != protocol_id or envelope.config_sha256 != config_sha256:
         raise V024ProvenanceError(
             "Model-state provenance does not match the active V2.4 contract"
         )

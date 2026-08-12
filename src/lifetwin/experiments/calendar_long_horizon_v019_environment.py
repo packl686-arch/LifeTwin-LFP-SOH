@@ -16,10 +16,10 @@ from typing import Mapping
 
 from threadpoolctl import threadpool_info
 
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_AMENDMENT_SEMANTIC_SHA256,
-    V024_PROTOCOL_ID,
-    load_v024_design,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    require_contract_view,
+    resolve_contract_view,
 )
 
 
@@ -207,16 +207,18 @@ def _validate_freeze_record(
     path: Path,
     *,
     amendment_byte_sha256: str,
+    amendment_semantic_sha256: str,
+    protocol_id: str,
     source_hashes: Mapping[str, str],
 ) -> str:
     payload = _strict_json_object(path, context="V2.4 freeze record")
     expected = {
         "schema_version": "1.0.0",
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": protocol_id,
         "design_freeze_commit": _DESIGN_FREEZE_COMMIT,
         "amendment_path": _AMENDMENT_RELATIVE_PATH.as_posix(),
         "amendment_byte_sha256": amendment_byte_sha256,
-        "amendment_semantic_sha256": V024_AMENDMENT_SEMANTIC_SHA256,
+        "amendment_semantic_sha256": amendment_semantic_sha256,
         "preregistration_path": _PREREG_RELATIVE_PATH.as_posix(),
         "preregistration_byte_sha256": _PREREG_BYTE_SHA256,
         "environment_lock_path": _LOCK_RELATIVE_PATH.as_posix(),
@@ -306,10 +308,16 @@ def _verify_paths_are_tracked(repo_root: Path, paths: tuple[Path, ...]) -> None:
 
 def verify_formal_environment(
     repo_root: str | Path,
+    *,
+    contract_view: V024ContractView | None = None,
 ) -> FormalEnvironmentIdentity:
     """Verify the frozen status, attestation lineage, source bytes, and runtime."""
 
     root = Path(repo_root).resolve()
+    try:
+        view = require_contract_view(resolve_contract_view(contract_view))
+    except (TypeError, ValueError) as exc:
+        raise V024EnvironmentError("Formal contract view is invalid") from exc
     if not (root / ".git").exists():
         raise V024EnvironmentError("Formal repository root has no .git directory")
     top_level = Path(_git(root, "rev-parse", "--show-toplevel")).resolve()
@@ -335,11 +343,9 @@ def verify_formal_environment(
     ):
         if not path.is_file():
             raise V024EnvironmentError(f"Required freeze file is absent: {path}")
-    try:
-        design = load_v024_design(amendment_path)
-    except (OSError, ValueError) as exc:
-        raise V024EnvironmentError("V2.4 amendment validation failed") from exc
-    if design.status != "implementation_frozen":
+    if view.artifacts.config_path != amendment_path.resolve():
+        raise V024EnvironmentError("Formal amendment path differs from its contract")
+    if view.design_status != "implementation_frozen":
         raise V024EnvironmentError(
             "V2.4 amendment has not entered immutable implementation_frozen status"
         )
@@ -364,7 +370,9 @@ def verify_formal_environment(
     )
     implementation_commit = _validate_freeze_record(
         freeze_record_path,
-        amendment_byte_sha256=design.config_byte_sha256,
+        amendment_byte_sha256=view.artifacts.config_byte_sha256,
+        amendment_semantic_sha256=view.config_canonical_sha256,
+        protocol_id=view.protocol.protocol_id,
         source_hashes=source_hashes,
     )
     if implementation_commit == git_commit:
@@ -432,11 +440,11 @@ def verify_formal_environment(
     active_threadpools = _active_threadpool_records()
 
     return FormalEnvironmentIdentity(
-        protocol_id=V024_PROTOCOL_ID,
+        protocol_id=view.protocol.protocol_id,
         git_commit=git_commit,
         git_dirty=False,
-        config_byte_sha256=design.config_byte_sha256,
-        config_canonical_sha256=V024_AMENDMENT_SEMANTIC_SHA256,
+        config_byte_sha256=view.artifacts.config_byte_sha256,
+        config_canonical_sha256=view.config_canonical_sha256,
         preregistration_byte_sha256=_PREREG_BYTE_SHA256,
         environment_lock_byte_sha256=_LOCK_BYTE_SHA256,
         python_version=platform.python_version(),

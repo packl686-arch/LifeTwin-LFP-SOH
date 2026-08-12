@@ -57,7 +57,7 @@ from lifetwin.experiments.calendar_long_horizon_v015_training import (
 )
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-    load_v024_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_environment import (
     FormalEnvironmentIdentity,
@@ -96,9 +96,6 @@ from lifetwin.experiments.calendar_long_horizon_v019_prediction import (
     commit_validated_fit_result_v024,
     fit_verified_generation_bundle_v024,
     write_verified_fit_result_v024,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_provenance import (
     V024CommittedModelStateEnvelope,
@@ -433,7 +430,7 @@ def _write_json_checkpoint(
 ) -> str:
     if (
         set(payload) != expected_keys
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != view.protocol.protocol_id
         or payload.get("config_sha256") != view.artifacts.config_byte_sha256
     ):
         raise V024RunnerError(f"{path.name} identity or schema changed")
@@ -465,6 +462,7 @@ def initialize_formal_attempt(
     *,
     paths: V024RunPaths,
     attempt_id: str,
+    _contract_view: V024ContractView | None = None,
 ) -> tuple[FormalEnvironmentIdentity, V024ContractView, FormalAttemptIdentity]:
     """Attest the environment and create the sole initial ledger event."""
 
@@ -489,8 +487,8 @@ def initialize_formal_attempt(
             raise V024RunnerError(f"{context} root is not the frozen V2.4 path")
         if actual.exists():
             raise V024RunnerError(f"{context} root must not exist before launch")
-    environment = verify_formal_environment(paths.repo_root)
-    view = load_v024_contract_view()
+    view = resolve_contract_view(_contract_view)
+    environment = verify_formal_environment(paths.repo_root, contract_view=view)
     if environment.config_byte_sha256 != view.artifacts.config_byte_sha256:
         raise V024RunnerError("Environment and V2.4 contract hashes differ")
     for root, context in (
@@ -518,13 +516,19 @@ def run_isolated_generation_stage(
     *,
     label_free_root: str | Path,
     sealed_truth_root: str | Path,
+    _contract_view: V024ContractView | None = None,
 ) -> None:
     """Run the RNG-free plan audit and one-shot generation in its subprocess."""
 
-    commit_frozen_v024_generation_plan(label_free_root=label_free_root)
+    view = resolve_contract_view(_contract_view)
+    commit_frozen_v024_generation_plan(
+        label_free_root=label_free_root,
+        _contract_view=view,
+    )
     generate_frozen_v024_artifacts(
         label_free_root=label_free_root,
         sealed_truth_root=sealed_truth_root,
+        _contract_view=view,
     )
 
 
@@ -732,16 +736,16 @@ def _apply_partition(
     partition_view = derive_partition_view(
         whole,
         partition=partition,
-        contract=view.artifacts,
+        contract=view,
     )
     pipeline = recompute_validated_partition_with_state_v024(
         partition_view,
         state=state,  # type: ignore[arg-type]
-        contract=view.artifacts,
+        contract=view,
     )
     return pipeline, consume_partition_frames(
         partition_view,
-        contract=view.artifacts,
+        contract=view,
     )
 
 
@@ -940,7 +944,7 @@ def _fit_center_stage(
     center_truth = open_truth_for_phase(
         ledger_path=paths.ledger_path,
         identity=identity,
-        contract=view.artifacts,
+        contract=view,
         commitment_path=paths.truth_commitment_path,
         sealed_truth_root=paths.sealed_truth_root,
         label_free_root=paths.label_free_root,
@@ -991,7 +995,7 @@ def _fit_center_stage(
             _stage="center_development",
         )
         payload = {
-            "protocol_id": V024_PROTOCOL_ID,
+            "protocol_id": view.protocol.protocol_id,
             "config_sha256": view.artifacts.config_byte_sha256,
             "state_kind": "center_development",
             "center_state_sha256": center_state_sha256(state),
@@ -1060,7 +1064,7 @@ def _fit_risk_stage(
     risk_truth = open_truth_for_phase(
         ledger_path=paths.ledger_path,
         identity=identity,
-        contract=view.artifacts,
+        contract=view,
         commitment_path=paths.truth_commitment_path,
         sealed_truth_root=paths.sealed_truth_root,
         label_free_root=paths.label_free_root,
@@ -1153,7 +1157,7 @@ def _fit_risk_stage(
             contract_view=view,
         )
         payload = {
-            "protocol_id": V024_PROTOCOL_ID,
+            "protocol_id": view.protocol.protocol_id,
             "config_sha256": view.artifacts.config_byte_sha256,
             "state_kind": "risk_development",
             "center_checkpoint_byte_sha256": center_checkpoint_hash,
@@ -1439,7 +1443,7 @@ def _create_model_state_commitment(
     view: V024ContractView,
 ) -> str:
     payload = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": view.protocol.protocol_id,
         "config_sha256": view.artifacts.config_byte_sha256,
         "git_commit": identity.git_commit,
         "files": [
@@ -1504,12 +1508,13 @@ def _fit_calibration_stage(
     )
     evidence_kwargs = dict(evidence.kwargs)
     evidence_kwargs["risk_state"] = risk
+    evidence_kwargs["protocol_id"] = view.protocol.protocol_id
 
     mask_phase = "calibration_mask_committed"
     _append_phase(
         paths=paths,
         identity=identity,
-        contract=view.artifacts,
+        contract=view,
         phase=mask_phase,
         exit_status="started",
         truth_hash=truth_hash,
@@ -1549,7 +1554,7 @@ def _fit_calibration_stage(
     calibration_truth = open_truth_for_phase(
         ledger_path=paths.ledger_path,
         identity=identity,
-        contract=view.artifacts,
+        contract=view,
         commitment_path=paths.truth_commitment_path,
         sealed_truth_root=paths.sealed_truth_root,
         label_free_root=paths.label_free_root,
@@ -1876,7 +1881,7 @@ def _score_and_write(
     truth_frames = open_truth_for_phase(
         ledger_path=paths.ledger_path,
         identity=identity,
-        contract=view.artifacts,
+        contract=view,
         commitment_path=paths.truth_commitment_path,
         sealed_truth_root=paths.sealed_truth_root,
         label_free_root=paths.label_free_root,
@@ -1904,8 +1909,12 @@ def _score_and_write(
             truth_frames=truth_frames,
             model_state_envelope=model,
             prediction_commitment_envelope=prediction_envelope,
+            _contract_view=view,
         )
-        payloads = required_score_artifact_payloads_v024(result)
+        payloads = required_score_artifact_payloads_v024(
+            result,
+            contract_view=view,
+        )
         if tuple(payloads) != tuple(REQUIRED_SCORE_ARTIFACTS):
             raise V024RunnerError("Scorer returned a changed artifact registry")
         _require_empty_score_root(paths.score_root)
@@ -1974,9 +1983,11 @@ def _publish_preprediction_failure(
                 progress,
                 created_utc=attempt_created_utc,
                 terminated_utc=_utc_now(),
+                protocol_id=view.protocol.protocol_id,
             ),
             error=error,
             repo_root=paths.repo_root,
+            _contract_view=view,
         )
     except BaseException as publication_error:
         error.add_note(
@@ -1994,6 +2005,7 @@ def run_formal_attempt(
     score_root: str | Path,
     termination_root: str | Path,
     repo_root: str | Path = _PROJECT_ROOT,
+    _contract_view: V024ContractView | None = None,
 ) -> V024FormalRunResult:
     """Execute the fixed V2.4 lifecycle without a scientific override surface."""
 
@@ -2009,6 +2021,7 @@ def run_formal_attempt(
     environment, view, identity = initialize_formal_attempt(
         paths=paths,
         attempt_id=attempt_id,
+        _contract_view=_contract_view,
     )
     try:
         if view.design_status != "implementation_frozen":

@@ -43,7 +43,8 @@ from lifetwin.experiments.calendar_long_horizon_v019_collision import (
 )
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-    load_v024_contract_view,
+    require_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_firewall import (
     AttemptProgress,
@@ -54,10 +55,6 @@ from lifetwin.experiments.calendar_long_horizon_v019_firewall import (
     phase_commitment_message,
     validate_formal_exposure_log,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
-)
-
 
 GENERATION_PLAN_COMMITMENT_FILENAME = "generation_plan_commitment.json"
 _LEDGER_FILENAME = "exposure_log.jsonl"
@@ -343,31 +340,31 @@ def _decode_canonical_plan_commitment(raw: bytes) -> Mapping[str, object]:
     return decoded
 
 
-def _formal_environment() -> object:
+def _formal_environment(view: V024ContractView) -> object:
     from lifetwin.experiments.calendar_long_horizon_v019_environment import (
         verify_formal_environment,
     )
 
-    environment = verify_formal_environment(_PROJECT_ROOT)
-    if (
-        getattr(environment, "protocol_id", None) != V024_PROTOCOL_ID
-        or getattr(environment, "git_dirty", None) is not False
-    ):
-        raise V024GenerationError("Formal V2.4 environment identity is invalid")
-    return environment
+    return verify_formal_environment(_PROJECT_ROOT, contract_view=view)
 
 
 def _validate_contract_view(view: V024ContractView) -> None:
-    if type(view) is not V024ContractView:
-        raise V024GenerationError("V2.4 contract view has an invalid type")
-    if (
-        view.protocol.protocol_id != V024_PROTOCOL_ID
-        or view.artifacts.protocol_id != V024_PROTOCOL_ID
-        or view.protocol.config_sha256 != view.artifacts.config_byte_sha256
-    ):
-        raise V024GenerationError("V2.4 protocol and artifact contracts disagree")
+    try:
+        require_contract_view(view)
+    except (TypeError, ValueError) as exc:
+        raise V024GenerationError("Formal contract view is invalid") from exc
     if view.design_status != _IMPLEMENTABLE_STATUS:
-        raise V024GenerationError("V2.4 implementation has not been immutably frozen")
+        raise V024GenerationError("Implementation has not been immutably frozen")
+
+
+def _validate_environment_identity(environment: object, view: V024ContractView) -> None:
+    if (
+        getattr(environment, "protocol_id", None) != view.protocol.protocol_id
+        or getattr(environment, "config_byte_sha256", None)
+        != view.artifacts.config_byte_sha256
+        or getattr(environment, "git_dirty", None) is not False
+    ):
+        raise V024GenerationError("Formal environment identity is invalid")
 
 
 def _validate_attempt_identities(
@@ -494,18 +491,14 @@ def _append_failure(
 def commit_frozen_v024_generation_plan(
     *,
     label_free_root: str | Path,
+    _contract_view: V024ContractView | None = None,
 ) -> str:
     """Audit and byte-commit the full coordinate plan without consuming a seed."""
 
-    environment = _formal_environment()
-    view = load_v024_contract_view()
+    view = resolve_contract_view(_contract_view)
     _validate_contract_view(view)
-    if getattr(environment, "config_byte_sha256", None) != (
-        view.artifacts.config_byte_sha256
-    ):
-        raise V024GenerationError(
-            "Formal environment and V2.4 amendment commitments disagree"
-        )
+    environment = _formal_environment(view)
+    _validate_environment_identity(environment, view)
 
     root = _physical_root_identity(
         label_free_root,
@@ -547,7 +540,7 @@ def commit_frozen_v024_generation_plan(
         verify_generation_plan_commitment(
             payload,
             expected_byte_sha256=commitment.byte_sha256,
-            expected_current_protocol_id=V024_PROTOCOL_ID,
+            expected_current_protocol_id=view.protocol.protocol_id,
             expected_current_protocol_byte_sha256=(view.artifacts.config_byte_sha256),
             expected_predecessor_protocol_id="synthetic_long_horizon_identifiability_v2",
             expected_predecessor_protocol_byte_sha256=(view.base_config_byte_sha256),
@@ -600,7 +593,7 @@ def _verify_committed_generation_plan(
         verify_generation_plan_commitment(
             payload,
             expected_byte_sha256=expected_byte_sha256,
-            expected_current_protocol_id=V024_PROTOCOL_ID,
+            expected_current_protocol_id=view.protocol.protocol_id,
             expected_current_protocol_byte_sha256=(view.artifacts.config_byte_sha256),
             expected_predecessor_protocol_id="synthetic_long_horizon_identifiability_v2",
             expected_predecessor_protocol_byte_sha256=(view.base_config_byte_sha256),
@@ -625,18 +618,14 @@ def generate_frozen_v024_artifacts(
     *,
     label_free_root: str | Path,
     sealed_truth_root: str | Path,
+    _contract_view: V024ContractView | None = None,
 ) -> WrittenV024GenerationArtifacts:
     """Generate fresh V2.4 rows only after the committed collision audit."""
 
-    environment = _formal_environment()
-    view = load_v024_contract_view()
+    view = resolve_contract_view(_contract_view)
     _validate_contract_view(view)
-    if getattr(environment, "config_byte_sha256", None) != (
-        view.artifacts.config_byte_sha256
-    ):
-        raise V024GenerationError(
-            "Formal environment and V2.4 amendment commitments disagree"
-        )
+    environment = _formal_environment(view)
+    _validate_environment_identity(environment, view)
     label_identity, sealed_identity = _bind_generation_roots(
         label_free_root=label_free_root,
         sealed_truth_root=sealed_truth_root,

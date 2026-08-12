@@ -39,29 +39,26 @@ from lifetwin.experiments.calendar_long_horizon_v019_collision import (
     derive_random_ranking_digest,
     derive_stress_permutation_digest,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_EXPECTED_SEED_ROOTS,
-    V024_PROTOCOL_ID,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    resolve_contract_view,
 )
 
 
 RANDOM_RANKING_COUNT = 10_000
 BOOTSTRAP_RESAMPLES = 5_000
 STRESS_PERMUTATIONS = 10_000
-RANDOM_ROOT = 202608100410
-BOOTSTRAP_ROOT = 202608100411
-STRESS_PERMUTATION_ROOT = 202608100412
+_DEFAULT_PROTOCOL = resolve_contract_view(None).protocol
+_DEFAULT_ROOTS = dict(_DEFAULT_PROTOCOL.seed_roots)
+RANDOM_ROOT = _DEFAULT_ROOTS["random_rankings"]
+BOOTSTRAP_ROOT = _DEFAULT_ROOTS["bootstrap"]
+STRESS_PERMUTATION_ROOT = _DEFAULT_ROOTS["stress_permutations"]
 
 _DECLARED_STOCHASTIC_ROOTS = {
     "random_rankings": RANDOM_ROOT,
     "bootstrap": BOOTSTRAP_ROOT,
     "stress_permutations": STRESS_PERMUTATION_ROOT,
 }
-if any(
-    V024_EXPECTED_SEED_ROOTS.get(name) != root
-    for name, root in _DECLARED_STOCHASTIC_ROOTS.items()
-):
-    raise RuntimeError("V2.4 stochastic roots disagree with the protocol amendment")
 if tuple(RISK_SCORE_IDS) != ANALYSIS_TIE_ARMS:
     raise RuntimeError("V2.4 analysis tie-arm registry drifted from V2")
 
@@ -72,23 +69,26 @@ class V024AnalysisError(V015AnalysisError):
 
 def _validate_identity(
     *,
-    protocol_id: str,
-    observed_root: int,
-    expected_root: int,
+    contract_view: V024ContractView | None,
+    protocol_id: str | None,
+    observed_root: int | None,
+    root_name: str,
     operation: str,
-) -> None:
-    if protocol_id != V024_PROTOCOL_ID:
-        raise V024AnalysisError(
-            f"{operation} requires protocol_id={V024_PROTOCOL_ID!r}"
-        )
+) -> tuple[str, int]:
+    contract = resolve_contract_view(contract_view)
+    expected_protocol_id = contract.protocol.protocol_id
+    expected_root = dict(contract.protocol.seed_roots)[root_name]
+    actual_protocol_id = expected_protocol_id if protocol_id is None else protocol_id
+    actual_root = expected_root if observed_root is None else observed_root
+    if actual_protocol_id != expected_protocol_id:
+        raise V024AnalysisError(f"{operation} protocol identity changed")
     if (
-        isinstance(observed_root, bool)
-        or not isinstance(observed_root, int)
-        or observed_root != expected_root
+        isinstance(actual_root, bool)
+        or not isinstance(actual_root, int)
+        or actual_root != expected_root
     ):
-        raise V024AnalysisError(
-            f"{operation} requires the frozen V2.4 root {expected_root}"
-        )
+        raise V024AnalysisError(f"{operation} seed root changed")
+    return actual_protocol_id, actual_root
 
 
 def _positive_count(value: int, *, context: str) -> int:
@@ -156,15 +156,17 @@ def deterministic_random_rankings(
     trajectories: pd.DataFrame,
     *,
     issue_count: int,
-    protocol_id: str = V024_PROTOCOL_ID,
-    random_root: int = RANDOM_ROOT,
+    protocol_id: str | None = None,
+    random_root: int | None = None,
     rankings: int = RANDOM_RANKING_COUNT,
+    contract_view: V024ContractView | None = None,
 ) -> pd.DataFrame:
     """Construct same-count random rankings in the V2.4 random namespace."""
-    _validate_identity(
+    protocol_id, random_root = _validate_identity(
+        contract_view=contract_view,
         protocol_id=protocol_id,
         observed_root=random_root,
-        expected_root=RANDOM_ROOT,
+        root_name="random_rankings",
         operation="Random rankings",
     )
     _positive_count(issue_count, context="Random-ranking issue_count")
@@ -240,15 +242,17 @@ def rank_policy(
     score_column: str,
     predictor_hash_column: str,
     issue_count: int,
-    protocol_id: str = V024_PROTOCOL_ID,
-    random_root: int = RANDOM_ROOT,
+    protocol_id: str | None = None,
+    random_root: int | None = None,
     eligibility_column: str = "hard_eligible_visible_stress",
+    contract_view: V024ContractView | None = None,
 ) -> pd.Series:
     """Return the frozen lowest-danger mask with the V2.4 protocol tie key."""
-    _validate_identity(
+    protocol_id, _ = _validate_identity(
+        contract_view=contract_view,
         protocol_id=protocol_id,
         observed_root=random_root,
-        expected_root=RANDOM_ROOT,
+        root_name="random_rankings",
         operation="Policy ranking",
     )
     _positive_count(issue_count, context="Policy issue_count")
@@ -341,15 +345,17 @@ def evaluate_policy_rankings(
     random_rankings: pd.DataFrame,
     *,
     issue_count: int,
-    protocol_id: str = V024_PROTOCOL_ID,
-    random_root: int = RANDOM_ROOT,
+    protocol_id: str | None = None,
+    random_root: int | None = None,
     rankings: int = RANDOM_RANKING_COUNT,
+    contract_view: V024ContractView | None = None,
 ) -> pd.DataFrame:
     """Report all frozen heads against one V2.4 random-ranking baseline."""
-    _validate_identity(
+    protocol_id, random_root = _validate_identity(
+        contract_view=contract_view,
         protocol_id=protocol_id,
         observed_root=random_root,
-        expected_root=RANDOM_ROOT,
+        root_name="random_rankings",
         operation="Policy comparison",
     )
     _positive_count(issue_count, context="Policy issue_count")
@@ -404,6 +410,7 @@ def evaluate_policy_rankings(
             score_column=f"risk_{score_id}",
             predictor_hash_column=f"risk_hash_{score_id}",
             issue_count=issue_count,
+            contract_view=contract_view,
         )
         issued_rate = float(catastrophic[issued].mean())
         rows.append(
@@ -440,17 +447,19 @@ def _bootstrap_seed(
 def bootstrap_risk_reductions(
     trajectories: pd.DataFrame,
     *,
-    protocol_id: str = V024_PROTOCOL_ID,
-    bootstrap_root: int = BOOTSTRAP_ROOT,
+    protocol_id: str | None = None,
+    bootstrap_root: int | None = None,
     issue_count: int = TEST_ISSUE_COUNT,
     resamples: int = BOOTSTRAP_RESAMPLES,
     families: Sequence[str] = TEST_FAMILIES,
+    contract_view: V024ContractView | None = None,
 ) -> pd.DataFrame:
     """Run the frozen family-stratified bootstrap in the V2.4 namespace."""
-    _validate_identity(
+    protocol_id, bootstrap_root = _validate_identity(
+        contract_view=contract_view,
         protocol_id=protocol_id,
         observed_root=bootstrap_root,
-        expected_root=BOOTSTRAP_ROOT,
+        root_name="bootstrap",
         operation="Bootstrap",
     )
     _positive_count(issue_count, context="Bootstrap issue_count")
@@ -734,16 +743,18 @@ def stress_permutation_metrics(
     visible_stress_state: Any,
     random_expected_catastrophic_rate: float,
     observed_prefix_only_risk_reduction: float,
-    protocol_id: str = V024_PROTOCOL_ID,
-    stress_permutation_root: int = STRESS_PERMUTATION_ROOT,
+    protocol_id: str | None = None,
+    stress_permutation_root: int | None = None,
     issue_count: int = TEST_ISSUE_COUNT,
     permutations: int = STRESS_PERMUTATIONS,
+    contract_view: V024ContractView | None = None,
 ) -> pd.DataFrame:
     """Jointly permute each eight-field stress block under V2.4 identity."""
-    _validate_identity(
+    protocol_id, stress_permutation_root = _validate_identity(
+        contract_view=contract_view,
         protocol_id=protocol_id,
         observed_root=stress_permutation_root,
-        expected_root=STRESS_PERMUTATION_ROOT,
+        root_name="stress_permutations",
         operation="Stress permutation",
     )
     _positive_count(issue_count, context="Stress-permutation issue_count")

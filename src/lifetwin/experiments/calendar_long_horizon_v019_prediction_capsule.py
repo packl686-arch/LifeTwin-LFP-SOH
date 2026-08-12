@@ -57,7 +57,7 @@ class V024PredictionCapsuleError(RuntimeError):
     """Raised when the isolated prediction capsule fails closed."""
 
 
-V024_PROTOCOL_ID = "synthetic_long_horizon_identifiability_v2_4"
+_PROTOCOL_ID = re.compile(r"^[a-z0-9_]+$")
 
 REAL_OPERATING_FIELDS = (
     "past_mean_temperature_c",
@@ -630,6 +630,7 @@ class PredictionState:
 
 @dataclass(frozen=True, slots=True)
 class DecodedPredictionState:
+    protocol_id: str
     state: PredictionState
     input_byte_hashes: Mapping[str, Mapping[str, str]]
     model_state_byte_sha256: str
@@ -678,6 +679,7 @@ class PredictionBundle:
         "_frames",
         "_git_commit",
         "_ledger_raw",
+        "_protocol_id",
         "_root",
         "_state",
     )
@@ -689,6 +691,7 @@ class PredictionBundle:
         root: Path,
         config_sha256: str,
         git_commit: str,
+        protocol_id: str,
         frames: Mapping[str, pd.DataFrame],
         state: PredictionState,
         file_hashes: Mapping[str, str],
@@ -702,6 +705,7 @@ class PredictionBundle:
         object.__setattr__(self, "_root", root)
         object.__setattr__(self, "_config_sha256", config_sha256)
         object.__setattr__(self, "_git_commit", git_commit)
+        object.__setattr__(self, "_protocol_id", protocol_id)
         object.__setattr__(
             self,
             "_frames",
@@ -1040,8 +1044,11 @@ def _validate_prediction_state(state: PredictionState) -> None:
 def decode_prediction_state(
     raw: bytes,
     *,
+    expected_protocol_id: str,
     expected_config_sha256: str,
 ) -> DecodedPredictionState:
+    if _PROTOCOL_ID.fullmatch(expected_protocol_id) is None:
+        raise V024PredictionCapsuleError("expected protocol ID is invalid")
     config_sha256 = _digest(
         expected_config_sha256,
         context="expected config hash",
@@ -1049,7 +1056,7 @@ def decode_prediction_state(
     payload = _strict_json(raw, filename="model_state.json")
     top = _exact_mapping(payload, _MODEL_STATE_KEYS, context="model_state.json")
     if (
-        top.get("protocol_id") != V024_PROTOCOL_ID
+        top.get("protocol_id") != expected_protocol_id
         or top.get("config_sha256") != config_sha256
     ):
         raise V024PredictionCapsuleError("model_state.json identity changed")
@@ -1303,13 +1310,14 @@ def decode_prediction_state(
         raise V024PredictionCapsuleError("software_versions changed")
     _utc(top["created_utc"], context="model_state.json created_utc")
     return DecodedPredictionState(
+        protocol_id=expected_protocol_id,
         state=state,
         input_byte_hashes=MappingProxyType(input_hashes),
         model_state_byte_sha256=_sha256(raw),
     )
 
 
-def _decode_mask_commitment(raw: bytes) -> _MaskEvidence:
+def _decode_mask_commitment(raw: bytes, *, protocol_id: str) -> _MaskEvidence:
     payload = _strict_json(
         raw,
         filename="calibration_mask_commitment.json",
@@ -1317,10 +1325,7 @@ def _decode_mask_commitment(raw: bytes) -> _MaskEvidence:
     )
     if set(payload) != _MASK_TOP_LEVEL_KEYS:
         raise V024PredictionCapsuleError("Calibration mask commitment schema changed")
-    if (
-        payload["schema_version"] != "1.0.0"
-        or payload["protocol_id"] != V024_PROTOCOL_ID
-    ):
+    if payload["schema_version"] != "1.0.0" or payload["protocol_id"] != protocol_id:
         raise V024PredictionCapsuleError("Calibration mask commitment identity changed")
     source_count = _integer(
         payload["source_calibration_count"],
@@ -1496,6 +1501,7 @@ def _verify_training_chain_semantics(
             payload,
             filename=filename,
             config_sha256=config_sha256,
+            protocol_id=decoded.protocol_id,
         )
         _utc(payload["created_utc"], context=f"{filename} created_utc")
 
@@ -1846,6 +1852,7 @@ def canonicalize_frame(
     filename: str,
     *,
     formal: bool = True,
+    protocol_id: str | None = None,
 ) -> pd.DataFrame:
     """Validate and stable-key-sort one prediction-capsule dataframe."""
 
@@ -1895,9 +1902,13 @@ def canonicalize_frame(
 
     if "protocol_id" in frame.columns:
         values = frame["protocol_id"].tolist()
-        if any(type(value) is not str for value in values) or set(values) != {
-            V024_PROTOCOL_ID
-        }:
+        observed = set(values)
+        if (
+            any(type(value) is not str for value in values)
+            or len(observed) != 1
+            or _PROTOCOL_ID.fullmatch(next(iter(observed))) is None
+            or (protocol_id is not None and observed != {protocol_id})
+        ):
             raise V024PredictionCapsuleError(
                 f"{filename} contains a non-frozen protocol_id"
             )
@@ -1936,8 +1947,14 @@ def canonical_csv_bytes(
     filename: str,
     *,
     formal: bool = True,
+    protocol_id: str | None = None,
 ) -> bytes:
-    ordered = canonicalize_frame(frame, filename, formal=formal)
+    ordered = canonicalize_frame(
+        frame,
+        filename,
+        formal=formal,
+        protocol_id=protocol_id,
+    )
     try:
         return ordered.to_csv(
             index=False,
@@ -1954,6 +1971,7 @@ def read_canonical_csv(
     path: Path,
     *,
     formal: bool = True,
+    protocol_id: str | None = None,
 ) -> pd.DataFrame:
     raw = path.read_bytes()
     try:
@@ -1971,8 +1989,21 @@ def read_canonical_csv(
         raise V024PredictionCapsuleError(
             f"{path.name} is not strict canonical CSV"
         ) from exc
-    ordered = canonicalize_frame(frame, path.name, formal=formal)
-    if canonical_csv_bytes(ordered, path.name, formal=formal) != raw:
+    ordered = canonicalize_frame(
+        frame,
+        path.name,
+        formal=formal,
+        protocol_id=protocol_id,
+    )
+    if (
+        canonical_csv_bytes(
+            ordered,
+            path.name,
+            formal=formal,
+            protocol_id=protocol_id,
+        )
+        != raw
+    ):
         raise V024PredictionCapsuleError(
             f"{path.name} is not the frozen canonical CSV serialization"
         )
@@ -1984,9 +2015,10 @@ def _identity_json(
     *,
     filename: str,
     config_sha256: str,
+    protocol_id: str,
 ) -> None:
     if (
-        payload.get("protocol_id") != V024_PROTOCOL_ID
+        payload.get("protocol_id") != protocol_id
         or payload.get("config_sha256") != config_sha256
     ):
         raise V024PredictionCapsuleError(f"{filename} identity changed")
@@ -2060,6 +2092,7 @@ def _verify_truth_commitment(
     *,
     progress: AttemptProgress,
     config_sha256: str,
+    protocol_id: str,
 ) -> dict[str, str]:
     _require_phase_hash(
         progress,
@@ -2080,6 +2113,7 @@ def _verify_truth_commitment(
         payload,
         filename="truth_commitments.json",
         config_sha256=config_sha256,
+        protocol_id=protocol_id,
     )
     _utc(payload["created_utc"], context="truth commitment created_utc")
     if payload["truth_values_withheld_by_physical_path"] is not True:
@@ -2120,6 +2154,7 @@ def _verify_file_commitment(
     progress: AttemptProgress,
     progress_field: str,
     config_sha256: str,
+    protocol_id: str,
     git_commit: str,
     frames: Mapping[str, pd.DataFrame],
     require_worker_count: bool,
@@ -2143,6 +2178,7 @@ def _verify_file_commitment(
         payload,
         filename=filename,
         config_sha256=config_sha256,
+        protocol_id=protocol_id,
     )
     _utc(payload["created_utc"], context=f"{filename} created_utc")
     entries = payload["files"]
@@ -2193,6 +2229,7 @@ def load_prediction_bundle(
     *,
     label_free_root: str | Path,
     attempt_id: str,
+    expected_protocol_id: str,
     expected_config_sha256: str,
     expected_git_commit: str,
 ) -> PredictionBundle:
@@ -2234,6 +2271,7 @@ def load_prediction_bundle(
         truth_raw,
         progress=progress,
         config_sha256=expected_config_sha256,
+        protocol_id=expected_protocol_id,
     )
     verified_hashes["truth_commitments.json"] = _sha256(truth_raw)
 
@@ -2256,10 +2294,19 @@ def load_prediction_bundle(
 
     frames: dict[str, pd.DataFrame] = {}
     for filename in (*_LABEL_INPUTS, *_FIT_OUTPUTS):
-        frame = read_canonical_csv(_direct_file(root, filename), formal=True)
+        frame = read_canonical_csv(
+            _direct_file(root, filename),
+            formal=True,
+            protocol_id=expected_protocol_id,
+        )
         frames[filename] = frame
         verified_hashes[filename] = _sha256(
-            canonical_csv_bytes(frame, filename, formal=True)
+            canonical_csv_bytes(
+                frame,
+                filename,
+                formal=True,
+                protocol_id=expected_protocol_id,
+            )
         )
     _validate_prediction_input_alignment(frames)
 
@@ -2273,6 +2320,7 @@ def load_prediction_bundle(
         progress=progress,
         progress_field="fit_commitment_byte_sha256",
         config_sha256=expected_config_sha256,
+        protocol_id=expected_protocol_id,
         git_commit=expected_git_commit,
         frames=frames,
         require_worker_count=True,
@@ -2296,6 +2344,7 @@ def load_prediction_bundle(
             payload,
             filename=filename,
             config_sha256=expected_config_sha256,
+            protocol_id=expected_protocol_id,
         )
         state_raw[filename] = raw
         state_payloads[filename] = payload
@@ -2303,7 +2352,7 @@ def load_prediction_bundle(
 
     mask_filename = "calibration_mask_commitment.json"
     mask_raw = _direct_file(root, mask_filename).read_bytes()
-    mask = _decode_mask_commitment(mask_raw)
+    mask = _decode_mask_commitment(mask_raw, protocol_id=expected_protocol_id)
     state_raw[mask_filename] = mask_raw
     verified_hashes[mask_filename] = _sha256(mask_raw)
 
@@ -2330,6 +2379,7 @@ def load_prediction_bundle(
 
     decoded = decode_prediction_state(
         state_raw["model_state.json"],
+        expected_protocol_id=expected_protocol_id,
         expected_config_sha256=expected_config_sha256,
     )
     _verify_training_chain_semantics(
@@ -2338,6 +2388,7 @@ def load_prediction_bundle(
         decoded=decoded,
         mask=mask,
         config_sha256=expected_config_sha256,
+        protocol_id=expected_protocol_id,
     )
     model_commitment_raw = _direct_file(
         root,
@@ -2352,6 +2403,7 @@ def load_prediction_bundle(
         progress=progress,
         progress_field="model_state_commitment_byte_sha256",
         config_sha256=expected_config_sha256,
+        protocol_id=expected_protocol_id,
         git_commit=expected_git_commit,
         frames=frames,
         require_worker_count=False,
@@ -2391,6 +2443,8 @@ def _require_bundle_unchanged(
         or not allowed_outputs.issubset(set(_PREDICTION_OUTPUTS))
         or not isinstance(value._config_sha256, str)
         or _SHA256.fullmatch(value._config_sha256) is None
+        or not isinstance(value._protocol_id, str)
+        or _PROTOCOL_ID.fullmatch(value._protocol_id) is None
         or not isinstance(value._git_commit, str)
         or _GIT_COMMIT.fullmatch(value._git_commit) is None
     ):
@@ -2417,6 +2471,7 @@ def _require_bundle_unchanged(
         raise V024PredictionCapsuleError("Committed prediction ledger changed")
     decoded = decode_prediction_state(
         _direct_file(value._root, "model_state.json").read_bytes(),
+        expected_protocol_id=value._protocol_id,
         expected_config_sha256=value._config_sha256,
     )
     if decoded.state != value._state:
@@ -2430,7 +2485,12 @@ def _require_bundle_unchanged(
     for filename, frame in frames:
         if type(frame) is not pd.DataFrame:
             raise V024PredictionCapsuleError(f"Sealed frame type changed: {filename}")
-        raw = canonical_csv_bytes(frame, filename, formal=True)
+        raw = canonical_csv_bytes(
+            frame,
+            filename,
+            formal=True,
+            protocol_id=value._protocol_id,
+        )
         if file_hashes[filename] != _sha256(raw):
             raise V024PredictionCapsuleError(
                 f"Sealed in-memory frame changed: {filename}"
@@ -2489,6 +2549,7 @@ def _bound_prediction_output_bytes(
             frame,
             filename,
             formal=True,
+            protocol_id=bundle._protocol_id,
         )
         for filename, frame in frames.items()
     }
@@ -3255,8 +3316,8 @@ def _abstention_reasons(
     return not reasons, ";".join(reasons)
 
 
-def _tie_hash(arm: str, content_hash: str) -> str:
-    material = f"{V024_PROTOCOL_ID}|{arm}|{content_hash}".encode("ascii")
+def _tie_hash(protocol_id: str, arm: str, content_hash: str) -> str:
+    material = f"{protocol_id}|{arm}|{content_hash}".encode("ascii")
     return _sha256(material)
 
 
@@ -3268,6 +3329,7 @@ def _rank_primary_arms(
     visible_stress_hashes: Sequence[str],
     hard_eligible: Sequence[bool],
     issue_count: int,
+    protocol_id: str,
 ) -> _PrimaryArmRanking:
     prefix_scores = np.asarray(prefix_only_scores, dtype=np.float64)
     visible_scores = np.asarray(visible_stress_scores, dtype=np.float64)
@@ -3299,12 +3361,17 @@ def _rank_primary_arms(
         raise V024PredictionCapsuleError("An eligible primary risk score is nonfinite")
     ranking_a = rank_for_issuance(
         prefix_scores[indices],
-        tuple(_tie_hash("prefix_only", hashes_a[index]) for index in indices),
+        tuple(
+            _tie_hash(protocol_id, "prefix_only", hashes_a[index]) for index in indices
+        ),
         issue_count,
     )
     ranking_b = rank_for_issuance(
         visible_scores[indices],
-        tuple(_tie_hash("visible_stress", hashes_b[index]) for index in indices),
+        tuple(
+            _tie_hash(protocol_id, "visible_stress", hashes_b[index])
+            for index in indices
+        ),
         issue_count,
     )
     ranks_a: list[int | None] = [None] * size
@@ -3406,6 +3473,7 @@ def recompute_prediction_pipeline(
     member_forecast_bundle: pd.DataFrame,
     state: PredictionState,
     formal: bool,
+    protocol_id: str,
 ) -> PredictionPipelineResult:
     """Recompute the V2.4 label-free outputs in the minimal capsule."""
 
@@ -3414,6 +3482,8 @@ def recompute_prediction_pipeline(
             "Prediction state must have the exact capsule type"
         )
     _validate_prediction_state(state)
+    if _PROTOCOL_ID.fullmatch(protocol_id) is None:
+        raise V024PredictionCapsuleError("Prediction protocol identity is invalid")
     try:
         return _recompute_prediction_pipeline_impl(
             prefix_pack=prefix_pack,
@@ -3423,6 +3493,7 @@ def recompute_prediction_pipeline(
             member_forecast_bundle=member_forecast_bundle,
             state=state,
             formal=formal,
+            protocol_id=protocol_id,
         )
     except V2ModelError as exc:
         raise V024PredictionCapsuleError(
@@ -3439,6 +3510,7 @@ def _recompute_prediction_pipeline_impl(
     member_forecast_bundle: pd.DataFrame,
     state: PredictionState,
     formal: bool,
+    protocol_id: str,
 ) -> PredictionPipelineResult:
     supplied = (
         prefix_pack,
@@ -3449,7 +3521,12 @@ def _recompute_prediction_pipeline_impl(
     )
     filenames = (*_LABEL_INPUTS, *_FIT_OUTPUTS)
     inputs = tuple(
-        canonicalize_frame(frame, filename, formal=formal)
+        canonicalize_frame(
+            frame,
+            filename,
+            formal=formal,
+            protocol_id=protocol_id,
+        )
         for frame, filename in zip(supplied, filenames, strict=True)
     )
     prefix, coordinates, operating, diagnostics, member_forecasts = inputs
@@ -3779,7 +3856,7 @@ def _recompute_prediction_pipeline_impl(
             ) = (math.nan,) * 11
 
         identity = {
-            "protocol_id": V024_PROTOCOL_ID,
+            "protocol_id": protocol_id,
             "partition": partition,
             "cluster_id": cluster_id,
         }
@@ -3970,6 +4047,7 @@ def _recompute_prediction_pipeline_impl(
                 visible_stress_hashes=contents["arm_b_content_sha256"].astype(str),
                 hard_eligible=features["hard_eligible"].tolist(),
                 issue_count=PRIMARY_ISSUE_COUNTS[str(partition)],
+                protocol_id=protocol_id,
             )
         else:
             empty_ranks: tuple[int | None, ...] = (None,) * len(features)
@@ -3998,7 +4076,7 @@ def _recompute_prediction_pipeline_impl(
             ):
                 decision_records.append(
                     {
-                        "protocol_id": V024_PROTOCOL_ID,
+                        "protocol_id": protocol_id,
                         "partition": str(partition),
                         "cluster_id": cluster_id,
                         "arm": arm,
@@ -4017,16 +4095,19 @@ def _recompute_prediction_pipeline_impl(
         pd.DataFrame(prediction_records),
         "prediction_bundle.csv",
         formal=formal,
+        protocol_id=protocol_id,
     )
     primary_risk_bundle = canonicalize_frame(
         primary_risk,
         "risk_bundle.csv",
         formal=formal,
+        protocol_id=protocol_id,
     )
     decision_bundle = canonicalize_frame(
         pd.DataFrame(decision_records),
         "decision_bundle.csv",
         formal=formal,
+        protocol_id=protocol_id,
     )
     return PredictionPipelineResult(
         prediction_bundle=prediction_bundle,
@@ -4059,6 +4140,7 @@ def run_prediction_bundle(
         member_forecast_bundle=frames["member_forecast_bundle.csv"],
         state=state,
         formal=formal,
+        protocol_id=value._protocol_id,
     )
     _require_bundle_unchanged(value)
     raw_by_name = {
@@ -4066,6 +4148,7 @@ def run_prediction_bundle(
             getattr(result, attribute),
             filename,
             formal=True,
+            protocol_id=value._protocol_id,
         )
         for filename, attribute in _PIPELINE_OUTPUT_FIELDS
     }
@@ -4094,7 +4177,6 @@ __all__ = [
     "PredictionPipelineResult",
     "PredictionState",
     "V024PredictionCapsuleError",
-    "V024_PROTOCOL_ID",
     "canonical_csv_bytes",
     "canonicalize_frame",
     "decode_prediction_state",

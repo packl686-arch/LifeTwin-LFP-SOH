@@ -24,12 +24,12 @@ from lifetwin.experiments.calendar_long_horizon_v019_environment import (
     V024EnvironmentError,
     verify_formal_environment,
 )
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    resolve_contract_view,
+)
 from lifetwin.experiments.calendar_long_horizon_v019_prediction_environment import (
     V024PredictionEnvironmentError,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
-    load_v024_design,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_partition import (
     V024PartitionCapabilityError,
@@ -55,7 +55,7 @@ from lifetwin.experiments.calendar_long_horizon_v019_signals import (
 )
 
 
-V024_AMENDMENT_BYTE_SHA256 = load_v024_design().config_byte_sha256
+V024_AMENDMENT_BYTE_SHA256 = resolve_contract_view(None).artifacts.config_byte_sha256
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -697,6 +697,7 @@ class TerminalContext:
         *,
         created_utc: str,
         terminated_utc: str,
+        protocol_id: str | None = None,
     ) -> "TerminalContext":
         """Derive every lifecycle and commitment field from the strict ledger."""
 
@@ -711,7 +712,11 @@ class TerminalContext:
                     "Completed attempt has no pre-prediction terminal phase"
                 ) from exc
         return cls(
-            protocol_id=V024_PROTOCOL_ID,
+            protocol_id=(
+                resolve_contract_view(None).protocol.protocol_id
+                if protocol_id is None
+                else protocol_id
+            ),
             attempt_id=progress.identity.attempt_id,
             git_commit=progress.identity.git_commit,
             git_dirty=False,
@@ -743,10 +748,13 @@ class TerminalContext:
         )
 
     def __post_init__(self) -> None:
-        if self.protocol_id != V024_PROTOCOL_ID:
-            raise ValueError("Terminal protocol_id is not the validated V2.4 ID")
-        if self.config_byte_sha256 != V024_AMENDMENT_BYTE_SHA256:
-            raise ValueError("Terminal config hash is not the validated V2.4 amendment")
+        if (
+            not isinstance(self.protocol_id, str)
+            or _SAFE_ID.fullmatch(self.protocol_id) is None
+        ):
+            raise ValueError("Terminal protocol_id is invalid")
+        if _SHA256.fullmatch(self.config_byte_sha256) is None:
+            raise ValueError("Terminal config hash is invalid")
         if (
             not isinstance(self.attempt_id, str)
             or _SAFE_ID.fullmatch(self.attempt_id) is None
@@ -927,10 +935,16 @@ def _validate_exact_keys(
     return value
 
 
-def _validate_identity(payload: Mapping[str, Any], *, context: str) -> None:
+def _validate_identity(
+    payload: Mapping[str, Any],
+    *,
+    context: str,
+    protocol_id: str,
+    config_byte_sha256: str,
+) -> None:
     if (
-        payload["protocol_id"] != V024_PROTOCOL_ID
-        or payload["config_byte_sha256"] != V024_AMENDMENT_BYTE_SHA256
+        payload["protocol_id"] != protocol_id
+        or payload["config_byte_sha256"] != config_byte_sha256
         or not isinstance(payload["attempt_id"], str)
         or _SAFE_ID.fullmatch(payload["attempt_id"]) is None
         or not isinstance(payload["git_commit"], str)
@@ -1026,7 +1040,12 @@ def _validate_structural_traceback(
         raise V019TerminationError("Structural traceback contains unsafe text")
 
 
-def validate_terminal_attempt_record(payload: Mapping[str, Any]) -> None:
+def validate_terminal_attempt_record(
+    payload: Mapping[str, Any],
+    *,
+    protocol_id: str | None = None,
+    config_byte_sha256: str | None = None,
+) -> None:
     """Validate the exact canonical terminal-attempt record schema."""
 
     record = _validate_exact_keys(
@@ -1034,7 +1053,19 @@ def validate_terminal_attempt_record(payload: Mapping[str, Any]) -> None:
         _ATTEMPT_RECORD_KEYS,
         context="terminal attempt record",
     )
-    _validate_identity(record, context="Terminal attempt record")
+    default = resolve_contract_view(None)
+    _validate_identity(
+        record,
+        context="Terminal attempt record",
+        protocol_id=(
+            default.protocol.protocol_id if protocol_id is None else protocol_id
+        ),
+        config_byte_sha256=(
+            default.artifacts.config_byte_sha256
+            if config_byte_sha256 is None
+            else config_byte_sha256
+        ),
+    )
     if not isinstance(record["git_dirty"], bool):
         raise V019TerminationError("Terminal attempt git_dirty is invalid")
     for phase_name in ("phase", "last_completed_phase"):
@@ -1146,7 +1177,12 @@ def _validate_terminal_file_record(
         raise V019TerminationError(f"{expected_path} file record is invalid")
 
 
-def validate_terminal_artifact_manifest(payload: Mapping[str, Any]) -> None:
+def validate_terminal_artifact_manifest(
+    payload: Mapping[str, Any],
+    *,
+    protocol_id: str | None = None,
+    config_byte_sha256: str | None = None,
+) -> None:
     """Validate the exact canonical terminal-artifact manifest schema."""
 
     manifest = _validate_exact_keys(
@@ -1154,7 +1190,19 @@ def validate_terminal_artifact_manifest(payload: Mapping[str, Any]) -> None:
         _MANIFEST_KEYS,
         context="terminal artifact manifest",
     )
-    _validate_identity(manifest, context="Terminal artifact manifest")
+    default = resolve_contract_view(None)
+    _validate_identity(
+        manifest,
+        context="Terminal artifact manifest",
+        protocol_id=(
+            default.protocol.protocol_id if protocol_id is None else protocol_id
+        ),
+        config_byte_sha256=(
+            default.artifacts.config_byte_sha256
+            if config_byte_sha256 is None
+            else config_byte_sha256
+        ),
+    )
     files = manifest["terminal_files"]
     if not isinstance(files, list) or len(files) != 2:
         raise V019TerminationError("Terminal file registry is invalid")
@@ -1240,10 +1288,19 @@ def validate_terminal_artifact_manifest(payload: Mapping[str, Any]) -> None:
         raise V019TerminationError("Terminal manifest boundary is invalid")
 
 
-def validate_termination_manifest(payload: Mapping[str, Any]) -> None:
+def validate_termination_manifest(
+    payload: Mapping[str, Any],
+    *,
+    protocol_id: str | None = None,
+    config_byte_sha256: str | None = None,
+) -> None:
     """Compatibility alias for the terminal-artifact manifest validator."""
 
-    validate_terminal_artifact_manifest(payload)
+    validate_terminal_artifact_manifest(
+        payload,
+        protocol_id=protocol_id,
+        config_byte_sha256=config_byte_sha256,
+    )
 
 
 def _parse_ledger_prefix(raw: bytes, context: TerminalContext) -> LedgerSnapshot:
@@ -1514,7 +1571,11 @@ def _build_attempt_record(
             },
         },
     }
-    validate_terminal_attempt_record(payload)
+    validate_terminal_attempt_record(
+        payload,
+        protocol_id=context.protocol_id,
+        config_byte_sha256=context.config_byte_sha256,
+    )
     return payload
 
 
@@ -1598,7 +1659,11 @@ def build_terminal_artifact_manifest(
             "strict_label_free_inventory_no_truth_or_scoring_capability"
         ),
     }
-    validate_terminal_artifact_manifest(payload)
+    validate_terminal_artifact_manifest(
+        payload,
+        protocol_id=context.protocol_id,
+        config_byte_sha256=context.config_byte_sha256,
+    )
     return payload
 
 
@@ -1924,8 +1989,16 @@ def _publish_terminal_classification(
             manifest_raw,
             context="terminal artifact manifest",
         )
-        validate_terminal_attempt_record(attempt_payload)
-        validate_terminal_artifact_manifest(manifest_payload)
+        validate_terminal_attempt_record(
+            attempt_payload,
+            protocol_id=context.protocol_id,
+            config_byte_sha256=context.config_byte_sha256,
+        )
+        validate_terminal_artifact_manifest(
+            manifest_payload,
+            protocol_id=context.protocol_id,
+            config_byte_sha256=context.config_byte_sha256,
+        )
 
         rescanned = _scan_preterminal_artifacts(
             label_free_root=label_free,
@@ -1969,11 +2042,15 @@ def _environment_guarded_error(
     context: TerminalContext,
     error: BaseException,
     repo_root: str | Path | None,
+    contract_view: V024ContractView,
 ) -> BaseException:
     """Convert any failed fresh environment attestation into an integrity void."""
 
     try:
-        environment = verify_formal_environment(repo_root or _PROJECT_ROOT)
+        environment = verify_formal_environment(
+            repo_root or _PROJECT_ROOT,
+            contract_view=contract_view,
+        )
     except BaseException:
         return V019IntegrityError(TerminalReason.INTEGRITY_ENVIRONMENT_MISMATCH)
     if (
@@ -1994,13 +2071,21 @@ def publish_terminal(
     error: BaseException,
     stderr: str | bytes = b"",
     repo_root: str | Path | None = None,
+    _contract_view: V024ContractView | None = None,
 ) -> PublishedTermination:
     """Publish any typed/default V2.4 pre-prediction terminal disposition."""
 
+    view = resolve_contract_view(_contract_view)
+    if (
+        context.protocol_id != view.protocol.protocol_id
+        or context.config_byte_sha256 != view.artifacts.config_byte_sha256
+    ):
+        raise V019TerminationError("Terminal context differs from its contract")
     guarded_error = _environment_guarded_error(
         context=context,
         error=error,
         repo_root=repo_root,
+        contract_view=view,
     )
     classification = classify_terminal_exception(guarded_error)
     return _publish_terminal_classification(
@@ -2022,13 +2107,21 @@ def publish_terminal_inconclusive(
     error: BaseException,
     stderr: str | bytes = b"",
     repo_root: str | Path | None = None,
+    _contract_view: V024ContractView | None = None,
 ) -> PublishedTermination:
     """Publish only a declared scientific terminal-inconclusive condition."""
 
+    view = resolve_contract_view(_contract_view)
+    if (
+        context.protocol_id != view.protocol.protocol_id
+        or context.config_byte_sha256 != view.artifacts.config_byte_sha256
+    ):
+        raise V019TerminationError("Terminal context differs from its contract")
     guarded_error = _environment_guarded_error(
         context=context,
         error=error,
         repo_root=repo_root,
+        contract_view=view,
     )
     classification = classify_terminal_exception(guarded_error)
     if not classification.is_scientific_terminal:

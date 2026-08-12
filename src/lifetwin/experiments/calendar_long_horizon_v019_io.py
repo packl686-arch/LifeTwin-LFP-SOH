@@ -37,15 +37,12 @@ from lifetwin.experiments.calendar_long_horizon_v015_protocol import (
 )
 from lifetwin.experiments.calendar_long_horizon_v019_contract import (
     V024ContractView,
-    load_v024_contract_view,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_ledger import (
     AttemptProgress,
     V024LedgerError,
     read_exposure_log,
-)
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_provenance import (
     V024CommittedModelStateEnvelope,
@@ -337,7 +334,7 @@ class V024FreshGenerationBundle:
 
     @property
     def protocol_id(self) -> str:
-        return V024_PROTOCOL_ID
+        return self._contract_view.protocol.protocol_id
 
 
 class V024CommittedLabelFreeBundle:
@@ -345,6 +342,7 @@ class V024CommittedLabelFreeBundle:
 
     __slots__ = (
         "_artifact_contract",
+        "_contract_view",
         "_config_sha256",
         "_design_status",
         "_file_hashes",
@@ -363,6 +361,7 @@ class V024CommittedLabelFreeBundle:
         _seal: object,
         root: Path,
         artifact_contract: FrozenArtifactContract,
+        contract_view: V024ContractView,
         design_status: str,
         config_sha256: str,
         identity: object,
@@ -377,6 +376,7 @@ class V024CommittedLabelFreeBundle:
         object.__setattr__(self, "_seal", _seal)
         object.__setattr__(self, "_root", root)
         object.__setattr__(self, "_artifact_contract", artifact_contract)
+        object.__setattr__(self, "_contract_view", contract_view)
         object.__setattr__(self, "_design_status", design_status)
         object.__setattr__(self, "_config_sha256", config_sha256)
         object.__setattr__(self, "_identity", identity)
@@ -667,16 +667,13 @@ def _require_membership(root: Path, expected: frozenset[str], *, context: str) -
 
 
 def _require_contract(view: object) -> V024ContractView:
-    if type(view) is not V024ContractView:
-        raise V024IOError("contract_view must be an exact V024ContractView")
-    if (
-        view.protocol.protocol_id != V024_PROTOCOL_ID
-        or view.artifacts.protocol_id != V024_PROTOCOL_ID
-        or view.protocol.config_sha256 != view.artifacts.config_byte_sha256
-        or view.design_status != "implementation_frozen"
-    ):
+    try:
+        validated = resolve_contract_view(view)
+    except (TypeError, ValueError) as exc:
+        raise V024IOError("contract_view is invalid") from exc
+    if validated.design_status != "implementation_frozen":
         raise V024IOError("V2.4 formal IO requires the implementation-frozen contract")
-    return view
+    return validated
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -755,7 +752,7 @@ def _identity_json(
     filename: str,
 ) -> None:
     if (
-        payload.get("protocol_id") != V024_PROTOCOL_ID
+        payload.get("protocol_id") != contract.protocol_id
         or payload.get("config_sha256") != contract.config_byte_sha256
     ):
         raise V024IOError(f"{filename} identity changed")
@@ -843,7 +840,7 @@ def _verify_generation_and_truth(
     )
     if (
         set(truth_payload) != view.artifacts.json_keys("truth_commitments.json")
-        or truth_payload.get("protocol_id") != V024_PROTOCOL_ID
+        or truth_payload.get("protocol_id") != view.protocol.protocol_id
         or truth_payload.get("config_sha256") != view.artifacts.config_byte_sha256
         or truth_payload.get("truth_values_withheld_by_physical_path") is not True
     ):
@@ -1353,7 +1350,7 @@ def create_actual_analysis_hash_ledger_commitment_v024(
 ) -> str:
     """Recompute and exclusively persist the formal post-generation ledger."""
 
-    view = _require_contract(contract_view or load_v024_contract_view())
+    view = _require_contract(contract_view)
     root = _physical_root(label_free_root)
     _require_membership(
         root,
@@ -1405,7 +1402,7 @@ def load_fresh_generation_bundle_v024(
 ) -> V024FreshGenerationBundle:
     """Verify the exact post-generation root and issue the sole formal fit input."""
 
-    view = _require_contract(contract_view or load_v024_contract_view())
+    view = _require_contract(contract_view)
     root = _physical_root(label_free_root)
     _require_membership(root, _GENERATION_FILES, context="Fresh generation")
     progress, ledger_raw, _ = _load_ledger(
@@ -1572,6 +1569,7 @@ def _load_committed_bundle(
         _seal=_SEAL,
         root=root,
         artifact_contract=_prediction_artifact_contract_snapshot(view.artifacts),
+        contract_view=view,
         design_status=view.design_status,
         config_sha256=view.artifacts.config_byte_sha256,
         identity=progress.identity,
@@ -1593,7 +1591,7 @@ def load_committed_label_free_bundle_v024(
 ) -> V024CommittedLabelFreeBundle:
     """Validate the complete pre-prediction chain without any truth path."""
 
-    view = _require_contract(contract_view or load_v024_contract_view())
+    view = _require_contract(contract_view)
     bundle, progress = _load_committed_bundle(
         label_free_root=label_free_root,
         attempt_id=attempt_id,
@@ -1688,7 +1686,7 @@ def _extract_prediction_inputs_v024(
     value: object,
     *,
     model_state: V024CommittedModelStateEnvelope,
-) -> tuple[dict[str, pd.DataFrame], FrozenArtifactContract]:
+) -> tuple[dict[str, pd.DataFrame], V024ContractView]:
     bundle = _require_committed_bundle(value)
     if (
         type(model_state) is not V024CommittedModelStateEnvelope
@@ -1701,7 +1699,7 @@ def _extract_prediction_inputs_v024(
     )
     return (
         {name: frame.copy(deep=True) for name, frame in bundle._frames},
-        bundle._artifact_contract,
+        bundle._contract_view,
     )
 
 
@@ -1828,7 +1826,7 @@ def _create_validated_fit_commitment_v024(
         expected_membership=_FIT_OUTPUT_FILES,
     )
     payload = {
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": value._contract_view.protocol.protocol_id,
         "config_sha256": value._contract_view.artifacts.config_byte_sha256,
         "git_commit": value._identity.git_commit,
         "worker_count": 6,
@@ -2000,7 +1998,7 @@ def create_prediction_commitment_v024(
         )
     payload = {
         "schema_version": "1.0.0",
-        "protocol_id": V024_PROTOCOL_ID,
+        "protocol_id": value._artifact_contract.protocol_id,
         "config_sha256": value._config_sha256,
         "attempt_id": value.attempt_id,
         "git_commit": value._identity.git_commit,
@@ -2054,7 +2052,7 @@ def verify_prediction_commitment_v024(
 ) -> V024PredictionCommitmentEvidence:
     """Verify prediction bytes and their precommit/current ledger bindings."""
 
-    view = _require_contract(contract_view or load_v024_contract_view())
+    view = _require_contract(contract_view)
     full_chain_bundle, progress = _load_committed_bundle(
         label_free_root=label_free_root,
         attempt_id=attempt_id,
@@ -2072,7 +2070,7 @@ def verify_prediction_commitment_v024(
     if (
         set(payload) != _PREDICTION_COMMITMENT_KEYS
         or payload.get("schema_version") != "1.0.0"
-        or payload.get("protocol_id") != V024_PROTOCOL_ID
+        or payload.get("protocol_id") != view.protocol.protocol_id
         or payload.get("config_sha256") != view.artifacts.config_byte_sha256
         or payload.get("attempt_id") != attempt_id
         or payload.get("git_commit") != progress.identity.git_commit

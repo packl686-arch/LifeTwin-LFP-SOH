@@ -120,6 +120,7 @@ class PredictionEnvironmentIdentity:
     """Minimal identity needed to bind a label-free prediction bundle."""
 
     git_commit: str
+    protocol_id: str
     config_byte_sha256: str
 
 
@@ -485,6 +486,7 @@ def verify_prediction_environment(
     _verify_runtime()
     return PredictionEnvironmentIdentity(
         git_commit=git_commit,
+        protocol_id=V024_PROTOCOL_ID,
         config_byte_sha256=amendment_byte_sha256,
     )
 

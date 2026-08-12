@@ -33,11 +33,11 @@ from lifetwin.experiments.calendar_long_horizon_v015_pipeline import (
 from lifetwin.experiments.calendar_long_horizon_v015_protocol import (
     FROZEN_PROTOCOL_ID as V2_PROTOCOL_ID,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
+from lifetwin.experiments.calendar_long_horizon_v019_contract import (
+    V024ContractView,
+    resolve_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_partition import (
-    PARTITION_COUNTS,
     ValidatedPartitionView,
     canonicalize_partition_output,
     consume_partition_frames,
@@ -99,8 +99,8 @@ def _translate_protocol_column(
     return translated
 
 
-def _tie_hash_v024(arm: str, content_hash: str) -> str:
-    material = f"{V024_PROTOCOL_ID}|{arm}|{content_hash}".encode("ascii")
+def _tie_hash_v024(protocol_id: str, arm: str, content_hash: str) -> str:
+    material = f"{protocol_id}|{arm}|{content_hash}".encode("ascii")
     return hashlib.sha256(material).hexdigest()
 
 
@@ -112,6 +112,7 @@ def rank_primary_arms_v024(
     visible_stress_hashes: Sequence[str],
     hard_eligible: Sequence[bool],
     issue_count: int,
+    protocol_id: str,
 ) -> PrimaryArmRanking:
     """Apply the inherited ranking rule with the V2.4 tie-hash domain."""
 
@@ -148,12 +149,18 @@ def rank_primary_arms_v024(
 
     ranking_a = rank_for_issuance(
         prefix_scores[indices],
-        tuple(_tie_hash_v024("prefix_only", hashes_a[index]) for index in indices),
+        tuple(
+            _tie_hash_v024(protocol_id, "prefix_only", hashes_a[index])
+            for index in indices
+        ),
         issue_count,
     )
     ranking_b = rank_for_issuance(
         visible_scores[indices],
-        tuple(_tie_hash_v024("visible_stress", hashes_b[index]) for index in indices),
+        tuple(
+            _tie_hash_v024(protocol_id, "visible_stress", hashes_b[index])
+            for index in indices
+        ),
         issue_count,
     )
     ranks_a: list[int | None] = [None] * size
@@ -206,6 +213,7 @@ def _rebuild_decision_bundle(
     feature_bundle: pd.DataFrame,
     risk_bundle: pd.DataFrame,
     content_bundle: pd.DataFrame,
+    protocol_id: str,
 ) -> pd.DataFrame:
     records: list[dict[str, object]] = []
     for partition, raw_features in feature_bundle.groupby("partition", sort=True):
@@ -236,6 +244,7 @@ def _rebuild_decision_bundle(
                 visible_stress_hashes=contents["arm_b_content_sha256"].astype(str),
                 hard_eligible=features["hard_eligible"].tolist(),
                 issue_count=PRIMARY_ISSUE_COUNTS[str(partition)],
+                protocol_id=protocol_id,
             )
         else:
             empty_ranks: tuple[int | None, ...] = (None,) * len(features)
@@ -264,7 +273,7 @@ def _rebuild_decision_bundle(
             ):
                 records.append(
                     {
-                        "protocol_id": V024_PROTOCOL_ID,
+                        "protocol_id": protocol_id,
                         "partition": str(partition),
                         "cluster_id": cluster_id,
                         "arm": arm,
@@ -294,8 +303,7 @@ def _recompute_label_free_pipeline_with_state_v024(
 ) -> LabelFreePipelineResult:
     """Internal numerical adapter after provenance has released its state."""
 
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024PipelineError("The artifact contract is not V2.4")
+    protocol_id = contract.protocol_id
     supplied = (
         prefix_pack,
         forecast_coordinates,
@@ -315,7 +323,7 @@ def _recompute_label_free_pipeline_with_state_v024(
     translated = tuple(
         _translate_protocol_column(
             frame,
-            source=V024_PROTOCOL_ID,
+            source=protocol_id,
             destination=V2_PROTOCOL_ID,
         )
         for frame in canonical
@@ -337,28 +345,29 @@ def _recompute_label_free_pipeline_with_state_v024(
     prediction = _translate_protocol_column(
         inherited.prediction_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     features = _translate_protocol_column(
         inherited.feature_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     risk = _translate_protocol_column(
         inherited.primary_risk_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     contents = _translate_protocol_column(
         inherited.predictor_content_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     risk = _suppress_ineligible_probabilities(risk, features)
     decisions = _rebuild_decision_bundle(
         feature_bundle=features,
         risk_bundle=risk,
         content_bundle=contents,
+        protocol_id=protocol_id,
     )
 
     prediction = _canonical_input(
@@ -410,16 +419,17 @@ def recompute_label_free_pipeline_v024(
     member_fit_diagnostics: pd.DataFrame,
     member_forecast_bundle: pd.DataFrame,
     model_state_envelope: V024CommittedModelStateEnvelope,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
 ) -> LabelFreePipelineResult:
     """Run V2.4 prediction only from a codec-validated model capability."""
 
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024PipelineError("The artifact contract is not V2.4")
+    view = resolve_contract_view(contract)
+    artifact_contract = view.artifacts
     try:
         state = _extract_label_free_state_for_formal_v024(
             model_state_envelope,
-            config_sha256=contract.config_byte_sha256,
+            protocol_id=view.protocol.protocol_id,
+            config_sha256=artifact_contract.config_byte_sha256,
         )
     except V024ProvenanceError as exc:
         raise V024PipelineError(str(exc)) from exc
@@ -430,7 +440,7 @@ def recompute_label_free_pipeline_v024(
         member_fit_diagnostics=member_fit_diagnostics,
         member_forecast_bundle=member_forecast_bundle,
         state=state,
-        contract=contract,
+        contract=artifact_contract,
         formal=True,
     )
 
@@ -439,7 +449,7 @@ def recompute_validated_partition_with_state_v024(
     partition_view: ValidatedPartitionView,
     *,
     state: FrozenLabelFreeState,
-    contract: FrozenArtifactContract,
+    contract: FrozenArtifactContract | V024ContractView,
 ) -> LabelFreePipelineResult:
     """Run the inherited numerical core from an exact partition capability.
 
@@ -450,16 +460,16 @@ def recompute_validated_partition_with_state_v024(
 
     if type(state) is not FrozenLabelFreeState:
         raise V024PipelineError("Partition state has the wrong exact type")
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024PipelineError("The artifact contract is not V2.4")
-    frames = consume_partition_frames(partition_view, contract=contract)
+    view = resolve_contract_view(contract)
+    artifact_contract = view.artifacts
+    frames = consume_partition_frames(partition_view, contract=view)
     partition = partition_view.partition
-    counts = PARTITION_COUNTS[partition]
     canonical = tuple(frames[name] for name in _INPUT_FILENAMES)
+    protocol_id = view.protocol.protocol_id
     translated = tuple(
         _translate_protocol_column(
             frame,
-            source=V024_PROTOCOL_ID,
+            source=protocol_id,
             destination=V2_PROTOCOL_ID,
         )
         for frame in canonical
@@ -481,36 +491,37 @@ def recompute_validated_partition_with_state_v024(
     prediction = _translate_protocol_column(
         inherited.prediction_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     features = _translate_protocol_column(
         inherited.feature_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     risk = _translate_protocol_column(
         inherited.primary_risk_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     contents = _translate_protocol_column(
         inherited.predictor_content_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=protocol_id,
     )
     risk = _suppress_ineligible_probabilities(risk, features)
     decisions = _rebuild_decision_bundle(
         feature_bundle=features,
         risk_bundle=risk,
         content_bundle=contents,
+        protocol_id=protocol_id,
     )
-    cluster_count = counts["clusters"]
+    cluster_count = len(canonical[2])
     prediction = canonicalize_partition_output(
         prediction,
         filename="prediction_bundle.csv",
         partition=partition,
         required_rows=cluster_count * 8,
-        contract=contract,
+        contract=artifact_contract,
     )
     risk = canonicalize_partition_output(
         risk,

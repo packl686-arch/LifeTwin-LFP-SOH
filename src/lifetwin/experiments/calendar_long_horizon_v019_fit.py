@@ -23,9 +23,6 @@ from lifetwin.experiments.calendar_long_horizon_v015_prediction import (
 from lifetwin.experiments.calendar_long_horizon_v015_protocol import (
     FROZEN_PROTOCOL_ID as V2_PROTOCOL_ID,
 )
-from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
-    V024_PROTOCOL_ID,
-)
 
 
 class V024FitError(RuntimeError):
@@ -70,8 +67,7 @@ def _prepare_inputs(
     forecast_coordinates: pd.DataFrame,
     contract: FrozenArtifactContract,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    if contract.protocol_id != V024_PROTOCOL_ID:
-        raise V024FitError("The artifact contract is not V2.4")
+    protocol_id = contract.protocol_id
     prefix = _canonical(
         prefix_pack,
         filename="prefix_pack.csv",
@@ -85,12 +81,12 @@ def _prepare_inputs(
     return (
         _translate(
             prefix,
-            source=V024_PROTOCOL_ID,
+            source=protocol_id,
             destination=V2_PROTOCOL_ID,
         ),
         _translate(
             coordinates,
-            source=V024_PROTOCOL_ID,
+            source=protocol_id,
             destination=V2_PROTOCOL_ID,
         ),
     )
@@ -104,12 +100,12 @@ def _finalize(
     diagnostics = _translate(
         result.member_fit_diagnostics,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=contract.protocol_id,
     )
     forecasts = _translate(
         result.member_forecast_bundle,
         source=V2_PROTOCOL_ID,
-        destination=V024_PROTOCOL_ID,
+        destination=contract.protocol_id,
     )
     return V015FitResult(
         member_fit_diagnostics=_canonical(
