@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import re
 import stat
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import pandas as pd
 
@@ -647,6 +647,58 @@ def _verify_input_hashes(
     return observed
 
 
+def _v020_input_filenames(
+    value: object | None,
+    *,
+    stage: str,
+    fallback: tuple[str, ...],
+) -> tuple[str, ...]:
+    if value is None:
+        return fallback
+    try:
+        from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+            V020CheckpointRegistryError,
+            require_input_filenames_by_stage_v020,
+        )
+
+        return require_input_filenames_by_stage_v020(value)[stage]
+    except (KeyError, V020CheckpointRegistryError) as exc:
+        raise V024FirewallError("V0.20 checkpoint registry is invalid") from exc
+
+
+def _open_after_checkpoint_registry_v020(
+    *,
+    stage: str,
+    input_byte_hashes: object,
+    label_root: Path,
+    sealed_root: Path,
+    _input_filenames_by_stage: object | None,
+    opener: Callable[[], Any],
+) -> Any:
+    """Open only after the canonical V0.20 registry passes fresh-byte checks."""
+
+    if _input_filenames_by_stage is not None:
+        try:
+            from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+                V020CheckpointRegistryError,
+                require_input_filenames_by_stage_v020,
+                verify_registered_input_hashes_v020,
+            )
+
+            require_input_filenames_by_stage_v020(_input_filenames_by_stage)
+            verify_registered_input_hashes_v020(
+                stage,
+                input_byte_hashes,
+                label_root=label_root,
+                sealed_root=sealed_root,
+            )
+        except V020CheckpointRegistryError as exc:
+            raise V024FirewallError(
+                f"{stage} checkpoint input integrity failed"
+            ) from exc
+    return opener()
+
+
 def _positive_int(value: object, *, context: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         raise V024FirewallError(f"{context} must be a positive integer")
@@ -659,6 +711,7 @@ def _verify_center_checkpoint(
     sealed_root: Path,
     progress: AttemptProgress,
     contract: FrozenArtifactContract,
+    _input_filenames_by_stage: object | None = None,
 ) -> dict[str, Any]:
     path = _require_direct_commitment(
         label_root=label_root,
@@ -708,7 +761,11 @@ def _verify_center_checkpoint(
         raise V024FirewallError("center ridge_penalty is invalid")
     _verify_input_hashes(
         payload.get("input_byte_hashes"),
-        expected_filenames=_CENTER_INPUT_FILENAMES,
+        expected_filenames=_v020_input_filenames(
+            _input_filenames_by_stage,
+            stage="center_development",
+            fallback=_CENTER_INPUT_FILENAMES,
+        ),
         label_root=label_root,
         sealed_root=sealed_root,
         context="center checkpoint",
@@ -768,12 +825,14 @@ def _verify_risk_checkpoint(
     sealed_root: Path,
     progress: AttemptProgress,
     contract: FrozenArtifactContract,
-) -> None:
+    _input_filenames_by_stage: object | None = None,
+) -> dict[str, Any]:
     center_payload = _verify_center_checkpoint(
         label_root=label_root,
         sealed_root=sealed_root,
         progress=progress,
         contract=contract,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     path = _require_direct_commitment(
         label_root=label_root,
@@ -825,7 +884,11 @@ def _verify_risk_checkpoint(
         raise V024FirewallError("Risk checkpoint counts are inconsistent")
     _verify_input_hashes(
         payload.get("input_byte_hashes"),
-        expected_filenames=_RISK_INPUT_FILENAMES,
+        expected_filenames=_v020_input_filenames(
+            _input_filenames_by_stage,
+            stage="risk_development",
+            fallback=_RISK_INPUT_FILENAMES,
+        ),
         label_root=label_root,
         sealed_root=sealed_root,
         context="risk checkpoint",
@@ -837,6 +900,7 @@ def _verify_risk_checkpoint(
         center_payload=center_payload,
         risk_payload=payload,
     )
+    return payload
 
 
 def _verify_mask_commitment(
@@ -874,7 +938,8 @@ def _verify_reveal_prerequisites(
     contract: FrozenArtifactContract,
     formal: bool,
     calibration_mask_commitment_path: str | Path | None,
-) -> None:
+    _input_filenames_by_stage: object | None = None,
+) -> Mapping[str, Any] | None:
     if phase in {"calibration_truth_opened", "scoring_truth_opened"}:
         _verify_mask_commitment(
             label_root=label_root,
@@ -896,24 +961,28 @@ def _verify_reveal_prerequisites(
         contract=contract,
         formal=formal,
     )
+    checkpoint_payload: Mapping[str, Any] | None = None
     if phase in {
         "risk_truth_opened",
         "calibration_truth_opened",
         "scoring_truth_opened",
     }:
-        _verify_center_checkpoint(
+        checkpoint_payload = _verify_center_checkpoint(
             label_root=label_root,
             sealed_root=sealed_root,
             progress=progress,
             contract=contract,
+            _input_filenames_by_stage=_input_filenames_by_stage,
         )
     if phase in {"calibration_truth_opened", "scoring_truth_opened"}:
-        _verify_risk_checkpoint(
+        checkpoint_payload = _verify_risk_checkpoint(
             label_root=label_root,
             sealed_root=sealed_root,
             progress=progress,
             contract=contract,
+            _input_filenames_by_stage=_input_filenames_by_stage,
         )
+    return checkpoint_payload
 
 
 def open_truth_for_phase(
@@ -929,6 +998,7 @@ def open_truth_for_phase(
     calibration_mask_commitment_path: str | Path | None = None,
     prediction_commitment_path: str | Path | None = None,
     formal: bool = True,
+    _input_filenames_by_stage: object | None = None,
 ) -> Mapping[str, pd.DataFrame]:
     """Open only truth authorized by one V2.4 reveal phase.
 
@@ -979,7 +1049,7 @@ def open_truth_for_phase(
         raise V024FirewallError(
             "Pre-calibration reveal cannot receive a mask commitment path"
         )
-    _verify_reveal_prerequisites(
+    checkpoint_payload = _verify_reveal_prerequisites(
         phase=phase,
         label_root=label_root,
         sealed_root=sealed_root,
@@ -987,6 +1057,7 @@ def open_truth_for_phase(
         contract=contract,
         formal=formal,
         calibration_mask_commitment_path=calibration_mask_commitment_path,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
 
     prediction_hash: str | None = None
@@ -1044,7 +1115,25 @@ def open_truth_for_phase(
             path = (sealed_root / filename).resolve()
             if path.parent != sealed_root:
                 raise V024FirewallError("Sealed truth path escaped its root")
-            frame = read_canonical_csv(path, contract, formal=formal)
+            checkpoint_stage = {
+                "risk_truth_opened": "center_development",
+                "calibration_truth_opened": "risk_development",
+            }.get(phase)
+            if checkpoint_stage is None or checkpoint_payload is None:
+                frame = read_canonical_csv(path, contract, formal=formal)
+            else:
+                frame = _open_after_checkpoint_registry_v020(
+                    stage=checkpoint_stage,
+                    input_byte_hashes=checkpoint_payload.get("input_byte_hashes"),
+                    label_root=label_root,
+                    sealed_root=sealed_root,
+                    _input_filenames_by_stage=_input_filenames_by_stage,
+                    opener=lambda: read_canonical_csv(
+                        path,
+                        contract,
+                        formal=formal,
+                    ),
+                )
             raw = path.read_bytes()
             if (
                 len(frame) != int(entry["row_count"])

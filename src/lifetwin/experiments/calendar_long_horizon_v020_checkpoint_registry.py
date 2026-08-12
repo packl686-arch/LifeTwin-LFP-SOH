@@ -94,6 +94,18 @@ REVEAL_PREREQUISITES = MappingProxyType(
 )
 
 
+def require_input_filenames_by_stage_v020(
+    value: object,
+) -> Mapping[str, tuple[str, ...]]:
+    """Accept only the single immutable V0.20 registry binding."""
+
+    if value is not INPUT_FILENAMES_BY_STAGE:
+        raise V020CheckpointRegistryError(
+            "V0.20 checkpoint registry binding is not canonical"
+        )
+    return INPUT_FILENAMES_BY_STAGE
+
+
 def _registered_file(*, label_root: Path, sealed_root: Path, filename: str) -> Path:
     root = sealed_root if filename.endswith("_truth.csv") else label_root
     physical_root = root.resolve(strict=True)
@@ -169,5 +181,6 @@ __all__ = [
     "RISK_INPUT_FILENAMES",
     "V020CheckpointRegistryError",
     "registered_input_hashes_v020",
+    "require_input_filenames_by_stage_v020",
     "verify_registered_input_hashes_v020",
 ]

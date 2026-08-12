@@ -1054,6 +1054,46 @@ def _resolve_input_hashes(
     return result
 
 
+def _resolve_stage_input_hashes(
+    value: object,
+    *,
+    root: Path,
+    truth_hashes: Mapping[str, str],
+    context: str,
+    stage: str,
+    _input_filenames_by_stage: object | None,
+) -> dict[str, str]:
+    expected_filenames: tuple[str, ...] | None = None
+    if _input_filenames_by_stage is not None:
+        try:
+            from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+                V020CheckpointRegistryError,
+                require_input_filenames_by_stage_v020,
+            )
+
+            expected_filenames = require_input_filenames_by_stage_v020(
+                _input_filenames_by_stage
+            )[stage]
+        except (KeyError, V020CheckpointRegistryError) as exc:
+            raise V024IOError("V0.20 checkpoint registry is invalid") from exc
+        if not isinstance(value, Mapping) or set(value) != set(expected_filenames):
+            raise V024IOError(f"{context} input registry changed")
+    return _resolve_input_hashes(
+        value,
+        root=root,
+        truth_hashes=truth_hashes,
+        context=context,
+    )
+
+
+def _require_model_state_input_hashes(
+    value: object,
+    expected: Mapping[str, Mapping[str, str]],
+) -> None:
+    if value != expected:
+        raise V024IOError("Model-state input hashes differ from verified artifacts")
+
+
 def _decode_model_state(
     raw: bytes,
     *,
@@ -1140,6 +1180,7 @@ def _verify_training_chain(
     progress: AttemptProgress,
     truth_hashes: Mapping[str, str],
     decoded: _v015.DecodedModelState,
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[bytes, bytes, bytes, dict[str, dict[str, str]]]:
     contract = view.artifacts
     center_raw = _direct_file(root, "center_state_checkpoint.json").read_bytes()
@@ -1179,17 +1220,21 @@ def _verify_training_chain(
     ):
         _identity_json(payload, contract=contract, filename=filename)
         _utc(payload.get("created_utc"), context=f"{filename} created_utc")
-    center_inputs = _resolve_input_hashes(
+    center_inputs = _resolve_stage_input_hashes(
         center.get("input_byte_hashes"),
         root=root,
         truth_hashes=truth_hashes,
         context="center checkpoint",
+        stage="center_development",
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
-    risk_inputs = _resolve_input_hashes(
+    risk_inputs = _resolve_stage_input_hashes(
         risk.get("input_byte_hashes"),
         root=root,
         truth_hashes=truth_hashes,
         context="risk checkpoint",
+        stage="risk_development",
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
 
     training_raw = _direct_file(root, "training_manifest.json").read_bytes()
@@ -1234,19 +1279,20 @@ def _verify_training_chain(
         )
     except (TypeError, ValueError) as exc:
         raise V024IOError("Calibration manifest state bindings changed") from exc
-    calibration_inputs = _resolve_input_hashes(
+    calibration_inputs = _resolve_stage_input_hashes(
         calibration.get("calibration_input_hashes"),
         root=root,
         truth_hashes=truth_hashes,
         context="calibration manifest",
+        stage="calibration",
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     expected_inputs = {
         "center_development": center_inputs,
         "risk_development": risk_inputs,
         "calibration": calibration_inputs,
     }
-    if decoded.input_byte_hashes != expected_inputs:
-        raise V024IOError("Model-state input hashes differ from verified artifacts")
+    _require_model_state_input_hashes(decoded.input_byte_hashes, expected_inputs)
     return center_raw, risk_raw, calibration_raw, expected_inputs
 
 
@@ -1411,6 +1457,7 @@ def _load_committed_bundle(
     attempt_id: str,
     contract_view: V024ContractView,
     expected_membership: frozenset[str],
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[V024CommittedLabelFreeBundle, AttemptProgress]:
     view = _require_contract(contract_view)
     root = _physical_root(label_free_root)
@@ -1472,6 +1519,7 @@ def _load_committed_bundle(
         progress=progress,
         truth_hashes=truth_hashes,
         decoded=decoded,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     audit_raw = _direct_file(root, "calibration_population_audit.json").read_bytes()
     audit = _verify_calibration_audit(
@@ -1541,6 +1589,7 @@ def load_committed_label_free_bundle_v024(
     label_free_root: str | Path,
     attempt_id: str,
     contract_view: V024ContractView | None = None,
+    _input_filenames_by_stage: object | None = None,
 ) -> V024CommittedLabelFreeBundle:
     """Validate the complete pre-prediction chain without any truth path."""
 
@@ -1550,6 +1599,7 @@ def load_committed_label_free_bundle_v024(
         attempt_id=attempt_id,
         contract_view=view,
         expected_membership=_PRE_PREDICTION_FILES,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     if (
         progress.completed_phase != "model_state_committed"

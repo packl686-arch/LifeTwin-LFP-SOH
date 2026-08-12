@@ -867,7 +867,35 @@ def _phase_input_bytes(
     paths: V024RunPaths,
     label_filenames: Sequence[str],
     truth_filename: str,
+    _input_filenames_by_stage: object | None = None,
+    _stage: str | None = None,
 ) -> dict[str, bytes]:
+    if _input_filenames_by_stage is not None:
+        try:
+            from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+                V020CheckpointRegistryError,
+                require_input_filenames_by_stage_v020,
+            )
+
+            if _stage is None:
+                raise V020CheckpointRegistryError("checkpoint stage is missing")
+            registry = require_input_filenames_by_stage_v020(_input_filenames_by_stage)
+            filenames = registry[_stage]
+        except (KeyError, V020CheckpointRegistryError) as exc:
+            raise V024RunnerError("V0.20 checkpoint registry is invalid") from exc
+        if truth_filename not in filenames or any(
+            name.endswith("_truth.csv") and name != truth_filename for name in filenames
+        ):
+            raise V024RunnerError("V0.20 checkpoint truth registry is invalid")
+        return {
+            name: _direct_child(
+                paths.sealed_truth_root
+                if name == truth_filename
+                else paths.label_free_root,
+                name,
+            ).read_bytes()
+            for name in filenames
+        }
     result = {
         name: _direct_child(paths.label_free_root, name).read_bytes()
         for name in label_filenames
@@ -900,6 +928,7 @@ def _fit_center_stage(
     view: V024ContractView,
     frames: WholeBundleValidated,
     truth_hash: str,
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[CenterDevelopmentState, Mapping[str, bytes], str]:
     partition = "center_development"
     probe, _ = _apply_partition(
@@ -958,6 +987,8 @@ def _fit_center_stage(
             paths=paths,
             label_filenames=_COMMON_TRAINING_INPUTS,
             truth_filename="center_development_truth.csv",
+            _input_filenames_by_stage=_input_filenames_by_stage,
+            _stage="center_development",
         )
         payload = {
             "protocol_id": V024_PROTOCOL_ID,
@@ -1012,6 +1043,7 @@ def _fit_risk_stage(
     center_input_bytes: Mapping[str, bytes],
     center_checkpoint_hash: str,
     truth_hash: str,
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[RiskDevelopmentState, Mapping[str, bytes], str]:
     if (
         _file_hash(paths.label_free_root / "center_state_checkpoint.json")
@@ -1034,6 +1066,7 @@ def _fit_risk_stage(
         label_free_root=paths.label_free_root,
         phase="risk_truth_opened",
         created_utc=_utc_now(),
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )["risk_development_truth.csv"]
     phase = "risk_state_committed"
     _append_phase(
@@ -1098,6 +1131,8 @@ def _fit_risk_stage(
                 "center_state_checkpoint.json",
             ),
             truth_filename="risk_development_truth.csv",
+            _input_filenames_by_stage=_input_filenames_by_stage,
+            _stage="risk_development",
         )
         training_raw = serialize_training_manifest_json_v024(
             center_development_input_hashes=_input_hashes(center_input_bytes),
@@ -1436,6 +1471,7 @@ def _fit_calibration_stage(
     risk_input_bytes: Mapping[str, bytes],
     risk_checkpoint_hash: str,
     truth_hash: str,
+    _input_filenames_by_stage: object | None = None,
 ) -> tuple[
     CalibrationDevelopmentState,
     V024CalibrationAudit,
@@ -1522,6 +1558,7 @@ def _fit_calibration_stage(
         calibration_mask_commitment_path=(
             paths.label_free_root / "calibration_mask_commitment.json"
         ),
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )["calibration_truth.csv"]
     model_phase = "model_state_committed"
     _append_phase(
@@ -1557,6 +1594,8 @@ def _fit_calibration_stage(
                 "calibration_mask_commitment.json",
             ),
             truth_filename="calibration_truth.csv",
+            _input_filenames_by_stage=_input_filenames_by_stage,
+            _stage="calibration",
         )
         calibration_raw = serialize_calibration_manifest_json_v024(
             calibration_input_hashes=_input_hashes(calibration_input_bytes),
@@ -1661,6 +1700,7 @@ def _fit_training_stages(
     view: V024ContractView,
     frames: WholeBundleValidated,
     truth_hash: str,
+    _input_filenames_by_stage: object | None = None,
 ) -> _TrainingArtifacts:
     center, center_inputs, center_hash = _fit_center_stage(
         paths=paths,
@@ -1668,6 +1708,7 @@ def _fit_training_stages(
         view=view,
         frames=frames,
         truth_hash=truth_hash,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     risk, risk_inputs, risk_hash = _fit_risk_stage(
         paths=paths,
@@ -1678,6 +1719,7 @@ def _fit_training_stages(
         center_input_bytes=center_inputs,
         center_checkpoint_hash=center_hash,
         truth_hash=truth_hash,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     calibration, audit, mask, calibration_inputs, _ = _fit_calibration_stage(
         paths=paths,
@@ -1690,6 +1732,7 @@ def _fit_training_stages(
         risk_input_bytes=risk_inputs,
         risk_checkpoint_hash=risk_hash,
         truth_hash=truth_hash,
+        _input_filenames_by_stage=_input_filenames_by_stage,
     )
     return _TrainingArtifacts(
         center=center,
