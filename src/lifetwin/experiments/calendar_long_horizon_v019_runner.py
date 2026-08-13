@@ -1535,7 +1535,7 @@ def _fit_calibration_stage(
     _append_phase(
         paths=paths,
         identity=identity,
-        contract=view,
+        contract=view.artifacts,
         phase=mask_phase,
         exit_status="started",
         truth_hash=truth_hash,

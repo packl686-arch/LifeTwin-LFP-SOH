@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,6 +13,9 @@ from lifetwin.experiments.calendar_long_horizon_v019_numeric_contract import (
 )
 from lifetwin.experiments.calendar_long_horizon_v020_contract import (
     load_v025_contract_view,
+)
+from lifetwin.experiments.calendar_long_horizon_v021_contract import (
+    load_v026_contract_view,
 )
 from lifetwin.experiments.calendar_long_horizon_v019_terminal import (
     ClassificationMode,
@@ -260,3 +264,67 @@ def test_completed_phase_append_failure_leaves_unregistered_partial_commitment(
     # event it is not a registered fit commitment.
     registered_fit_commitment = None
     assert registered_fit_commitment is None
+
+
+def test_calibration_started_phase_uses_artifacts_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    view = load_v026_contract_view()
+    observed: list[object] = []
+
+    class StopAtStartedPhase(Exception):
+        pass
+
+    def append_phase(**kwargs: object) -> None:
+        observed.append(kwargs["contract"])
+        raise StopAtStartedPhase
+
+    monkeypatch.setattr(runner, "_file_hash", lambda _: "a" * 64)
+    monkeypatch.setattr(
+        runner, "_apply_partition", lambda *_args, **_kwargs: (object(), object())
+    )
+    monkeypatch.setattr(runner, "_calibration_probe_state", lambda *_: object())
+    monkeypatch.setattr(runner, "_ordered_cluster_ids", lambda *_args, **_kwargs: ())
+    monkeypatch.setattr(
+        runner,
+        "_calibration_evidence",
+        lambda **_: SimpleNamespace(kwargs={}, cluster_ids=()),
+    )
+    monkeypatch.setattr(runner, "_append_phase", append_phase)
+    with pytest.raises(StopAtStartedPhase):
+        runner._fit_calibration_stage(
+            paths=SimpleNamespace(label_free_root=Path("."), ledger_path=Path(".")),
+            identity=SimpleNamespace(attempt_id=FIXTURE_ID),
+            view=view,
+            frames=object(),
+            center=object(),
+            risk=object(),
+            center_input_bytes={},
+            risk_input_bytes={},
+            risk_checkpoint_hash="a" * 64,
+            truth_hash="0" * 64,
+        )
+
+    assert observed == [view.artifacts]
+    assert observed[0].config_byte_sha256 == view.protocol.config_sha256
+
+    tree = ast.parse(Path(runner.__file__).read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in {"_append_phase", "_append_failure"}
+    ]
+    contracts = [
+        next(keyword.value for keyword in call.keywords if keyword.arg == "contract")
+        for call in calls
+    ]
+    assert contracts
+    assert all(
+        isinstance(contract, ast.Attribute)
+        and isinstance(contract.value, ast.Name)
+        and contract.value.id == "view"
+        and contract.attr == "artifacts"
+        for contract in contracts
+    )
