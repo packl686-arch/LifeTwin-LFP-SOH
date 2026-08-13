@@ -391,7 +391,7 @@
     "showcase/demo_fixture/model_unavailable.json": "110c8c29431a40a4b102fd04abd7ab9e3edfc7cc6edeb3320be9aa9e0c4c50d2",
     "showcase/demo_fixture/update_demo.json": "7838eb812cbfdbc8fab625f4f2779ce0492f8c3ae0abc04130172521a3879df8",
     "showcase/demo_fixture/workbench_scenarios.json": "2153ce7cfe10a3e0c5a343c07ea8e0eb7f0ac7a305a5a908691a46f52d957f7c",
-    "scripts/validate_demo.js": "f648281c11fdec4d9a0fb6bf78aa5308fe5e7d4c3dbfed6d45a2fc80d3639f8f"
+    "scripts/validate_demo.js": "721f5150ccff36d6dcccf0a307b1264589bebde7c4a53bd0e710f3056a87c613"
   },
   "forbidden_release_globs": [
     "artifacts/**",
