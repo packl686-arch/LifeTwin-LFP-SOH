@@ -385,12 +385,13 @@
     "tests/test_v016_training.py": "14cee68462e64be8c06c4666d50a0008f847617484ffa26d16f4c29ed41c1d0d",
     "docs/demo/index.html": "362c66f12fbbeb592ce1f2fc98ff68bad9f3b6a0e3cafeac6951cccf28f3b1a0",
     "docs/demo/schema/demo_summary.schema.json": "756d0ab8de8ae12c3cb0bd9c51cdb532b0d5f87c243250cd8bab109a5bb04b70",
-    "showcase/demo_fixture/README.md": "822efc3c6a6aa72b7792077bd539b35c6f3e153699450e81a50ae9068fcb9264",
+    "showcase/demo_fixture/README.md": "5bb23564a26ac3a7cd5045a148bc23c942496f2536d5db9317698db144033b0b",
     "showcase/demo_fixture/model_independent.json": "1940c4fcdde9b7b85f719883a34c083bf464d34fcf2d27d1cc5df6e6f5a508bc",
     "showcase/demo_fixture/model_main.json": "4c21ab8ec7625e7ddc3e11a76a9025f10cb71920516afc87ecf4fc9efe744630",
     "showcase/demo_fixture/model_unavailable.json": "110c8c29431a40a4b102fd04abd7ab9e3edfc7cc6edeb3320be9aa9e0c4c50d2",
     "showcase/demo_fixture/update_demo.json": "7838eb812cbfdbc8fab625f4f2779ce0492f8c3ae0abc04130172521a3879df8",
-    "showcase/demo_fixture/workbench_scenarios.json": "2153ce7cfe10a3e0c5a343c07ea8e0eb7f0ac7a305a5a908691a46f52d957f7c"
+    "showcase/demo_fixture/workbench_scenarios.json": "2153ce7cfe10a3e0c5a343c07ea8e0eb7f0ac7a305a5a908691a46f52d957f7c",
+    "scripts/validate_demo.js": "f648281c11fdec4d9a0fb6bf78aa5308fe5e7d4c3dbfed6d45a2fc80d3639f8f"
   },
   "forbidden_release_globs": [
     "artifacts/**",

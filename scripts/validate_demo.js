@@ -225,6 +225,12 @@ try {
   }
   results.push('PASS: No gages field in any fixture');
 
+  
+  // 12. Check release_manifest.json is not self-referential
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'release_manifest.json'), 'utf8'));
+  assert(!manifest.frozen_files_sha256['release_manifest.json'], 'release_manifest.json should not be in its own frozen_files_sha256');
+  results.push('PASS: release_manifest.json is not self-referential');
+
   // Output results
   console.log('\n=== VALIDATION RESULTS ===\n');
   for (const r of results) {
