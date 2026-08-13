@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LifeTwin Demo Summary",
+  "description": "公开、小型、已审查的模型结果摘要，供评委 Demo 页面读取。",
+  "type": "object",
+  "required": ["schema_version", "model_id", "status"],
+  "properties": {
+    "schema_version": { "const": "lifetwin_demo_summary/1.0" },
+    "model_id": { "type": "string" },
+    "public_version": { "type": "string" },
+    "protocol_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["scored", "terminal_pre_prediction", "unavailable"] },
+    "prediction_commitment": { "type": "boolean" },
+    "scored": { "type": "boolean" },
+    "opened_truth_scope": { "type": "string", "enum": ["none", "development_only", "scoring"] },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["value", "unit", "role", "evidence_grade"],
+        "properties": {
+          "value": {},
+          "unit": { "type": "string" },
+          "role": { "type": "string", "enum": ["verified_fact", "exploratory_result", "pending_enterprise_validation", "failure_record"] },
+          "evidence_grade": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "reasons"],
+        "properties": {
+          "status": { "type": "string" },
+          "reasons": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "terminal": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "has_scored_result": { "type": "boolean" },
+        "opened_development_truth": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "claim_boundary": { "type": "string", "maxLength": 500 },
+    "source_links": { "type": "array", "items": { "type": "string", "format": "uri" } }
+  },
+  "additionalProperties": false
+}

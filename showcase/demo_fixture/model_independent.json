@@ -1,0 +1,19 @@
+{
+"schema_version": "lifetwin_demo_summary/1.0",
+"model_id": "independent",
+"public_version": "V0.14.1",
+"protocol_id": "naumann_calendar_v4_hybrid_development_v1",
+"status": "terminal_pre_prediction",
+"prediction_commitment": false,
+"scored": false,
+"opened_truth_scope": "none",
+"metrics": {},
+"gates": {},
+"terminal": {
+"category": "calibration_insufficient",
+"has_scored_result": false,
+"opened_development_truth": false
+},
+"claim_boundary": "独立模型在预测承诺前终止；未形成评分结果，无可报告指标。",
+"source_links": ["https://github.com/packl686-arch/LifeTwin-LFP-SOH"]
+}

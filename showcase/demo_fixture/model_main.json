@@ -1,0 +1,56 @@
+{
+  "schema_version": "lifetwin_demo_summary/1.0",
+  "model_id": "main",
+  "public_version": "V0.14.1",
+  "protocol_id": "naumann_calendar_v4_hybrid_development_v1",
+  "status": "scored",
+  "prediction_commitment": true,
+  "scored": true,
+  "opened_truth_scope": "development_only",
+  "metrics": {
+    "future_point_mae_pp": {
+      "value": 0.305,
+      "unit": "pp",
+      "role": "exploratory_result",
+      "evidence_grade": "E2"
+    },
+    "final_point_abs_error_pp": {
+      "value": 0.508,
+      "unit": "pp",
+      "role": "exploratory_result",
+      "evidence_grade": "E2"
+    },
+    "diagnostic_interval_coverage": {
+      "value": 0.8,
+      "unit": "coverage",
+      "role": "exploratory_result",
+      "evidence_grade": "E2"
+    },
+    "operational_issuances": {
+      "value": 0,
+      "unit": "count",
+      "role": "verified_fact",
+      "evidence_grade": "E2"
+    }
+  },
+  "gates": {
+    "calibration": {
+      "status": "passed",
+      "reasons": ["回退路由校准可用"]
+    },
+    "operational_issuance": {
+      "status": "failed",
+      "reasons": ["校准证据并非独立确认队列", "缺少独立长期 LFP 证据"]
+    }
+  },
+  "terminal": {
+    "category": "none",
+    "has_scored_result": true,
+    "opened_development_truth": true
+  },
+  "claim_boundary": "公开 Naumann 条件均值回顾性诊断；最长 885 天；非海辰产品，不支持 15–25 年结论。",
+  "source_links": [
+    "https://github.com/packl686-arch/LifeTwin-LFP-SOH",
+    "https://doi.org/10.17632/kxh42bfgtj.1"
+  ]
+}

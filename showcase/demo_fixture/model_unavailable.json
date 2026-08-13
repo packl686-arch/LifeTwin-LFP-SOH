@@ -1,0 +1,19 @@
+{
+"schema_version": "lifetwin_demo_summary/1.0",
+"model_id": "independent",
+"public_version": "V0.15",
+"protocol_id": "synthetic_long_horizon_identifiability_v2",
+"status": "unavailable",
+"prediction_commitment": false,
+"scored": false,
+"opened_truth_scope": "none",
+"metrics": {},
+"gates": {},
+"terminal": {
+"category": "formal_result_not_yet_released",
+"has_scored_result": false,
+"opened_development_truth": false
+},
+"claim_boundary": "正式结果尚未发布或没有适合公开的数据；页面显示等待正式结果审查。",
+"source_links": ["https://github.com/packl686-arch/LifeTwin-LFP-SOH"]
+}
