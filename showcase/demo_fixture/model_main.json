@@ -1,0 +1,33 @@
+{
+  "schema_version": "lifetwin_demo_summary/1.0",
+  "model_id": "main",
+  "public_version": "V0.14.1",
+  "protocol_id": "naumann_calendar_v4_hybrid_development_v1",
+  "status": "unavailable",
+  "prediction_commitment": false,
+  "scored": false,
+  "opened_truth_scope": "none",
+  "metrics": {},
+  "gages": {},
+  "terminal": {
+    "category": "formal_result_not_yet_released",
+    "has_scored_result": false,
+    "opened_development_truth": false
+  },
+  "claim_boundary": "当前主模型尚无经过审计、适合公开的最新正式 summary；页面默认显示 unavailable。历史 Naumann 回顾性案例仅作为公开证据案例展示，不代表当前 formal、独立模型、海辰产品或电站验证。",
+  "source_links": [
+    "https://github.com/packl686-arch/LifeTwin-LFP-SOH",
+    "https://doi.org/10.17632/kxh42bfgtj.1"
+  ],
+  "comparison": {
+    "data_version": "",
+    "prefix_definition": "",
+    "prediction_range": "",
+    "partition_id": "",
+    "scoring_rule_id": "",
+    "metric_name": "",
+    "metric_unit": "",
+    "protocol_id": "",
+    "scored": false
+  }
+}

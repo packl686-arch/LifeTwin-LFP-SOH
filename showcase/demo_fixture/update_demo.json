@@ -1,0 +1,246 @@
+{
+  "schema_version": "lifetwin_demo_summary/1.0",
+  "description": "动态更新演示序列。所有数值均为界面演示数据。",
+  "sequence": [
+    {
+      "step": 1,
+      "label": "前 5 点前缀",
+      "prefix_count": 5,
+      "temperature_c": 40,
+      "soc_fraction": 0.375,
+      "checkpoints": [
+        {
+          "day": 0,
+          "retention": 100
+        },
+        {
+          "day": 6.68,
+          "retention": 99.57
+        },
+        {
+          "day": 11.54,
+          "retention": 99.28
+        },
+        {
+          "day": 17.04,
+          "retention": 99.02
+        },
+        {
+          "day": 29.5,
+          "retention": 98.64
+        }
+      ],
+      "forecast": [
+        {
+          "day": 42,
+          "prediction": 98.4,
+          "lower": 97.8,
+          "upper": 99
+        },
+        {
+          "day": 81,
+          "prediction": 97.8,
+          "lower": 96.9,
+          "upper": 98.7
+        },
+        {
+          "day": 136.9,
+          "prediction": 96.9,
+          "lower": 95.6,
+          "upper": 98.2
+        }
+      ],
+      "interval_width": 1.6,
+      "nominal_interval_level": 0.8,
+      "risk_level": "medium",
+      "decision": "predict",
+      "route": "hierarchical_power_fallback"
+    },
+    {
+      "step": 2,
+      "label": "新增第 6 点",
+      "prefix_count": 6,
+      "temperature_c": 40,
+      "soc_fraction": 0.375,
+      "checkpoints": [
+        {
+          "day": 0,
+          "retention": 100
+        },
+        {
+          "day": 6.68,
+          "retention": 99.57
+        },
+        {
+          "day": 11.54,
+          "retention": 99.28
+        },
+        {
+          "day": 17.04,
+          "retention": 99.02
+        },
+        {
+          "day": 29.5,
+          "retention": 98.64
+        },
+        {
+          "day": 42,
+          "retention": 98.31
+        }
+      ],
+      "forecast": [
+        {
+          "day": 81,
+          "prediction": 97.6,
+          "lower": 96.7,
+          "upper": 98.5
+        },
+        {
+          "day": 136.9,
+          "prediction": 96.7,
+          "lower": 95.4,
+          "upper": 98
+        },
+        {
+          "day": 266.2,
+          "prediction": 95.2,
+          "lower": 93.6,
+          "upper": 96.8
+        }
+      ],
+      "interval_width": 1.5,
+      "nominal_interval_level": 0.8,
+      "risk_level": "medium",
+      "decision": "predict",
+      "route": "hierarchical_power_fallback"
+    },
+    {
+      "step": 3,
+      "label": "新增第 7 点，出现早期回升信号",
+      "prefix_count": 7,
+      "temperature_c": 40,
+      "soc_fraction": 0.375,
+      "checkpoints": [
+        {
+          "day": 0,
+          "retention": 100
+        },
+        {
+          "day": 6.68,
+          "retention": 99.57
+        },
+        {
+          "day": 11.54,
+          "retention": 99.28
+        },
+        {
+          "day": 17.04,
+          "retention": 99.02
+        },
+        {
+          "day": 29.5,
+          "retention": 98.64
+        },
+        {
+          "day": 42,
+          "retention": 98.31
+        },
+        {
+          "day": 53.6,
+          "retention": 98.08
+        }
+      ],
+      "forecast": [
+        {
+          "day": 81,
+          "prediction": 97.5,
+          "lower": 96.4,
+          "upper": 98.6
+        },
+        {
+          "day": 136.9,
+          "prediction": 96.5,
+          "lower": 95,
+          "upper": 98
+        },
+        {
+          "day": 266.2,
+          "prediction": 94.9,
+          "lower": 93,
+          "upper": 96.8
+        }
+      ],
+      "interval_width": 1.9,
+      "nominal_interval_level": 0.8,
+      "risk_level": "high",
+      "decision": "fallback",
+      "route": "hierarchical_power_fallback"
+    },
+    {
+      "step": 4,
+      "label": "新增第 8 点，同路由校准不足",
+      "prefix_count": 8,
+      "temperature_c": 40,
+      "soc_fraction": 0.375,
+      "checkpoints": [
+        {
+          "day": 0,
+          "retention": 100
+        },
+        {
+          "day": 6.68,
+          "retention": 99.57
+        },
+        {
+          "day": 11.54,
+          "retention": 99.28
+        },
+        {
+          "day": 17.04,
+          "retention": 99.02
+        },
+        {
+          "day": 29.5,
+          "retention": 98.64
+        },
+        {
+          "day": 42,
+          "retention": 98.31
+        },
+        {
+          "day": 53.6,
+          "retention": 98.08
+        },
+        {
+          "day": 81,
+          "retention": 97.61
+        }
+      ],
+      "forecast": [
+        {
+          "day": 136.9,
+          "prediction": 96.4,
+          "lower": null,
+          "upper": null
+        },
+        {
+          "day": 266.2,
+          "prediction": 94.7,
+          "lower": null,
+          "upper": null
+        },
+        {
+          "day": 319.3,
+          "prediction": 94.2,
+          "lower": null,
+          "upper": null
+        }
+      ],
+      "interval_width": null,
+      "nominal_interval_level": null,
+      "risk_level": "critical",
+      "decision": "reject",
+      "route": "hierarchical_power_fallback"
+    }
+  ]
+}
