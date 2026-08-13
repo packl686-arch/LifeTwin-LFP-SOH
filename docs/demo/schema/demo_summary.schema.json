@@ -170,6 +170,10 @@
     "properties": { "status": { "const": "scored" } }
   },
   "then": {
+    "properties": {
+      "prediction_commitment": { "const": true },
+      "scored": { "const": true }
+    },
     "required": ["metrics"],
     "not": { "required": ["terminal"] }
   },
@@ -178,6 +182,10 @@
       "properties": { "status": { "const": "terminal_pre_prediction" } }
     },
     "then": {
+      "properties": {
+        "prediction_commitment": { "const": false },
+        "scored": { "const": false }
+      },
       "required": ["terminal"],
       "not": { "required": ["metrics"] }
     },
@@ -186,6 +194,10 @@
         "properties": { "status": { "const": "unavailable" } }
       },
       "then": {
+        "properties": {
+          "prediction_commitment": { "const": false },
+          "scored": { "const": false }
+        },
         "not": {
           "anyOf": [
             { "required": ["metrics"] },

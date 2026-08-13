@@ -191,6 +191,46 @@ try {
   assert(schema.properties.metrics.minProperties === 1, 'Schema enforces metrics minProperties=1');
   results.push('PASS: Schema rejects empty metrics object');
 
+  // 1e. Contradictory status boolean invariants must fail schema validation
+  const contradictionCases = [
+    {
+      file: 'contradiction_scored_false_booleans.json',
+      model: JSON.parse(JSON.stringify(fixtures['model_main.json'])),
+      expectedError: 'contradiction_scored_false_booleans.json passes JSON Schema validation'
+    },
+    {
+      file: 'contradiction_terminal_true_booleans.json',
+      model: JSON.parse(JSON.stringify(fixtures['model_main.json'])),
+      expectedError: 'contradiction_terminal_true_booleans.json passes JSON Schema validation'
+    },
+    {
+      file: 'contradiction_unavailable_true_booleans.json',
+      model: JSON.parse(JSON.stringify(fixtures['model_main.json'])),
+      expectedError: 'contradiction_unavailable_true_booleans.json passes JSON Schema validation'
+    }
+  ];
+
+  contradictionCases[0].model.status = 'scored';
+  contradictionCases[0].model.prediction_commitment = false;
+  contradictionCases[0].model.scored = false;
+  contradictionCases[0].model.metrics = { test: { value: 1, unit: 'pp', role: 'verified_fact', evidence_grade: 'E2' } };
+
+  contradictionCases[1].model.status = 'terminal_pre_prediction';
+  contradictionCases[1].model.prediction_commitment = true;
+  contradictionCases[1].model.scored = true;
+  contradictionCases[1].model.terminal = { category: 'formal_result_not_yet_released', has_scored_result: false, opened_development_truth: false };
+
+  contradictionCases[2].model.status = 'unavailable';
+  contradictionCases[2].model.prediction_commitment = true;
+  contradictionCases[2].model.scored = true;
+
+  for (const c of contradictionCases) {
+    const schemaErrors = [];
+    validateSchema(c.model, schema, c.file, schemaErrors);
+    assert(schemaErrors.length > 0, c.file + ' must fail JSON Schema validation');
+    results.push('PASS: Contradictory status booleans rejected for ' + c.file);
+  }
+
   // 1d. Schema structure: unavailable branch uses true exclusivity
   const unavailableBranch = schema.else.else.then;
   assert(
