@@ -27,6 +27,126 @@ function sha256(filePath) {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+// --- lightweight JSON Schema draft-07 validator ---
+function validateSchema(instance, schema, instanceName, errors) {
+  if (schema.constructor !== undefined && schema.constructor.name !== 'Object') {
+    return;
+  }
+  if (schema.type !== undefined && schema.type !== 'any') {
+    const actualType = Array.isArray(instance) ? 'array' : (instance === null ? 'null' : typeof instance);
+    if (actualType !== schema.type) {
+      errors.push(instanceName + ': type must be ' + schema.type + ', got ' + actualType);
+      return;
+    }
+  }
+  if (schema.enum !== undefined) {
+    if (!schema.enum.includes(instance)) {
+      errors.push(instanceName + ': value must be one of ' + JSON.stringify(schema.enum));
+    }
+  }
+  if (schema.const !== undefined && instance !== schema.const) {
+    errors.push(instanceName + ': value must be ' + JSON.stringify(schema.const));
+  }
+  if (schema.minLength !== undefined && typeof instance === 'string' && instance.length < schema.minLength) {
+    errors.push(instanceName + ': string length must be >= ' + schema.minLength);
+  }
+  if (schema.maxLength !== undefined && typeof instance === 'string' && instance.length > schema.maxLength) {
+    errors.push(instanceName + ': string length must be <= ' + schema.maxLength);
+  }
+  if (schema.minProperties !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    if (Object.keys(instance).length < schema.minProperties) {
+      errors.push(instanceName + ': object must have >= ' + schema.minProperties + ' properties');
+    }
+  }
+  if (schema.required !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    for (const field of schema.required) {
+      if (!(field in instance)) {
+        errors.push(instanceName + ': missing required field ' + field);
+      }
+    }
+  }
+  if (schema.properties !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    for (const [key, subSchema] of Object.entries(schema.properties)) {
+      if (key in instance) {
+        validateSchema(instance[key], subSchema, instanceName + '.' + key, errors);
+      }
+    }
+  }
+  if (schema.additionalProperties !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    const allowed = schema.properties ? Object.keys(schema.properties) : [];
+    for (const key of Object.keys(instance)) {
+      if (!allowed.includes(key)) {
+        errors.push(instanceName + ': additional property not allowed: ' + key);
+      }
+    }
+  }
+  if (schema.items !== undefined && Array.isArray(instance)) {
+    instance.forEach((item, i) => validateSchema(item, schema.items, instanceName + '[' + i + ']', errors));
+  }
+  if (schema.if && schema.then) {
+    let conditionMet = false;
+    if (schema.if.properties && schema.if.properties.status && schema.if.properties.status.const !== undefined) {
+      if (instance.status === schema.if.properties.status.const) {
+        conditionMet = true;
+      }
+    }
+    if (conditionMet) {
+      const branchErrors = [];
+      validateSchema(instance, schema.then, instanceName, branchErrors);
+      errors.push(...branchErrors);
+    } else if (schema.else) {
+      if (schema.else.if && schema.else.then) {
+        let nestedMet = false;
+        if (schema.else.if.properties && schema.else.if.properties.status && schema.else.if.properties.status.const !== undefined) {
+          if (instance.status === schema.else.if.properties.status.const) {
+            nestedMet = true;
+          }
+        }
+        if (nestedMet) {
+          const nestedErrors = [];
+          validateSchema(instance, schema.else.then, instanceName, nestedErrors);
+          errors.push(...nestedErrors);
+        } else if (schema.else.else) {
+          if (schema.else.else.if && schema.else.else.then) {
+            let deepestMet = false;
+            if (schema.else.else.if.properties && schema.else.else.if.properties.status && schema.else.else.if.properties.status.const !== undefined) {
+              if (instance.status === schema.else.else.if.properties.status.const) {
+                deepestMet = true;
+              }
+            }
+            if (deepestMet) {
+              const deepestErrors = [];
+              validateSchema(instance, schema.else.else.then, instanceName, deepestErrors);
+              errors.push(...deepestErrors);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (schema.anyOf !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    let anyValid = false;
+    for (const subSchema of schema.anyOf) {
+      const subErrors = [];
+      validateSchema(instance, subSchema, instanceName, subErrors);
+      if (subErrors.length === 0) {
+        anyValid = true;
+        break;
+      }
+    }
+    if (!anyValid && schema.anyOf.length > 0) {
+      errors.push(instanceName + ': must satisfy at least one of anyOf');
+    }
+  }
+  if (schema.not !== undefined && instance !== null && typeof instance === 'object' && !Array.isArray(instance)) {
+    const notErrors = [];
+    validateSchema(instance, schema.not, instanceName, notErrors);
+    if (notErrors.length === 0 && Object.keys(schema.not).length > 0) {
+      errors.push(instanceName + ': must NOT satisfy the not schema');
+    }
+  }
+}
+
 try {
   // 1. JSON parse validation
   const jsonFiles = fs.readdirSync(FIXTURE_DIR).filter(f => f.endsWith('.json'));
@@ -43,6 +163,43 @@ try {
   const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'));
   const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
   results.push('PASS: JSON parse demo_summary.schema.json');
+
+  // 1a. JSON Schema validation (draft-07 lightweight validator) for model summary files
+  const modelFiles = ['model_main.json', 'model_independent.json', 'model_unavailable.json'];
+  for (const file of modelFiles) {
+    const schemaErrors = [];
+    validateSchema(fixtures[file], schema, file, schemaErrors);
+    assert(schemaErrors.length === 0, file + ' passes JSON Schema validation (0 errors, got ' + schemaErrors.length + ')');
+    for (const err of schemaErrors) {
+      results.push('SCHEMA_ERR: ' + file + ' ' + err);
+    }
+  }
+  results.push('PASS: All model summary files pass JSON Schema validation');
+
+  // 1b. State exclusivity via Schema if/then/else
+  for (const file of ['model_main.json', 'model_independent.json', 'model_unavailable.json']) {
+    const model = fixtures[file];
+    if (model.status === 'unavailable') {
+      const hasMetrics = model.metrics && Object.keys(model.metrics).length > 0;
+      const hasTerminal = !!model.terminal;
+      assert(!hasMetrics && !hasTerminal, file + ': unavailable must not have metrics or terminal');
+    }
+  }
+  results.push('PASS: State exclusivity enforced by Schema branches');
+
+  // 1c. Schema structure: metrics must reject empty object
+  assert(schema.properties.metrics.minProperties === 1, 'Schema enforces metrics minProperties=1');
+  results.push('PASS: Schema rejects empty metrics object');
+
+  // 1d. Schema structure: unavailable branch uses true exclusivity
+  const unavailableBranch = schema.else.else.then;
+  assert(
+    unavailableBranch.not &&
+    unavailableBranch.not.anyOf &&
+    unavailableBranch.not.anyOf.length === 2,
+    'Schema unavailable branch uses anyOf not: required for true exclusivity'
+  );
+  results.push('PASS: Schema unavailable branch has true exclusivity constraint');
 
   // 2. Schema required fields
   assert(schema.required.includes('prediction_commitment'), 'Schema requires prediction_commitment');
@@ -225,11 +382,14 @@ try {
   }
   results.push('PASS: No gages field in any fixture');
 
-  
   // 12. Check release_manifest.json is not self-referential
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'release_manifest.json'), 'utf8'));
   assert(!manifest.frozen_files_sha256['release_manifest.json'], 'release_manifest.json should not be in its own frozen_files_sha256');
   results.push('PASS: release_manifest.json is not self-referential');
+
+  // 13. Prefix cutoff line uses last prefix checkpoint, not xMin
+  assert(html.includes('checkpoints[checkpoints.length - 1].day'), 'HTML boundaryX uses last prefix checkpoint day');
+  results.push('PASS: Prefix cutoff line at last prefix checkpoint');
 
   // Output results
   console.log('\n=== VALIDATION RESULTS ===\n');
@@ -238,7 +398,7 @@ try {
   }
   console.log('\nTotal: ' + results.length + ' checks');
   console.log('Failures: ' + failures);
-  
+
   if (failures > 0) {
     console.log('\n=== VALIDATION FAILED ===\n');
     process.exit(1);

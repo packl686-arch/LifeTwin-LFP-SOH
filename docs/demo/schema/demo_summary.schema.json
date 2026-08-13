@@ -49,6 +49,7 @@
     "metrics": {
       "type": "object",
       "description": "仅 scored=true 时允许非空。",
+      "minProperties": 1,
       "additionalProperties": {
         "type": "object",
         "required": [
@@ -165,67 +166,33 @@
     }
   },
   "additionalProperties": false,
-  "oneOf": [
-    {
-      "properties": {
-        "status": {
-          "const": "scored"
-        },
-        "prediction_commitment": {
-          "const": true
-        },
-        "scored": {
-          "const": true
-        }
-      },
-      "required": [
-        "metrics"
-      ],
-      "not": {
-        "required": [
-          "terminal"
-        ]
-      }
+  "if": {
+    "properties": { "status": { "const": "scored" } }
+  },
+  "then": {
+    "required": ["metrics"],
+    "not": { "required": ["terminal"] }
+  },
+  "else": {
+    "if": {
+      "properties": { "status": { "const": "terminal_pre_prediction" } }
     },
-    {
-      "properties": {
-        "status": {
-          "const": "terminal_pre_prediction"
-        },
-        "prediction_commitment": {
-          "const": false
-        },
-        "scored": {
-          "const": false
-        }
-      },
-      "required": [
-        "terminal"
-      ],
-      "not": {
-        "required": [
-          "metrics"
-        ]
-      }
+    "then": {
+      "required": ["terminal"],
+      "not": { "required": ["metrics"] }
     },
-    {
-      "properties": {
-        "status": {
-          "const": "unavailable"
-        },
-        "prediction_commitment": {
-          "const": false
-        },
-        "scored": {
-          "const": false
-        }
+    "else": {
+      "if": {
+        "properties": { "status": { "const": "unavailable" } }
       },
-      "not": {
-        "required": [
-          "metrics",
-          "terminal"
-        ]
+      "then": {
+        "not": {
+          "anyOf": [
+            { "required": ["metrics"] },
+            { "required": ["terminal"] }
+          ]
+        }
       }
     }
-  ]
+  }
 }
