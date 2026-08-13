@@ -116,7 +116,7 @@
     },
     {
       "step": 3,
-      "label": "新增第 7 点，出现早期回升信号",
+      "label": "新增第 7 点，早期下降/波动信号",
       "prefix_count": 7,
       "temperature_c": 40,
       "soc_fraction": 0.375,

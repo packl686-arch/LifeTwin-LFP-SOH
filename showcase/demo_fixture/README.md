@@ -24,7 +24,7 @@
 
 - **scored**：`prediction_commitment=true`, `scored=true`, `metrics` 非空, `terminal` 必须不存在。
 - **terminal_pre_prediction**：`prediction_commitment=false`, `scored=false`, `metrics` 必须不存在, `terminal` 必须存在。
-- **unavailable**：`prediction_commitment=false`, `scored=false`, `metrics` 必须不存在, `terminal` 必须不存在。
+- **unavailable**：`prediction_commitment=false`, `scored=false`, `metrics` 必须不存在, `terminal` 必须不存在, `gages` 必须不存在, `public_version` 必须不存在, `protocol_id` 必须不存在。
 
 ## 比较口径（fail-closed）
 

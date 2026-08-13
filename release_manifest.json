@@ -382,7 +382,15 @@
     "tests/test_v016_security_boundaries.py": "9ac0aeb34574c6140034a58bf9d73af331266bac5a81dfbc1568225417a4aff8",
     "tests/test_v016_state.py": "f9ff94e76680a75651be01d02a40c64c9c89369593c4c646997b3507f4ba59be",
     "tests/test_v016_terminal.py": "96583c16e9ba180be8c1801ba1e2cfaef0bb865c063cb1caab83a79797164114",
-    "tests/test_v016_training.py": "14cee68462e64be8c06c4666d50a0008f847617484ffa26d16f4c29ed41c1d0d"
+    "tests/test_v016_training.py": "14cee68462e64be8c06c4666d50a0008f847617484ffa26d16f4c29ed41c1d0d",
+    "docs/demo/index.html": "362c66f12fbbeb592ce1f2fc98ff68bad9f3b6a0e3cafeac6951cccf28f3b1a0",
+    "docs/demo/schema/demo_summary.schema.json": "756d0ab8de8ae12c3cb0bd9c51cdb532b0d5f87c243250cd8bab109a5bb04b70",
+    "showcase/demo_fixture/README.md": "822efc3c6a6aa72b7792077bd539b35c6f3e153699450e81a50ae9068fcb9264",
+    "showcase/demo_fixture/model_independent.json": "1940c4fcdde9b7b85f719883a34c083bf464d34fcf2d27d1cc5df6e6f5a508bc",
+    "showcase/demo_fixture/model_main.json": "4c21ab8ec7625e7ddc3e11a76a9025f10cb71920516afc87ecf4fc9efe744630",
+    "showcase/demo_fixture/model_unavailable.json": "110c8c29431a40a4b102fd04abd7ab9e3edfc7cc6edeb3320be9aa9e0c4c50d2",
+    "showcase/demo_fixture/update_demo.json": "7838eb812cbfdbc8fab625f4f2779ce0492f8c3ae0abc04130172521a3879df8",
+    "showcase/demo_fixture/workbench_scenarios.json": "2153ce7cfe10a3e0c5a343c07ea8e0eb7f0ac7a305a5a908691a46f52d957f7c"
   },
   "forbidden_release_globs": [
     "artifacts/**",

@@ -7,6 +7,8 @@
     "schema_version",
     "model_id",
     "status",
+    "prediction_commitment",
+    "scored",
     "comparison"
   ],
   "properties": {
@@ -76,28 +78,6 @@
         "additionalProperties": false
       }
     },
-    "gates": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "status",
-          "reasons"
-        ],
-        "properties": {
-          "status": {
-            "type": "string"
-          },
-          "reasons": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "additionalProperties": false
-      }
-    },
     "terminal": {
       "type": "object",
       "description": "terminal_pre_prediction 时必填。",
@@ -146,28 +126,36 @@
       ],
       "properties": {
         "data_version": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "prefix_definition": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "prediction_range": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "partition_id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "scoring_rule_id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "metric_name": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "metric_unit": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "protocol_id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "scored": {
           "type": "boolean"
@@ -192,7 +180,12 @@
       },
       "required": [
         "metrics"
-      ]
+      ],
+      "not": {
+        "required": [
+          "terminal"
+        ]
+      }
     },
     {
       "properties": {
@@ -229,7 +222,8 @@
       },
       "not": {
         "required": [
-          "metrics"
+          "metrics",
+          "terminal"
         ]
       }
     }
