@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 import hashlib
 import inspect
 from typing import Any, Mapping
@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from lifetwin.experiments import calendar_long_horizon_v016_training as training
+from lifetwin.experiments import calendar_long_horizon_v019_training as v019_training
 from lifetwin.experiments.calendar_long_horizon_v015_model import (
     FORECAST_DAYS,
     PREFIX_DAYS,
@@ -28,6 +29,9 @@ from lifetwin.experiments.calendar_long_horizon_v015_training import (
     CALIBRATION_COUNT,
     CalibrationDevelopmentState,
     RiskDevelopmentState,
+)
+from lifetwin.experiments.calendar_long_horizon_v019_state import (
+    serialize_calibration_mask_commitment_json_v024,
 )
 
 
@@ -77,6 +81,21 @@ def _risk_state() -> RiskDevelopmentState:
         eligible_cluster_count=600,
         positive_label_count=120,
         negative_label_count=480,
+    )
+
+
+def _cancellation_state(feature_names: tuple[str, ...]) -> LogisticRiskState:
+    dimension = len(feature_names)
+    coefficients = (1e16, 1.0, -1e16, *((1.0,) * (dimension - 3)))
+    return LogisticRiskState(
+        feature_names=feature_names,
+        standardizer=StandardizerState(
+            mean=(0.0,) * dimension,
+            scale=(1.0,) * dimension,
+            zero_variance=(False,) * dimension,
+        ),
+        intercept=0.0,
+        coefficients=coefficients,
     )
 
 
@@ -244,6 +263,101 @@ def _set_one_family(inputs: dict[str, Any], index: int) -> None:
     lower, upper = _support_band(support)
     inputs["base_interval_lower_pct"][index] = lower
     inputs["base_interval_upper_pct"][index] = upper
+
+
+def test_risk_scores_are_bit_exact_for_rowwise_and_batch_evaluation() -> None:
+    model = _cancellation_state(PREFIX_FEATURE_NAMES)
+    rows = np.vstack(
+        (
+            np.ones(len(PREFIX_FEATURE_NAMES), dtype=np.float64),
+            np.arange(1, len(PREFIX_FEATURE_NAMES) + 1, dtype=np.float64),
+            np.linspace(-1.0, 1.0, len(PREFIX_FEATURE_NAMES), dtype=np.float64),
+        )
+    )
+
+    rowwise = np.asarray([model.decision_function((row,))[0] for row in rows])
+    batched = model.decision_function(rows)
+
+    assert np.array_equal(rowwise, batched)
+
+
+def _v024_cancellation_inputs() -> dict[str, Any]:
+    inputs = _calibration_inputs()
+    risk_state = replace(
+        inputs["risk_state"],
+        prefix_only_risk=_cancellation_state(PREFIX_FEATURE_NAMES),
+        visible_stress_risk=_cancellation_state(VISIBLE_STRESS_FEATURE_NAMES),
+    )
+    inputs["risk_state"] = risk_state
+    inputs["raw_prefix_risk_scores"] = np.asarray(
+        [
+            risk_state.prefix_only_risk.decision_function((row,))[0]
+            for row in inputs["prefix_features"]
+        ]
+    )
+    visible = np.column_stack(
+        (inputs["prefix_features"], inputs["real_stress_features"])
+    )
+    inputs["raw_visible_risk_scores"] = np.asarray(
+        [risk_state.visible_stress_risk.decision_function((row,))[0] for row in visible]
+    )
+    return inputs
+
+
+def test_v024_primary_score_verifier_and_commitment_are_reproducible() -> None:
+    inputs = _v024_cancellation_inputs()
+    v019_training._verify_primary_scores(
+        risk_state=inputs["risk_state"],
+        prefix=inputs["prefix_features"],
+        real_stress=inputs["real_stress_features"],
+        supplied_prefix=inputs["raw_prefix_risk_scores"],
+        supplied_visible=inputs["raw_visible_risk_scores"],
+    )
+
+    raw = serialize_calibration_mask_commitment_json_v024(
+        v019_training.derive_calibration_mask_commitment_v024(
+            **_pretruth_kwargs(inputs)
+        )
+    )
+    repeated = serialize_calibration_mask_commitment_json_v024(
+        v019_training.derive_calibration_mask_commitment_v024(
+            **_pretruth_kwargs(inputs)
+        )
+    )
+
+    assert raw == repeated
+    assert hashlib.sha256(raw).digest() == hashlib.sha256(repeated).digest()
+
+
+@pytest.mark.parametrize("mutation", ("row", "value", "nan", "inf", "-inf"))
+def test_v024_primary_score_mutations_fail_closed(mutation: str) -> None:
+    inputs = _v024_cancellation_inputs()
+    supplied = inputs["raw_prefix_risk_scores"].copy()
+    if mutation == "row":
+        supplied[[0, 1]] = supplied[[1, 0]]
+    elif mutation == "value":
+        supplied[0] = np.nextafter(supplied[0], np.inf)
+    else:
+        supplied[0] = {"nan": np.nan, "inf": np.inf, "-inf": -np.inf}[mutation]
+
+    with pytest.raises(v019_training.V024CalibrationError, match="risk-state"):
+        v019_training._verify_primary_scores(
+            risk_state=inputs["risk_state"],
+            prefix=inputs["prefix_features"],
+            real_stress=inputs["real_stress_features"],
+            supplied_prefix=supplied,
+            supplied_visible=inputs["raw_visible_risk_scores"],
+        )
+
+
+def test_v024_calibration_key_mismatch_fails_closed() -> None:
+    inputs = _v024_cancellation_inputs()
+    inputs["cluster_ids"][1] = inputs["cluster_ids"][0]
+
+    with pytest.raises(v019_training.V024CalibrationError, match="unique"):
+        v019_training.derive_calibration_mask_commitment_v024(
+            **_pretruth_kwargs(inputs)
+        )
 
 
 def _set_zero_family(inputs: dict[str, Any], index: int) -> None:
