@@ -51,6 +51,7 @@ from lifetwin.experiments.calendar_long_horizon_v019_ledger import (
     locked_ledger,
     parse_exposure_log_bytes,
 )
+from lifetwin.experiments.calendar_long_horizon_v019_io import V024IOError
 from lifetwin.experiments.calendar_long_horizon_v019_signals import (
     V024CalibrationTerminalInconclusive,
 )
@@ -361,13 +362,37 @@ def _v024_training_reason(error: BaseException) -> TerminalReason | None:
     return reason
 
 
+_EXCEPTION_CHAIN_LIMIT = 16
+
+
+def _walk_exception_chain(
+    error: BaseException,
+) -> tuple[tuple[tuple[BaseException, str], ...], bool]:
+    entries: list[tuple[BaseException, str]] = []
+    current: BaseException | None = error
+    relationship = "outer"
+    seen: set[int] = set()
+    while current is not None:
+        if id(current) in seen or len(entries) >= _EXCEPTION_CHAIN_LIMIT:
+            return tuple(entries), True
+        seen.add(id(current))
+        entries.append((current, relationship))
+        if current.__cause__ is not None:
+            current = current.__cause__
+            relationship = "cause"
+        elif not current.__suppress_context__:
+            current = current.__context__
+            relationship = "context"
+        else:
+            current = None
+    return tuple(entries), False
+
+
 def classify_terminal_exception(error: BaseException) -> TerminalClassification:
     """Classify from types and registered codes, never raw exception text."""
 
-    cursor: BaseException | None = error
-    seen: set[int] = set()
-    while cursor is not None and id(cursor) not in seen:
-        seen.add(id(cursor))
+    entries, _ = _walk_exception_chain(error)
+    for cursor, _ in entries:
         if isinstance(cursor, V020CheckpointRegistryError):
             return _classification(
                 error=error,
@@ -375,7 +400,13 @@ def classify_terminal_exception(error: BaseException) -> TerminalClassification:
                 mode=ClassificationMode.PROVEN_INTEGRITY,
                 reason=TerminalReason.INTEGRITY_ARTIFACT_HASH_MISMATCH,
             )
-        cursor = cursor.__cause__ or cursor.__context__
+        if type(cursor) is V024IOError:
+            return _classification(
+                error=error,
+                disposition=TerminalDisposition.INTEGRITY_FAILURE,
+                mode=ClassificationMode.PROVEN_INTEGRITY,
+                reason=TerminalReason.INTEGRITY_ARTIFACT_HASH_MISMATCH,
+            )
     if isinstance(error, V019IntegrityError):
         return _classification(
             error=error,
@@ -524,35 +555,54 @@ def _safe_frame_path(filename: str, repo_root: Path | None) -> str:
     return _sanitize_text(f"<external>/{path.name}", maximum_length=512)
 
 
-def sanitized_structural_traceback(
+def _structural_frames(
     error: BaseException,
     *,
-    repo_root: str | Path | None = None,
-) -> bytes:
-    """Return deterministic traceback structure without locals or raw text."""
-
-    root = None if repo_root is None else Path(repo_root)
+    repo_root: Path | None,
+) -> list[dict[str, object]]:
     frames: list[dict[str, object]] = []
     current = error.__traceback__
     while current is not None:
         code = current.tb_frame.f_code
         frames.append(
             {
-                "file": _safe_frame_path(code.co_filename, root),
+                "file": _safe_frame_path(code.co_filename, repo_root),
                 "function": _sanitize_text(code.co_name, maximum_length=256),
                 "line": int(current.tb_lineno),
             }
         )
         current = current.tb_next
+    return frames
+
+
+def sanitized_structural_traceback(
+    error: BaseException,
+    *,
+    repo_root: str | Path | None = None,
+) -> bytes:
+    """Return a deterministic exception chain without locals or raw messages."""
+
+    root = None if repo_root is None else Path(repo_root)
+    entries, chain_truncated = _walk_exception_chain(error)
+    exception_chain = [
+        {
+            "exception_class": _safe_exception_class(item),
+            "relationship": relationship,
+            "frames": _structural_frames(item, repo_root=root),
+        }
+        for item, relationship in entries
+    ]
     classification = classify_terminal_exception(error)
     payload = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "exception_class": classification.exception_class,
         "classification_mode": classification.mode.value,
         "attempt_disposition": classification.disposition.value,
         "reason_code": classification.reason.value,
         "safe_message": classification.safe_message,
-        "frames": frames,
+        "frames": exception_chain[0]["frames"],
+        "exception_chain": exception_chain,
+        "exception_chain_truncated": chain_truncated,
     }
     raw = _canonical_json_bytes(payload)
     text = raw.decode("ascii")
@@ -864,9 +914,14 @@ _TRACEBACK_KEYS = frozenset(
         "reason_code",
         "safe_message",
         "frames",
+        "exception_chain",
+        "exception_chain_truncated",
     }
 )
 _FRAME_KEYS = frozenset({"file", "function", "line"})
+_EXCEPTION_CHAIN_KEYS = frozenset(
+    {"exception_class", "relationship", "frames"}
+)
 _FILE_RECORD_KEYS = frozenset({"path", "byte_count", "byte_sha256"})
 _TERMINAL_FILE_RECORD_KEYS = frozenset({"path", "role", "byte_count", "byte_sha256"})
 _MANIFEST_KEYS = frozenset(
@@ -1006,6 +1061,22 @@ def _expected_classification(
     raise V019TerminationError("Disposition and reason classification conflict")
 
 
+def _validate_traceback_frames(value: object, *, context: str) -> None:
+    if not isinstance(value, list):
+        raise V019TerminationError(f"{context} is invalid")
+    for item in value:
+        frame = _validate_exact_keys(item, _FRAME_KEYS, context="traceback frame")
+        if (
+            not isinstance(frame["file"], str)
+            or not isinstance(frame["function"], str)
+            or not isinstance(frame["line"], int)
+            or isinstance(frame["line"], bool)
+            or frame["line"] < 0
+            or Path(frame["file"]).is_absolute()
+        ):
+            raise V019TerminationError("Structural traceback frame is invalid")
+
+
 def _validate_structural_traceback(
     value: object,
     *,
@@ -1020,7 +1091,7 @@ def _validate_structural_traceback(
         context="structural traceback",
     )
     if (
-        trace["schema_version"] != "1.0.0"
+        trace["schema_version"] != "1.1.0"
         or not isinstance(trace["exception_class"], str)
         or re.fullmatch(
             r"[A-Za-z_][A-Za-z0-9_]{0,127}",
@@ -1031,20 +1102,44 @@ def _validate_structural_traceback(
         or trace["classification_mode"] != expected_mode.value
         or trace["attempt_disposition"] != expected_disposition.value
         or trace["safe_message"] != expected_message
-        or not isinstance(trace["frames"], list)
+        or not isinstance(trace["exception_chain_truncated"], bool)
+        or not isinstance(trace["exception_chain"], list)
+        or not 1 <= len(trace["exception_chain"]) <= _EXCEPTION_CHAIN_LIMIT
     ):
         raise V019TerminationError("Structural traceback identity is invalid")
-    for value in trace["frames"]:
-        frame = _validate_exact_keys(value, _FRAME_KEYS, context="traceback frame")
+    _validate_traceback_frames(trace["frames"], context="outer traceback frames")
+    for index, value in enumerate(trace["exception_chain"]):
+        entry = _validate_exact_keys(
+            value,
+            _EXCEPTION_CHAIN_KEYS,
+            context="exception chain entry",
+        )
+        relationship = entry["relationship"]
+        relationship_valid = isinstance(relationship, str) and (
+            relationship == "outer"
+            if index == 0
+            else relationship in {"cause", "context"}
+        )
         if (
-            not isinstance(frame["file"], str)
-            or not isinstance(frame["function"], str)
-            or not isinstance(frame["line"], int)
-            or isinstance(frame["line"], bool)
-            or frame["line"] < 0
-            or Path(frame["file"]).is_absolute()
+            not isinstance(entry["exception_class"], str)
+            or re.fullmatch(
+                r"[A-Za-z_][A-Za-z0-9_]{0,127}",
+                entry["exception_class"],
+            )
+            is None
+            or not relationship_valid
         ):
-            raise V019TerminationError("Structural traceback frame is invalid")
+            raise V019TerminationError("Structural exception chain is invalid")
+        _validate_traceback_frames(
+            entry["frames"],
+            context="exception chain frames",
+        )
+    outer = trace["exception_chain"][0]
+    if (
+        outer["exception_class"] != trace["exception_class"]
+        or outer["frames"] != trace["frames"]
+    ):
+        raise V019TerminationError("Outer structural traceback identity changed")
     serialized = _canonical_json_bytes(trace).decode("ascii")
     if (
         _ADDRESS.search(serialized)
