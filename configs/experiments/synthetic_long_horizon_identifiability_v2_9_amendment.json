@@ -1,0 +1,166 @@
+{
+  "schema_version": "lifetwin_synthetic_long_horizon_v2_9/1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2_9",
+  "implementation_profile": "v0.24",
+  "status": "preregistered_post_fix_pre_formalization",
+  "design_date": "2026-08-14",
+  "base_contract": {
+    "protocol_id": "synthetic_long_horizon_identifiability_v2_8",
+    "amendment_path": "configs/experiments/synthetic_long_horizon_identifiability_v2_8_amendment.json",
+    "amendment_byte_sha256": "b5e93bac3e744cd6bfff09edf437f6a17d37c20fa0382f9546b8459dce740a1a",
+    "amendment_semantic_sha256": "a27124fbb86307b8c02f5e7a011e7941a7a114e6acec5df041a7f0cbed6e99f1",
+    "fixed_core_commit": "6955b6c42773d5c1e2948c2ba0228cf910b7ff02"
+  },
+  "change_scope": {
+    "allowed": [
+      "new protocol, attempt, seed, generated-data and path identities",
+      "derive each matched-pair registry row count from its frozen member count and the two-members-per-pair relationship",
+      "formal and prediction process attestation of the same immutable identity"
+    ],
+    "forbidden": [
+      "changing any generating family, equation, feature, model, optimizer or parameter bound",
+      "changing any threshold, partition, endpoint, denominator, gate, confidence rule or success condition",
+      "changing pair membership, member count, pair count, truth schema or truth commitment tolerance",
+      "formal=False, skipped hashes, relaxed firewalls or result-dependent changes",
+      "reusing any predecessor seed, row, ID, hash, state, prediction, score or attempt root"
+    ]
+  },
+  "attempt_registry": {
+    "only_attempt_id": "v029-formal-20260814-a1",
+    "maximum_attempts": 1,
+    "a2_or_replacement_attempt_forbidden": true,
+    "retry_or_resume_for_better_result_forbidden": true,
+    "formal_execution_status": "reserved_pending_post_freeze_authorization",
+    "formal_generation_before_freeze_forbidden": true
+  },
+  "fresh_generation": {
+    "generation_has_started": false,
+    "seed_consumed": false,
+    "sealed_truth_created_or_opened": false,
+    "pilot_or_test_generation_forbidden": true,
+    "seed_roots": {
+      "center_development": 202608140901,
+      "risk_development": 202608140902,
+      "calibration": 202608140903,
+      "test": 202608140904,
+      "audit": 202608140905,
+      "novel_mechanism_test": 202608140906,
+      "novel_mechanism_audit": 202608140907,
+      "intrinsic_matched_pairs": 202608140908,
+      "stress_plan_matched_pairs": 202608140909,
+      "random_rankings": 202608140910,
+      "bootstrap": 202608140911,
+      "stress_permutations": 202608140912,
+      "placebo_covariate": 202608140913
+    },
+    "seed_derivation": "For each named stream, derive the first 16 hexadecimal digits of SHA256(protocol_id|seed_root|partition|family_id|zero_based_index|stream_name), interpret as unsigned and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) only in the frozen environment."
+  },
+  "path_isolation": {
+    "label_free_root": "artifacts/v029-formal-20260814-a1-label-free",
+    "sealed_truth_root": "artifacts/v029-formal-20260814-a1-sealed-truth",
+    "score_root": "artifacts/v029-formal-20260814-a1-score",
+    "termination_root": "artifacts/v029-formal-20260814-a1-termination",
+    "formal_roots_must_be_absent_before_launch": true,
+    "resolved_roots_must_be_pairwise_distinct": true,
+    "all_predecessor_roots_are_read_only_and_disjoint": true
+  },
+  "pair_registry_row_contract_fix": {
+    "binding": "Each matched-pair CSV contains one mapping row per pair, while each matched partition contains exactly two members per pair.",
+    "pair_mapping_rows_each": 250,
+    "pair_members_each": 500,
+    "members_per_pair": 2,
+    "ordinary_truth_row_counts_unchanged": true,
+    "truth_commitment_verification_remains_fail_closed": true,
+    "development_fix_commit": "6955b6c42773d5c1e2948c2ba0228cf910b7ff02"
+  },
+  "result_blind_development_evidence": {
+    "pair_registry_and_v019_terminal_preresult_tests_passed": 22,
+    "current_prediction_entry_uses_fixed_v019_loader": true,
+    "pair_rows_250_accepted": true,
+    "pair_rows_500_249_251_and_registry_drift_rejected": true,
+    "formal_attempt_or_outcome_created": false,
+    "sealed_raw_or_formal_outputs_read": false
+  },
+  "partition_contract_view": {
+    "binding": "fit structure passes the one authenticated contract view to whole-bundle validation",
+    "naked_artifacts_fail_closed": true,
+    "resolver_relaxation_forbidden": true,
+    "fit_commitment_order": "write, fresh read-back, whole validation through authenticated view, commitment, completed phase"
+  },
+  "checkpoint_registry_contract": {
+    "binding": "the inherited immutable V0.20 exact-set registry remains shared by producer, verifier, truth firewall, calibration manifest and model-state validation",
+    "center_development_count": 10,
+    "risk_development_count": 11,
+    "calibration_count": 14,
+    "failure_rule": "Any missing, extra, renamed, reordered, mutable or byte-drifted registered input is a typed pre-result integrity failure and truth reveal count remains zero."
+  },
+  "scientific_inheritance": {
+    "rule": "Every scientific field in the committed V2.8 amendment remains binding unless explicitly listed in change_scope.allowed. Omission never weakens inheritance.",
+    "unchanged": [
+      "six generating families, equations, distributions and noise",
+      "seven partitions, cluster counts, twelve prefix days, eight forecast days and units",
+      "exact 86 variants, models, features, optimizers, parameter bounds and fit credibility",
+      "risk, isotonic, mean baseline, split-conformal, routing, fallback and rejection rules",
+      "five primary endpoints, eight-family, novel-mechanism and safety gates",
+      "placebo, stress-permutation and information-firewall negative controls",
+      "bootstrap, Clopper-Pearson, permutation and confidence-interval rules",
+      "success, scored failure, terminal inconclusive, integrity void and unknown terminal classifications",
+      "whole-bundle and partition cardinality, schema, key, unit, hash and numeric contracts",
+      "fit commitment, prediction commitment, truth-open, scoring and terminal ordering"
+    ],
+    "post_result_review_only": [
+      "strong simple baselines",
+      "stratified and worst-condition behavior",
+      "out-of-domain refusal",
+      "interval calibration",
+      "physical plausibility and clipping dependence",
+      "public-to-enterprise domain gap",
+      "dynamic updating",
+      "business decision mapping",
+      "single champion selection",
+      "same-protocol Model B comparison"
+    ]
+  },
+  "predecessor_terminal": {
+    "attempt_id": "v028-formal-20260814-a1",
+    "terminal_state": "terminal_pre_prediction",
+    "scientific_status": "unclassified_terminal_not_success",
+    "classification_mode": "unknown_default",
+    "reason_code": "UNKNOWN_PRE_PREDICTION_EXCEPTION",
+    "prediction_commitment_created": false,
+    "score_created": false,
+    "immutable_and_not_reusable": true
+  },
+  "lifecycle_order": [
+    "static environment, source, history, collision and path preflight without seed consumption",
+    "capability-minimal fresh generation",
+    "whole-bundle formal validation and fit commitment",
+    "center, risk and calibration checkpoints through the canonical registry",
+    "prediction commitment",
+    "heldout truth opening and deterministic scoring",
+    "exactly one scored or terminal registry",
+    "independent post-run hash and history audit"
+  ],
+  "terminal_rules": {
+    "scientific_classifications_inherited_from_v2_8": true,
+    "known_integrity_contract_mismatch_is_void": true,
+    "unknown_exception_preserves_unknown_default": true,
+    "prediction_and_terminal_registries_mutually_exclusive": true,
+    "terminal_registry_exact_files": [
+      "terminal_attempt_record.json",
+      "terminal_artifact_manifest.json",
+      "terminal_exposure_log_snapshot.jsonl"
+    ]
+  },
+  "freeze_requirements": {
+    "preregistration": "reports/synthetic_long_horizon_identifiability_prereg_v2_9.md",
+    "environment_lock": "requirements/v029-formal.txt",
+    "implementation_audit": "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_9.md",
+    "freeze_record": "reports/synthetic_long_horizon_identifiability_freeze_record_v2_9.json",
+    "linear_topology": "P parent is 6955b6c42773d5c1e2948c2ba0228cf910b7ff02; I is the direct child of P; F is the direct child of I.",
+    "source_tree_byte_semantic_and_file_sha_required": true,
+    "clean_worktree_and_remote_identity_required": true,
+    "no_source_or_protocol_change_after_F": true
+  },
+  "claim_boundary": "Any future V2.9 result is limited to the frozen six-core-family synthetic 25-year protocol. It is not evidence of real LFP cells, Hithium products, storage stations or 15-25 year real-world predictive accuracy."
+}
