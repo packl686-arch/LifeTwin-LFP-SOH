@@ -1,0 +1,332 @@
+"""Static, non-generative validator for the preregistered V2.9 amendment."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import hashlib
+import json
+from pathlib import Path
+from types import MappingProxyType
+from typing import Any, Mapping
+
+from lifetwin.experiments.calendar_long_horizon_v019_protocol import (
+    V021_SEED_ROOTS,
+    V022_SEED_ROOTS,
+    V023_SEED_ROOTS,
+    V024_EXPECTED_SEED_ROOTS,
+    V2_SEED_ROOTS,
+)
+from lifetwin.experiments.calendar_long_horizon_v020_checkpoint_registry import (
+    INPUT_FILENAMES_BY_STAGE,
+)
+from lifetwin.experiments.calendar_long_horizon_v020_protocol import (
+    V025_EXPECTED_SEED_ROOTS,
+)
+from lifetwin.experiments.calendar_long_horizon_v021_protocol import (
+    V026_EXPECTED_SEED_ROOTS,
+)
+from lifetwin.experiments.calendar_long_horizon_v022_protocol import (
+    V027_EXPECTED_SEED_ROOTS,
+)
+from lifetwin.experiments.calendar_long_horizon_v023_protocol import (
+    V028_EXPECTED_SEED_ROOTS,
+)
+
+
+V029_PROTOCOL_ID = "synthetic_long_horizon_identifiability_v2_9"
+V029_ONLY_ATTEMPT_ID = "v029-formal-20260814-a1"
+V029_DESIGN_STATUS = "implementation_frozen"
+V029_EXPECTED_SEED_ROOTS = MappingProxyType(
+    {
+        "center_development": 202608140901,
+        "risk_development": 202608140902,
+        "calibration": 202608140903,
+        "test": 202608140904,
+        "audit": 202608140905,
+        "novel_mechanism_test": 202608140906,
+        "novel_mechanism_audit": 202608140907,
+        "intrinsic_matched_pairs": 202608140908,
+        "stress_plan_matched_pairs": 202608140909,
+        "random_rankings": 202608140910,
+        "bootstrap": 202608140911,
+        "stress_permutations": 202608140912,
+        "placebo_covariate": 202608140913,
+    }
+)
+V029_AMENDMENT_BYTE_SHA256 = (
+    "175e9765c290f6c2718c8881bbf1324ba62ecbe2d2d71d2083a589025a743c8c"
+)
+V029_AMENDMENT_SEMANTIC_SHA256 = (
+    "0a606caad5e03cebacfdbe2df48d01d884c9485d0eb65de539d2804bcbceb8ee"
+)
+V029_PREREG_BYTE_SHA256 = (
+    "750a3502ed13cf2c02a336e051968a5b98ddb86e19c9faa25c6fd9cbab99b415"
+)
+V029_REQUIREMENTS_BYTE_SHA256 = (
+    "41ad58baae6d34c513c5abfe73d08b09e3a7a8a0d489a9ce91301565d3fc445a"
+)
+V029_DESIGN_FREEZE_COMMIT = "1ec9d37ea53fb27767beee131b65d1c0885d288c"
+V029_FIXED_CORE_COMMIT = "6955b6c42773d5c1e2948c2ba0228cf910b7ff02"
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_V029_AMENDMENT_PATH = (
+    _PROJECT_ROOT
+    / "configs"
+    / "experiments"
+    / "synthetic_long_horizon_identifiability_v2_9_amendment.json"
+)
+_EXPECTED_KEYS = {
+    "schema_version",
+    "protocol_id",
+    "implementation_profile",
+    "status",
+    "design_date",
+    "base_contract",
+    "change_scope",
+    "attempt_registry",
+    "fresh_generation",
+    "path_isolation",
+    "pair_registry_row_contract_fix",
+    "result_blind_development_evidence",
+    "partition_contract_view",
+    "checkpoint_registry_contract",
+    "scientific_inheritance",
+    "predecessor_terminal",
+    "lifecycle_order",
+    "terminal_rules",
+    "freeze_requirements",
+    "claim_boundary",
+}
+
+
+class V029ProtocolError(ValueError):
+    """Raised when the result-blind V2.9 amendment bytes drift."""
+
+
+@dataclass(frozen=True, slots=True)
+class ValidatedV029Design:
+    protocol_id: str
+    status: str
+    config_path: Path
+    config_byte_sha256: str
+    config_semantic_sha256: str
+    seed_roots: Mapping[str, int]
+    raw: Mapping[str, Any]
+
+
+def _deep_freeze(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType(
+            {str(key): _deep_freeze(item) for key, item in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_deep_freeze(item) for item in value)
+    return value
+
+
+def _object(value: object, *, context: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or any(not isinstance(key, str) for key in value):
+        raise V029ProtocolError(f"{context} must be a JSON object")
+    return value
+
+
+def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise V029ProtocolError(f"Duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_constant(token: str) -> None:
+    raise V029ProtocolError(f"Nonfinite JSON constant: {token}")
+
+
+def load_v029_design(
+    path: str | Path = DEFAULT_V029_AMENDMENT_PATH,
+) -> ValidatedV029Design:
+    """Validate committed V2.9 bytes without deriving or consuming a seed."""
+
+    config_path = Path(path).resolve()
+    try:
+        raw = config_path.read_bytes()
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicates,
+            parse_constant=_reject_constant,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise V029ProtocolError("Cannot read V2.9 amendment JSON") from exc
+    top = _object(payload, context="V2.9 amendment")
+    canonical = json.dumps(
+        top,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    if (
+        set(top) != _EXPECTED_KEYS
+        or hashlib.sha256(raw).hexdigest() != V029_AMENDMENT_BYTE_SHA256
+        or hashlib.sha256(canonical).hexdigest() != V029_AMENDMENT_SEMANTIC_SHA256
+        or top.get("schema_version") != "lifetwin_synthetic_long_horizon_v2_9/1.0.0"
+        or top.get("protocol_id") != V029_PROTOCOL_ID
+        or top.get("implementation_profile") != "v0.24"
+        or top.get("status") != V029_DESIGN_STATUS
+    ):
+        raise V029ProtocolError("V2.9 amendment identity or commitment changed")
+
+    base = _object(top.get("base_contract"), context="base_contract")
+    if (
+        base.get("protocol_id") != "synthetic_long_horizon_identifiability_v2_8"
+        or base.get("amendment_byte_sha256")
+        != "b5e93bac3e744cd6bfff09edf437f6a17d37c20fa0382f9546b8459dce740a1a"
+        or base.get("amendment_semantic_sha256")
+        != "a27124fbb86307b8c02f5e7a011e7941a7a114e6acec5df041a7f0cbed6e99f1"
+        or base.get("fixed_core_commit") != V029_FIXED_CORE_COMMIT
+    ):
+        raise V029ProtocolError("V2.9 base contract changed")
+
+    attempt = _object(top.get("attempt_registry"), context="attempt_registry")
+    if (
+        attempt.get("only_attempt_id") != V029_ONLY_ATTEMPT_ID
+        or attempt.get("maximum_attempts") != 1
+        or attempt.get("a2_or_replacement_attempt_forbidden") is not True
+        or attempt.get("formal_generation_before_freeze_forbidden") is not True
+    ):
+        raise V029ProtocolError("V2.9 attempt registry changed")
+
+    fresh = _object(top.get("fresh_generation"), context="fresh_generation")
+    roots = _object(fresh.get("seed_roots"), context="seed_roots")
+    if (
+        fresh.get("generation_has_started") is not False
+        or fresh.get("seed_consumed") is not False
+        or fresh.get("sealed_truth_created_or_opened") is not False
+        or fresh.get("pilot_or_test_generation_forbidden") is not True
+        or roots != dict(V029_EXPECTED_SEED_ROOTS)
+    ):
+        raise V029ProtocolError("V2.9 result-blind seed registry changed")
+    predecessors = {
+        *V2_SEED_ROOTS,
+        *V021_SEED_ROOTS,
+        *V022_SEED_ROOTS,
+        *V023_SEED_ROOTS,
+        *V024_EXPECTED_SEED_ROOTS.values(),
+        *V025_EXPECTED_SEED_ROOTS.values(),
+        *V026_EXPECTED_SEED_ROOTS.values(),
+        *V027_EXPECTED_SEED_ROOTS.values(),
+        *V028_EXPECTED_SEED_ROOTS.values(),
+    }
+    if predecessors.intersection(roots.values()) or len(set(roots.values())) != 13:
+        raise V029ProtocolError("V2.9 seed roots collide or are not unique")
+
+    checkpoint = _object(
+        top.get("checkpoint_registry_contract"),
+        context="checkpoint_registry_contract",
+    )
+    for stage, names in INPUT_FILENAMES_BY_STAGE.items():
+        if checkpoint.get(f"{stage}_count") != len(names):
+            raise V029ProtocolError(f"V2.9 {stage} checkpoint registry changed")
+    if checkpoint.get("failure_rule") is None:
+        raise V029ProtocolError("V2.9 checkpoint failure rule is absent")
+
+    isolation = _object(top.get("path_isolation"), context="path_isolation")
+    for role in ("label_free", "sealed_truth", "score", "termination"):
+        expected = f"artifacts/{V029_ONLY_ATTEMPT_ID}-{role.replace('_', '-')}"
+        if isolation.get(f"{role}_root") != expected:
+            raise V029ProtocolError(f"V2.9 {role} root changed")
+    if (
+        isolation.get("formal_roots_must_be_absent_before_launch") is not True
+        or isolation.get("resolved_roots_must_be_pairwise_distinct") is not True
+    ):
+        raise V029ProtocolError("V2.9 path isolation weakened")
+
+    inheritance = _object(
+        top.get("scientific_inheritance"), context="scientific_inheritance"
+    )
+    if len(inheritance.get("unchanged", ())) != 10:
+        raise V029ProtocolError("V2.9 scientific inheritance changed")
+    terminal = _object(top.get("terminal_rules"), context="terminal_rules")
+    if (
+        terminal.get("known_integrity_contract_mismatch_is_void") is not True
+        or terminal.get("unknown_exception_preserves_unknown_default") is not True
+        or terminal.get("prediction_and_terminal_registries_mutually_exclusive")
+        is not True
+    ):
+        raise V029ProtocolError("V2.9 terminal rules changed")
+    partition_view = _object(
+        top.get("partition_contract_view"), context="partition_contract_view"
+    )
+    if (
+        partition_view.get("naked_artifacts_fail_closed") is not True
+        or partition_view.get("resolver_relaxation_forbidden") is not True
+    ):
+        raise V029ProtocolError("V2.9 authenticated-view contract changed")
+    pair_contract = _object(
+        top.get("pair_registry_row_contract_fix"),
+        context="pair_registry_row_contract_fix",
+    )
+    if (
+        pair_contract.get("pair_mapping_rows_each") != 250
+        or pair_contract.get("pair_members_each") != 500
+        or pair_contract.get("members_per_pair") != 2
+        or pair_contract.get("ordinary_truth_row_counts_unchanged") is not True
+        or pair_contract.get("truth_commitment_verification_remains_fail_closed")
+        is not True
+        or pair_contract.get("development_fix_commit") != V029_FIXED_CORE_COMMIT
+    ):
+        raise V029ProtocolError("V2.9 pair-registry contract fix changed")
+    evidence = _object(
+        top.get("result_blind_development_evidence"),
+        context="result_blind_development_evidence",
+    )
+    if (
+        evidence.get("pair_registry_and_v019_terminal_preresult_tests_passed") != 22
+        or evidence.get("current_prediction_entry_uses_fixed_v019_loader") is not True
+        or evidence.get("pair_rows_250_accepted") is not True
+        or evidence.get("pair_rows_500_249_251_and_registry_drift_rejected") is not True
+        or evidence.get("formal_attempt_or_outcome_created") is not False
+        or evidence.get("sealed_raw_or_formal_outputs_read") is not False
+    ):
+        raise V029ProtocolError("V2.9 result-blind development evidence changed")
+    predecessor = _object(
+        top.get("predecessor_terminal"), context="predecessor_terminal"
+    )
+    if (
+        predecessor.get("attempt_id") != "v028-formal-20260814-a1"
+        or predecessor.get("reason_code") != "UNKNOWN_PRE_PREDICTION_EXCEPTION"
+        or predecessor.get("scientific_status") != "unclassified_terminal_not_success"
+        or predecessor.get("prediction_commitment_created") is not False
+        or predecessor.get("score_created") is not False
+        or predecessor.get("immutable_and_not_reusable") is not True
+    ):
+        raise V029ProtocolError("V2.8 terminal history changed")
+
+    return ValidatedV029Design(
+        protocol_id=V029_PROTOCOL_ID,
+        status=V029_DESIGN_STATUS,
+        config_path=config_path,
+        config_byte_sha256=V029_AMENDMENT_BYTE_SHA256,
+        config_semantic_sha256=V029_AMENDMENT_SEMANTIC_SHA256,
+        seed_roots=MappingProxyType({str(k): int(v) for k, v in roots.items()}),
+        raw=_deep_freeze(top),
+    )
+
+
+__all__ = [
+    "DEFAULT_V029_AMENDMENT_PATH",
+    "V029_AMENDMENT_BYTE_SHA256",
+    "V029_AMENDMENT_SEMANTIC_SHA256",
+    "V029_DESIGN_FREEZE_COMMIT",
+    "V029_DESIGN_STATUS",
+    "V029_EXPECTED_SEED_ROOTS",
+    "V029_FIXED_CORE_COMMIT",
+    "V029_ONLY_ATTEMPT_ID",
+    "V029_PREREG_BYTE_SHA256",
+    "V029_PROTOCOL_ID",
+    "V029_REQUIREMENTS_BYTE_SHA256",
+    "V029ProtocolError",
+    "ValidatedV029Design",
+    "load_v029_design",
+]

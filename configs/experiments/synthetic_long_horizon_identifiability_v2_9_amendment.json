@@ -2,7 +2,7 @@
   "schema_version": "lifetwin_synthetic_long_horizon_v2_9/1.0.0",
   "protocol_id": "synthetic_long_horizon_identifiability_v2_9",
   "implementation_profile": "v0.24",
-  "status": "preregistered_post_fix_pre_formalization",
+  "status": "implementation_frozen",
   "design_date": "2026-08-14",
   "base_contract": {
     "protocol_id": "synthetic_long_horizon_identifiability_v2_8",
