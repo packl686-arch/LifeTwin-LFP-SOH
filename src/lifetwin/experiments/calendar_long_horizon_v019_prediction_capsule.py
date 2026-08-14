@@ -2457,6 +2457,7 @@ def load_prediction_bundle(
         root=root,
         config_sha256=expected_config_sha256,
         git_commit=expected_git_commit,
+        protocol_id=expected_protocol_id,
         frames=frames,
         state=decoded.state,
         file_hashes=verified_hashes,
