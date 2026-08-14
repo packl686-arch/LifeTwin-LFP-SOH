@@ -1,0 +1,15 @@
+# Exact direct runtime reserved for the V2.10 formal profile.
+# Python runtime: CPython 3.12.13, 64-bit, Windows (MSC v.1944).
+duckdb==1.5.4
+joblib==1.5.3
+jsonschema==4.25.1
+numpy==2.5.1
+pandas==3.0.3
+scikit-learn==1.9.0
+scipy==1.18.0
+threadpoolctl==3.6.0
+
+# Verification-only tools used before implementation freeze.
+pytest==9.1.1
+ruff==0.12.12
+
