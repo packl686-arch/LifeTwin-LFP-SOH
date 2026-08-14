@@ -600,8 +600,14 @@ _TRUTH_REQUIRED_ROWS = MappingProxyType(
         "audit_truth.csv": 7_600,
         "intrinsic_matched_truth.csv": 4_000,
         "stress_plan_matched_truth.csv": 4_000,
-        "intrinsic_matched_pairs.csv": 500,
-        "stress_plan_matched_pairs.csv": 500,
+        "intrinsic_matched_pairs.csv": PARTITION_MEMBER_COUNTS[
+            "intrinsic_matched_pairs"
+        ]
+        // 2,
+        "stress_plan_matched_pairs.csv": PARTITION_MEMBER_COUNTS[
+            "stress_plan_matched_pairs"
+        ]
+        // 2,
     }
 )
 
