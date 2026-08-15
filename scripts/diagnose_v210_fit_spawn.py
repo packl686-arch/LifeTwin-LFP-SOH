@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 import sys
 import time
-import traceback
 
 
 for variable in (
@@ -25,6 +24,8 @@ os.environ["PYTHONHASHSEED"] = "0"
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+
+from v210_diagnostic_resources import ResourceSampler  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -204,11 +205,24 @@ def _result_hashes(result: prediction.V015FitResult) -> dict[str, str]:
 def _exception_chain(error: BaseException) -> list[dict[str, str]]:
     chain: list[dict[str, str]] = []
     current: BaseException | None = error
+    relationship = "outer"
     seen: set[int] = set()
     while current is not None and id(current) not in seen:
         seen.add(id(current))
-        chain.append({"type": type(current).__name__, "message": str(current)})
-        current = current.__cause__ or current.__context__
+        chain.append(
+            {
+                "exception_class": type(current).__name__,
+                "relationship": relationship,
+            }
+        )
+        if current.__cause__ is not None:
+            current = current.__cause__
+            relationship = "cause"
+        elif not current.__suppress_context__:
+            current = current.__context__
+            relationship = "context"
+        else:
+            current = None
     return chain
 
 
@@ -227,45 +241,82 @@ def main() -> int:
         raise SystemExit("clusters and repeat must be positive")
     prefix, coordinates = _fixture_tables(args.clusters, args.suite)
     observed_hashes: list[dict[str, str]] = []
+    repeat_elapsed_seconds: list[float] = []
+    sampler = ResourceSampler()
+    sampler.start()
     started = time.perf_counter()
     try:
         for _ in range(args.repeat):
+            repeat_started = time.perf_counter()
             result = prediction.fit_structure_library_parallel(
                 prefix_pack=prefix,
                 forecast_coordinates=coordinates,
                 worker_count=args.workers,
             )
             observed_hashes.append(_result_hashes(result))
+            repeat_elapsed_seconds.append(time.perf_counter() - repeat_started)
     except BaseException as error:
-        traceback.print_exception(error)
+        resource_telemetry = sampler.stop()
         print(
             json.dumps(
                 {
+                    "schema_version": "1.0.0",
                     "status": "failed",
+                    "phase": "fit_structure_library_parallel",
                     "clusters": args.clusters,
                     "workers": args.workers,
                     "suite": args.suite,
                     "elapsed_seconds": time.perf_counter() - started,
                     "exception_chain": _exception_chain(error),
+                    "worker_exit_codes": [],
+                    "resource_telemetry": resource_telemetry,
                 },
                 sort_keys=True,
             )
         )
         return 1
+    resource_telemetry = sampler.stop()
     if not all(item == observed_hashes[0] for item in observed_hashes):
-        raise RuntimeError("Repeated probe outputs differ")
+        print(
+            json.dumps(
+                {
+                    "schema_version": "1.0.0",
+                    "status": "failed",
+                    "phase": "repeat_hash_comparison",
+                    "clusters": args.clusters,
+                    "workers": args.workers,
+                    "suite": args.suite,
+                    "elapsed_seconds": time.perf_counter() - started,
+                    "exception_chain": [
+                        {
+                            "exception_class": "RepeatHashMismatch",
+                            "relationship": "outer",
+                        }
+                    ],
+                    "worker_exit_codes": [],
+                    "resource_telemetry": resource_telemetry,
+                },
+                sort_keys=True,
+            )
+        )
+        return 1
     print(
         json.dumps(
             {
+                "schema_version": "1.0.0",
                 "status": "passed",
+                "phase": "completed",
                 "clusters": args.clusters,
                 "workers": args.workers,
                 "repeat": args.repeat,
                 "suite": args.suite,
                 "elapsed_seconds": time.perf_counter() - started,
+                "repeat_elapsed_seconds": repeat_elapsed_seconds,
                 "diagnostic_rows": args.clusters * 86,
                 "forecast_rows": args.clusters * 86 * 8,
                 "hashes": observed_hashes[0],
+                "worker_exit_codes": [],
+                "resource_telemetry": resource_telemetry,
             },
             sort_keys=True,
         )
