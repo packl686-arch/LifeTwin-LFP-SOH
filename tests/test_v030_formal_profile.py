@@ -49,6 +49,7 @@ from lifetwin.experiments.calendar_long_horizon_v019_terminal import (
     TerminalReason,
     classify_terminal_exception,
 )
+from scripts.verify_historical_freezes import current_checkout_is_freeze
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -277,11 +278,19 @@ def test_v030_profile_rejects_other_attempt_before_prediction_capsule(
         )
 
 
-def test_v030_formal_roots_remain_absent_before_authorization() -> None:
+def test_v030_formal_roots_follow_freeze_lifecycle() -> None:
     isolation = load_v030_design().raw["path_isolation"]
     assert isinstance(isolation, Mapping)
-    for role in ("label_free", "sealed_truth", "score", "termination"):
-        assert not (ROOT / isolation[f"{role}_root"]).exists()
+    roots = tuple(
+        ROOT / isolation[f"{role}_root"]
+        for role in ("label_free", "sealed_truth", "score", "termination")
+    )
+    assert len({path.resolve() for path in roots}) == 4
+    if current_checkout_is_freeze(ROOT, FREEZE_RECORD):
+        assert not any(path.exists() for path in roots)
+    else:
+        record = json.loads(FREEZE_RECORD.read_text(encoding="utf-8"))
+        assert record["formal_roots_created_before_implementation_freeze"] is False
 
 
 def test_v030_cli_exposes_no_scientific_or_identity_override() -> None:
@@ -345,8 +354,14 @@ def test_v030_checkpoint_registry_drift_is_a_proven_integrity_void() -> None:
 
 
 @pytest.mark.skipif(not FREEZE_RECORD.is_file(), reason="freeze commit not created")
-def test_v030_formal_and_prediction_attesters_bind_the_same_freeze() -> None:
+def test_v030_formal_and_prediction_attesters_bind_or_reject_head() -> None:
     view = load_v030_contract_view()
+    if not current_checkout_is_freeze(ROOT, FREEZE_RECORD):
+        with pytest.raises(RuntimeError):
+            verify_formal_environment_v030(ROOT, view)
+        with pytest.raises(RuntimeError):
+            verify_prediction_environment_v030(ROOT)
+        return
     formal = verify_formal_environment_v030(ROOT, view)
     prediction = verify_prediction_environment_v030(ROOT)
     assert formal.git_commit == prediction.git_commit

@@ -4,9 +4,12 @@ import argparse
 from datetime import date
 import fnmatch
 import hashlib
+import io
 import json
+import posixpath
 import re
 import subprocess
+import tarfile
 import tomllib
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import unquote, urlparse
@@ -217,10 +220,206 @@ def _broken_markdown_links(project_root: Path, files: list[Path]) -> list[str]:
     return sorted(broken)
 
 
-def verify(project_root: Path) -> dict[str, object]:
+def _version_consistency_from_mapping(
+    files: dict[str, bytes],
+    manifest: dict[str, object],
+) -> dict[str, object]:
+    try:
+        pyproject = tomllib.loads(files["pyproject.toml"].decode("utf-8"))
+        citation = files["CITATION.cff"].decode("utf-8")
+        package_init = files["src/lifetwin/__init__.py"].decode("utf-8")
+        citation_version_match = re.search(
+            r"(?m)^version:\s*[\"']?([^\s\"']+)", citation
+        )
+        citation_date_match = re.search(
+            r"(?m)^date-released:\s*[\"']?([^\s\"']+)", citation
+        )
+        package_version_match = re.search(
+            r"(?m)^__version__\s*=\s*[\"']([^\"']+)", package_init
+        )
+        release_id = str(manifest["release_id"])
+        versions = {
+            "manifest": release_id.rsplit("_v", 1)[-1],
+            "pyproject": str(pyproject["project"]["version"]),
+            "citation": (
+                citation_version_match.group(1) if citation_version_match else None
+            ),
+            "package": (
+                package_version_match.group(1) if package_version_match else None
+            ),
+        }
+        dates = {
+            "manifest": str(manifest["release_date"]),
+            "citation": (
+                citation_date_match.group(1) if citation_date_match else None
+            ),
+        }
+        valid_dates = all(value is not None for value in dates.values())
+        if valid_dates:
+            for value in dates.values():
+                date.fromisoformat(str(value))
+        passed = (
+            all(value is not None for value in versions.values())
+            and len(set(versions.values())) == 1
+            and valid_dates
+            and len(set(dates.values())) == 1
+        )
+        return {
+            "status": "passed" if passed else "failed",
+            "versions": versions,
+            "release_dates": dates,
+        }
+    except (
+        KeyError,
+        TypeError,
+        UnicodeError,
+        ValueError,
+        tomllib.TOMLDecodeError,
+    ) as exc:
+        return {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+
+
+def _broken_markdown_links_from_mapping(files: dict[str, bytes]) -> list[str]:
+    available = set(files)
+    for path in tuple(files):
+        parent = PurePosixPath(path).parent
+        while parent != PurePosixPath("."):
+            available.add(parent.as_posix())
+            parent = parent.parent
+    broken: list[str] = []
+    for path, raw in files.items():
+        if not path.lower().endswith(".md"):
+            continue
+        text = raw.decode("utf-8")
+        for match in _MARKDOWN_LINK.finditer(text):
+            target = match.group(1).strip().strip("<>")
+            parsed = urlparse(target)
+            if parsed.scheme or target.startswith("#"):
+                continue
+            path_text = unquote(target.split("#", 1)[0].split("?", 1)[0])
+            if not path_text:
+                continue
+            destination = posixpath.normpath(
+                posixpath.join(posixpath.dirname(path), path_text)
+            )
+            line = text.count("\n", 0, match.start()) + 1
+            if destination == ".." or destination.startswith("../"):
+                broken.append(f"{path}:{line}: link escapes repository: {target}")
+            elif destination not in available:
+                broken.append(f"{path}:{line}: {target}")
+    return sorted(broken)
+
+
+def _verify_revision_mapping(
+    files: dict[str, bytes],
+    *,
+    commit: str,
+) -> dict[str, object]:
+    try:
+        manifest = json.loads(files["release_manifest.json"].decode("utf-8"))
+    except (KeyError, UnicodeError, json.JSONDecodeError) as exc:
+        return {
+            "status": "failed",
+            "revision": commit,
+            "revision_error": f"invalid_manifest:{type(exc).__name__}",
+        }
+    release_file_set = set(files)
+    mismatches = [
+        {
+            "path": path,
+            "expected_sha256": expected,
+            "observed_sha256": (
+                hashlib.sha256(files[path]).hexdigest() if path in files else None
+            ),
+        }
+        for path, expected in manifest["frozen_files_sha256"].items()
+        if path not in files or hashlib.sha256(files[path]).hexdigest() != expected
+    ]
+    forbidden = sorted(
+        path
+        for path in files
+        if any(
+            fnmatch.fnmatch(path, pattern)
+            for pattern in manifest["forbidden_release_globs"]
+        )
+    )
+    oversized = sorted(
+        path
+        for path, raw in files.items()
+        if len(raw) > int(manifest["maximum_file_size_bytes"])
+    )
+    broken_links = _broken_markdown_links_from_mapping(files)
+    version_consistency = _version_consistency_from_mapping(files, manifest)
+    untracked_frozen = sorted(
+        set(manifest["frozen_files_sha256"]) - release_file_set
+    )
+    freeze_gate_value = manifest.get("require_all_tracked_files_frozen", False)
+    freeze_gate_errors: list[dict[str, object]] = []
+    if not isinstance(freeze_gate_value, bool):
+        freeze_gate_errors.append(
+            {
+                "field": "require_all_tracked_files_frozen",
+                "reason": "must_be_boolean",
+                "value": freeze_gate_value,
+            }
+        )
+    freeze_gate_required = freeze_gate_value is True
+    allowlist: set[str] = set()
+    allowlist_errors: list[dict[str, object]] = []
+    unfrozen_tracked: list[str] = []
+    if freeze_gate_required:
+        allowlist, allowlist_errors = _unfrozen_tracked_allowlist(
+            manifest,
+            release_file_set,
+        )
+        unfrozen_tracked = sorted(
+            release_file_set
+            - set(manifest["frozen_files_sha256"])
+            - {"release_manifest.json"}
+            - allowlist
+        )
+    passed = (
+        not mismatches
+        and not forbidden
+        and not oversized
+        and not broken_links
+        and not untracked_frozen
+        and not freeze_gate_errors
+        and not allowlist_errors
+        and not unfrozen_tracked
+        and version_consistency["status"]
+        in {"passed", "not_applicable_legacy_manifest"}
+    )
+    return {
+        "release_id": manifest["release_id"],
+        "status": "passed" if passed else "failed",
+        "scan_mode": "git_revision_tree",
+        "scanned_file_count": len(release_file_set),
+        "manifest_tracked": "release_manifest.json" in release_file_set,
+        "frozen_file_count": len(manifest["frozen_files_sha256"]),
+        "untracked_frozen_files": untracked_frozen,
+        "require_all_tracked_files_frozen": freeze_gate_required,
+        "tracked_file_freeze_gate_errors": freeze_gate_errors,
+        "unfrozen_tracked_allowlist": sorted(allowlist),
+        "unfrozen_tracked_allowlist_errors": allowlist_errors,
+        "unfrozen_tracked_files": unfrozen_tracked,
+        "hash_mismatches": mismatches,
+        "forbidden_files": forbidden,
+        "oversized_files": oversized,
+        "broken_markdown_links": broken_links,
+        "version_consistency": version_consistency,
+        "revision": commit,
+    }
+
+
+def _verify_release_files(
+    project_root: Path,
+    *,
+    release_files: list[Path],
+    scan_mode: str,
+) -> dict[str, object]:
     manifest_path = project_root / "release_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    release_files, scan_mode = _release_files(project_root)
     release_file_set = {
         path.relative_to(project_root).as_posix()
         for path in release_files
@@ -260,12 +459,12 @@ def verify(project_root: Path) -> dict[str, object]:
     version_consistency = _version_consistency(project_root, manifest)
     manifest_tracked = (
         "release_manifest.json" in release_file_set
-        if scan_mode == "git_tracked_files"
+        if scan_mode in {"git_tracked_files", "git_revision_tree"}
         else None
     )
     untracked_frozen = (
         sorted(set(manifest["frozen_files_sha256"]) - release_file_set)
-        if scan_mode == "git_tracked_files"
+        if scan_mode in {"git_tracked_files", "git_revision_tree"}
         else []
     )
     freeze_gate_value = manifest.get("require_all_tracked_files_frozen", False)
@@ -283,7 +482,7 @@ def verify(project_root: Path) -> dict[str, object]:
     allowlist_errors: list[dict[str, object]] = []
     unfrozen_tracked: list[str] = []
     if freeze_gate_required:
-        if scan_mode != "git_tracked_files":
+        if scan_mode not in {"git_tracked_files", "git_revision_tree"}:
             freeze_gate_errors.append(
                 {
                     "field": "require_all_tracked_files_frozen",
@@ -340,11 +539,77 @@ def verify(project_root: Path) -> dict[str, object]:
     return result
 
 
+def verify(project_root: Path) -> dict[str, object]:
+    """Verify the current checkout against its public-release manifest."""
+
+    release_files, scan_mode = _release_files(project_root)
+    return _verify_release_files(
+        project_root,
+        release_files=release_files,
+        scan_mode=scan_mode,
+    )
+
+
+def verify_revision(project_root: Path, revision: str) -> dict[str, object]:
+    """Verify the immutable Git tree that actually carried the release."""
+
+    resolved = subprocess.run(
+        ["git", "-C", str(project_root), "rev-parse", "--verify", f"{revision}^{{commit}}"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    commit = resolved.stdout.strip()
+    if resolved.returncode != 0 or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        return {
+            "status": "failed",
+            "revision": revision,
+            "revision_error": "not_a_commit",
+        }
+    archived = subprocess.run(
+        ["git", "-C", str(project_root), "archive", "--format=tar", commit],
+        capture_output=True,
+        check=False,
+    )
+    if archived.returncode != 0:
+        return {
+            "status": "failed",
+            "revision": commit,
+            "revision_error": "git_archive_failed",
+        }
+    files: dict[str, bytes] = {}
+    with tarfile.open(fileobj=io.BytesIO(archived.stdout), mode="r:") as archive:
+        for member in archive.getmembers():
+            if not member.isfile():
+                continue
+            if not _is_canonical_relative_path(member.name):
+                return {
+                    "status": "failed",
+                    "revision": commit,
+                    "revision_error": "noncanonical_archive_path",
+                }
+            stream = archive.extractfile(member)
+            if stream is None:
+                return {
+                    "status": "failed",
+                    "revision": commit,
+                    "revision_error": "unreadable_archive_member",
+                }
+            files[member.name] = stream.read()
+    return _verify_revision_mapping(files, commit=commit)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify the public release bundle.")
     parser.add_argument("--project-root", type=Path, default=Path("."))
+    parser.add_argument("--revision")
     args = parser.parse_args()
-    result = verify(args.project_root.resolve())
+    root = args.project_root.resolve()
+    result = (
+        verify(root)
+        if args.revision is None
+        else verify_revision(root, args.revision)
+    )
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if result["status"] == "passed" else 1
 

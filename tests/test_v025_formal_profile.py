@@ -40,6 +40,7 @@ from lifetwin.experiments.calendar_long_horizon_v019_terminal import (
     TerminalReason,
     classify_terminal_exception,
 )
+from scripts.verify_historical_freezes import current_checkout_is_freeze
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,8 +223,14 @@ def test_v025_checkpoint_registry_drift_is_a_proven_integrity_void() -> None:
 
 
 @pytest.mark.skipif(not FREEZE_RECORD.is_file(), reason="freeze commit not created")
-def test_v025_formal_and_prediction_attesters_bind_the_same_freeze() -> None:
+def test_v025_formal_and_prediction_attesters_bind_or_reject_head() -> None:
     view = load_v025_contract_view()
+    if not current_checkout_is_freeze(ROOT, FREEZE_RECORD):
+        with pytest.raises(RuntimeError):
+            verify_formal_environment_v025(ROOT, view)
+        with pytest.raises(RuntimeError):
+            verify_prediction_environment_v025(ROOT)
+        return
     formal = verify_formal_environment_v025(ROOT, view)
     prediction = verify_prediction_environment_v025(ROOT)
     assert formal.git_commit == prediction.git_commit
