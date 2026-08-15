@@ -1,0 +1,213 @@
+{
+  "schema_version": "lifetwin_runtime_reliability_v3_0/1.0.0",
+  "protocol_id": "lifetwin_structure_fit_runtime_reliability_v3_0",
+  "implementation_profile": "v3.0-runtime",
+  "status": "preregistered_pre_implementation",
+  "design_date": "2026-08-15",
+  "design_basis": {
+    "design_commit": "e418d9916a014ee3b8ba416081ca5f0f90d09a06",
+    "design_record": "reports/runtime_reliability_v3_0_design_20260815.md",
+    "design_record_byte_sha256": "c5d702ea755fd2064fe4982403184e2f19b7e590aacb6543384010e3d2152900",
+    "runtime_hardening_commit": "f4d067348ca9985d5f55601b09f9648256fbe7b1"
+  },
+  "independence_contract": {
+    "study_type": "truth_free_operational_methods_validation",
+    "v2_10_attempt_terminal_and_immutable": "v030-formal-20260814-a1",
+    "v2_10_outcome_reclassification_forbidden": true,
+    "v2_10_formal_rows_forbidden": true,
+    "v2_10_sealed_truth_forbidden": true,
+    "v2_10_seed_or_artifact_reuse_forbidden": true,
+    "prediction_accuracy_claim_forbidden": true,
+    "reused_public_quantity": "5950_cluster_workload_cardinality_only"
+  },
+  "attempt_registry": {
+    "only_attempt_id": "v300-formal-20260815-a1",
+    "maximum_attempts": 1,
+    "a2_or_replacement_attempt_forbidden": true,
+    "retry_or_resume_for_better_result_forbidden": true,
+    "partial_attempt_consumes_attempt": true,
+    "formal_execution_status": "reserved_pending_post_freeze_authorization",
+    "formal_execution_before_freeze_forbidden": true,
+    "authorization_must_postdate_freeze": true,
+    "authorization_record": "artifacts/v300-formal-20260815-authorization.json"
+  },
+  "seed_registry": {
+    "formal_seed_root": 202608153001,
+    "development_seed_root": 31000000,
+    "formal_and_development_roots_distinct": true,
+    "bit_generator": "numpy.random.PCG64DXSM",
+    "derivation": "For randomized curve zero_based_index i, use formal_seed_root + i as the PCG64DXSM seed.",
+    "formal_seed_consumed": false,
+    "formal_seed_consumption_before_freeze_forbidden": true,
+    "formal_seed_consumption_by_tests_or_preflight_forbidden": true
+  },
+  "environment": {
+    "platform": "Windows",
+    "python": "CPython 3.12.13",
+    "architecture_bits": 64,
+    "requirements_lock": "requirements/v300-formal.txt",
+    "powershell_executable": "pwsh",
+    "pythonhashseed": "0",
+    "numerical_thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "minimum_prelaunch_available_physical_memory_bytes": 4294967296,
+    "minimum_prelaunch_disk_free_bytes": 21474836480
+  },
+  "formal_paths": {
+    "attempt_root": "artifacts/v300-formal-20260815-a1",
+    "authorization_record": "artifacts/v300-formal-20260815-authorization.json",
+    "attempt_root_must_be_absent_before_authorized_launch": true,
+    "authorization_record_must_be_outside_attempt_root": true,
+    "all_predecessor_roots_are_read_only_and_disjoint": true
+  },
+  "workload": {
+    "suite": "mixed",
+    "cluster_id_prefix": "v300-formal-runtime",
+    "structured_curve_period": 12,
+    "mixed_assignment": "even indices use the structured curve; odd indices use the randomized curve",
+    "prefix_point_count": 12,
+    "forecast_days": [
+      1095.75,
+      1461.0,
+      1826.25,
+      2556.75,
+      3652.5,
+      5478.75,
+      7305.0,
+      9131.25
+    ],
+    "structure_library_member_count": 86,
+    "jobs": [
+      {
+        "job_id": "reference-96-serial",
+        "clusters": 96,
+        "workers": 1
+      },
+      {
+        "job_id": "reference-96-parallel-a",
+        "clusters": 96,
+        "workers": 6
+      },
+      {
+        "job_id": "reference-96-parallel-b",
+        "clusters": 96,
+        "workers": 6
+      },
+      {
+        "job_id": "scale-1024-a",
+        "clusters": 1024,
+        "workers": 6
+      },
+      {
+        "job_id": "scale-1024-b",
+        "clusters": 1024,
+        "workers": 6
+      },
+      {
+        "job_id": "full-5950-a",
+        "clusters": 5950,
+        "workers": 6
+      },
+      {
+        "job_id": "full-5950-b",
+        "clusters": 5950,
+        "workers": 6
+      }
+    ],
+    "repeat_inside_each_child": 1,
+    "hash_equivalence_groups": [
+      [
+        "reference-96-serial",
+        "reference-96-parallel-a",
+        "reference-96-parallel-b"
+      ],
+      [
+        "scale-1024-a",
+        "scale-1024-b"
+      ],
+      [
+        "full-5950-a",
+        "full-5950-b"
+      ]
+    ],
+    "failure_matrix_expected_runtime_phases": {
+      "pool_startup": "process_pool_construction",
+      "worker_submission": "worker_submission",
+      "worker_completion_wait": "worker_completion_wait",
+      "worker_exception": "worker_future_result",
+      "broken_process_pool": "broken_process_pool",
+      "invalid_worker_output": "worker_output_validation",
+      "executor_shutdown": "process_pool_shutdown",
+      "verified_bundle_io": null
+    }
+  },
+  "primary_gates": {
+    "all_normal_jobs_exit_zero": true,
+    "all_normal_jobs_status": "passed",
+    "all_normal_job_stderr_empty": true,
+    "all_progress_records_terminal": true,
+    "all_worker_exit_code_lists_empty": true,
+    "exact_hash_equivalence_within_groups": true,
+    "full_scale_elapsed_seconds_maximum": 7200,
+    "peak_process_tree_working_set_bytes_maximum": 2415919104,
+    "peak_process_tree_private_bytes_maximum": 2952790016,
+    "minimum_available_physical_memory_bytes_minimum": 1073741824,
+    "resource_sampling_error_count_maximum": 0,
+    "peak_worker_process_count_maximum": 6,
+    "failure_matrix_status": "passed",
+    "failure_matrix_exact_phase_set_required": true,
+    "overall_rule": "Every primary gate must pass; there is no compensating endpoint or result-dependent exclusion."
+  },
+  "output_contract": {
+    "child_probe_script": "scripts/diagnose_v210_fit_spawn.py",
+    "fault_matrix_script": "scripts/diagnose_v210_failure_matrix.py",
+    "result_blind_wrapper": "scripts/run_result_blind_python.ps1",
+    "formal_runner": "scripts/run_runtime_reliability_v300.py",
+    "normal_probe_stdout_is_single_json_object": true,
+    "stdout_stderr_exit_manifest_are_distinct_and_exclusive": true,
+    "progress_is_atomic_and_terminal": true,
+    "terminal_record_is_atomic": true,
+    "forbidden_payload_fields": [
+      "cluster_id",
+      "observed_retention_pct",
+      "forecast_day",
+      "exception_message",
+      "process_id",
+      "sealed_truth",
+      "score"
+    ],
+    "retained_terminal_files": [
+      "attempt_progress.json",
+      "terminal_record.json",
+      "artifact_manifest.json"
+    ]
+  },
+  "terminal_rules": {
+    "success": "All primary gates pass.",
+    "operational_failure": "A runtime, determinism, resource or telemetry primary gate fails after integrity is established.",
+    "integrity_void": "Source, history, environment, authorization, wrapper or manifest integrity is not established.",
+    "interrupted_inconclusive": "An external interruption prevents a terminal endpoint decision.",
+    "exactly_one_terminal_disposition": true,
+    "terminal_disposition_consumes_attempt": true,
+    "partial_artifacts_retained": true
+  },
+  "freeze_requirements": {
+    "preregistration": "reports/runtime_reliability_v3_0_preregistration.md",
+    "implementation_audit": "reports/runtime_reliability_v3_0_implementation_audit.md",
+    "validation_evidence": "reports/runtime_reliability_v3_0_nonformal_validation.json",
+    "freeze_record": "reports/runtime_reliability_v3_0_freeze_record.json",
+    "freeze_bundle": "reports/runtime_reliability_v3_0_freeze_bundle.json",
+    "linear_topology": "P is the direct child of design D; I is the direct child of P; F is the direct child of I.",
+    "source_tree_and_file_hashes_required": true,
+    "clean_worktree_required": true,
+    "no_source_or_protocol_change_after_freeze": true,
+    "post_freeze_preflight_required": true,
+    "post_freeze_authorization_required": true
+  },
+  "claim_boundary": "A result applies only to the declared truth-free structure-fit workload on the frozen Windows environment. It cannot repair or explain V2.10, establish battery prediction accuracy, or support real-cell, product, station, safety, warranty or business claims."
+}
