@@ -49,6 +49,14 @@ class _InjectedWorkerError(RuntimeError):
     pass
 
 
+class _InjectedSubmissionError(RuntimeError):
+    pass
+
+
+class _InjectedWaitError(RuntimeError):
+    pass
+
+
 class _InjectedShutdownError(RuntimeError):
     pass
 
@@ -72,13 +80,17 @@ class _FakeExecutor:
         self,
         *,
         future: _FakeFuture,
+        submit_error: BaseException | None = None,
         shutdown_error: BaseException | None = None,
     ) -> None:
         self._future = future
+        self._submit_error = submit_error
         self._shutdown_error = shutdown_error
 
     def submit(self, function: object, task: object) -> _FakeFuture:
         del function, task
+        if self._submit_error is not None:
+            raise self._submit_error
         return self._future
 
     def shutdown(self, *, wait: bool, cancel_futures: bool) -> None:
@@ -152,16 +164,23 @@ def _pool_startup_failure() -> BaseException:
 def _executor_failure(
     *,
     future: _FakeFuture,
+    submit_error: BaseException | None = None,
+    wait_error: BaseException | None = None,
     shutdown_error: BaseException | None = None,
 ) -> BaseException:
-    executor = _FakeExecutor(future=future, shutdown_error=shutdown_error)
+    executor = _FakeExecutor(
+        future=future,
+        submit_error=submit_error,
+        shutdown_error=shutdown_error,
+    )
+    wait_probe = wait_error if wait_error is not None else _fake_wait
     with (
         mock.patch.object(
             v015_prediction,
             "ProcessPoolExecutor",
             return_value=executor,
         ),
-        mock.patch.object(v015_prediction, "wait", side_effect=_fake_wait),
+        mock.patch.object(v015_prediction, "wait", side_effect=wait_probe),
     ):
         return _capture_error(
             lambda: v015_prediction._collect_worker_outputs((_task(),), 1)
@@ -170,6 +189,20 @@ def _executor_failure(
 
 def _worker_exception_failure() -> BaseException:
     return _executor_failure(future=_FakeFuture(error=_InjectedWorkerError()))
+
+
+def _submission_failure() -> BaseException:
+    return _executor_failure(
+        future=_FakeFuture(),
+        submit_error=_InjectedSubmissionError(),
+    )
+
+
+def _wait_failure() -> BaseException:
+    return _executor_failure(
+        future=_FakeFuture(),
+        wait_error=_InjectedWaitError(),
+    )
 
 
 def _broken_pool_failure() -> BaseException:
@@ -239,6 +272,7 @@ def _case_result(
     expected_chain: list[str],
     probe: object,
     observe_exit_code: bool = False,
+    expected_runtime_phase: str | None = None,
 ) -> dict[str, object]:
     sampler = ResourceSampler()
     sampler.start()
@@ -254,6 +288,7 @@ def _case_result(
     finally:
         resource_telemetry = sampler.stop()
     identity = _safe_error_identity(error)
+    runtime_telemetry = v015_prediction.result_blind_worker_failure_telemetry(error)
     observed_chain = [
         item["exception_class"] for item in identity["exception_chain"]
     ]
@@ -264,15 +299,23 @@ def _case_result(
             and worker_exit_codes == [_ABRUPT_EXIT_CODE]
         )
     )
+    runtime_phase_ok = (
+        (expected_runtime_phase is None and runtime_telemetry is None)
+        or (
+            runtime_telemetry is not None
+            and runtime_telemetry["phase"] == expected_runtime_phase
+        )
+    )
     return {
         "case": case,
         "phase": phase,
         "status": (
             "expected_failure_observed"
-            if observed_chain == expected_chain and exit_code_ok
+            if observed_chain == expected_chain and exit_code_ok and runtime_phase_ok
             else "unexpected_observation"
         ),
         **identity,
+        "runtime_failure_telemetry": runtime_telemetry,
         "elapsed_seconds": time.perf_counter() - started,
         "worker_exit_codes": worker_exit_codes,
         "worker_exit_code_source": (
@@ -297,33 +340,58 @@ def main() -> int:
         _case_result(
             case="pool_startup",
             phase="process_pool_construction",
-            expected_chain=["V015PredictionError", "_InjectedPoolStartupError"],
+            expected_chain=[
+                "V015WorkerPoolStartupError",
+                "_InjectedPoolStartupError",
+            ],
             probe=_pool_startup_failure,
+            expected_runtime_phase="process_pool_construction",
+        ),
+        _case_result(
+            case="worker_submission",
+            phase="worker_submission",
+            expected_chain=[
+                "V015WorkerSubmissionError",
+                "_InjectedSubmissionError",
+            ],
+            probe=_submission_failure,
+            expected_runtime_phase="worker_submission",
+        ),
+        _case_result(
+            case="worker_completion_wait",
+            phase="worker_completion_wait",
+            expected_chain=["V015WorkerWaitError", "_InjectedWaitError"],
+            probe=_wait_failure,
+            expected_runtime_phase="worker_completion_wait",
         ),
         _case_result(
             case="worker_exception",
             phase="worker_future_result",
-            expected_chain=["V015PredictionError", "_InjectedWorkerError"],
+            expected_chain=["V015WorkerExecutionError", "_InjectedWorkerError"],
             probe=_worker_exception_failure,
+            expected_runtime_phase="worker_future_result",
         ),
         _case_result(
             case="broken_process_pool",
             phase="worker_future_result",
-            expected_chain=["V015PredictionError", "BrokenProcessPool"],
+            expected_chain=["V015WorkerPoolBrokenError", "BrokenProcessPool"],
             probe=_broken_pool_failure,
             observe_exit_code=True,
+            expected_runtime_phase="broken_process_pool",
         ),
         _case_result(
             case="invalid_worker_output",
             phase="worker_output_validation",
-            expected_chain=["V015PredictionError"],
+            expected_chain=["V015WorkerOutputError"],
             probe=_invalid_output_failure,
+            expected_runtime_phase="worker_output_validation",
         ),
         _case_result(
             case="executor_shutdown",
             phase="process_pool_shutdown",
-            expected_chain=["_InjectedShutdownError"],
+            expected_chain=["V015WorkerShutdownError", "_InjectedShutdownError"],
             probe=_shutdown_failure,
+            expected_runtime_phase="process_pool_shutdown",
         ),
     ]
     passed = all(case["status"] == "expected_failure_observed" for case in cases)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import math
@@ -226,6 +227,26 @@ def _exception_chain(error: BaseException) -> list[dict[str, str]]:
     return chain
 
 
+def _commit_progress(path: Path | None, payload: dict[str, object]) -> None:
+    if path is None:
+        return
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    raw = (
+        json.dumps(
+            payload,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        + "\n"
+    ).encode("ascii")
+    temporary.write_bytes(raw)
+    os.replace(temporary, path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--clusters", type=int, default=96)
@@ -236,6 +257,7 @@ def main() -> int:
         choices=("structured", "randomized"),
         default="structured",
     )
+    parser.add_argument("--progress-file", type=Path)
     args = parser.parse_args()
     if args.clusters < 1 or args.repeat < 1:
         raise SystemExit("clusters and repeat must be positive")
@@ -254,73 +276,102 @@ def main() -> int:
                 worker_count=args.workers,
             )
             observed_hashes.append(_result_hashes(result))
+            del result
+            gc.collect()
             repeat_elapsed_seconds.append(time.perf_counter() - repeat_started)
-    except BaseException as error:
-        resource_telemetry = sampler.stop()
-        print(
-            json.dumps(
+            deterministic_so_far = all(
+                item == observed_hashes[0] for item in observed_hashes
+            )
+            _commit_progress(
+                args.progress_file,
                 {
                     "schema_version": "1.0.0",
-                    "status": "failed",
-                    "phase": "fit_structure_library_parallel",
+                    "status": "in_progress",
+                    "completed_repeats": len(observed_hashes),
+                    "requested_repeats": args.repeat,
                     "clusters": args.clusters,
                     "workers": args.workers,
                     "suite": args.suite,
                     "elapsed_seconds": time.perf_counter() - started,
-                    "exception_chain": _exception_chain(error),
-                    "worker_exit_codes": [],
-                    "resource_telemetry": resource_telemetry,
+                    "hashes": observed_hashes[0],
+                    "deterministic_so_far": deterministic_so_far,
+                    "formal_inputs_used": False,
+                    "formal_rows_opened": False,
+                    "formal_seeds_used": False,
+                    "sealed_truth_opened": False,
                 },
-                sort_keys=True,
             )
-        )
+            if not deterministic_so_far:
+                break
+    except BaseException as error:
+        resource_telemetry = sampler.stop()
+        runtime_telemetry = prediction.result_blind_worker_failure_telemetry(error)
+        payload = {
+            "schema_version": "1.0.0",
+            "status": "failed",
+            "phase": (
+                runtime_telemetry["phase"]
+                if runtime_telemetry is not None
+                else "fit_structure_library_parallel"
+            ),
+            "clusters": args.clusters,
+            "workers": args.workers,
+            "suite": args.suite,
+            "elapsed_seconds": time.perf_counter() - started,
+            "exception_chain": _exception_chain(error),
+            "runtime_failure_telemetry": runtime_telemetry,
+            "worker_exit_codes": (
+                runtime_telemetry["worker_exit_codes"]
+                if runtime_telemetry is not None
+                else []
+            ),
+            "resource_telemetry": resource_telemetry,
+        }
+        _commit_progress(args.progress_file, payload)
+        print(json.dumps(payload, sort_keys=True))
         return 1
     resource_telemetry = sampler.stop()
     if not all(item == observed_hashes[0] for item in observed_hashes):
-        print(
-            json.dumps(
+        payload = {
+            "schema_version": "1.0.0",
+            "status": "failed",
+            "phase": "repeat_hash_comparison",
+            "clusters": args.clusters,
+            "workers": args.workers,
+            "suite": args.suite,
+            "elapsed_seconds": time.perf_counter() - started,
+            "exception_chain": [
                 {
-                    "schema_version": "1.0.0",
-                    "status": "failed",
-                    "phase": "repeat_hash_comparison",
-                    "clusters": args.clusters,
-                    "workers": args.workers,
-                    "suite": args.suite,
-                    "elapsed_seconds": time.perf_counter() - started,
-                    "exception_chain": [
-                        {
-                            "exception_class": "RepeatHashMismatch",
-                            "relationship": "outer",
-                        }
-                    ],
-                    "worker_exit_codes": [],
-                    "resource_telemetry": resource_telemetry,
-                },
-                sort_keys=True,
-            )
-        )
+                    "exception_class": "RepeatHashMismatch",
+                    "relationship": "outer",
+                }
+            ],
+            "runtime_failure_telemetry": None,
+            "worker_exit_codes": [],
+            "resource_telemetry": resource_telemetry,
+        }
+        _commit_progress(args.progress_file, payload)
+        print(json.dumps(payload, sort_keys=True))
         return 1
-    print(
-        json.dumps(
-            {
-                "schema_version": "1.0.0",
-                "status": "passed",
-                "phase": "completed",
-                "clusters": args.clusters,
-                "workers": args.workers,
-                "repeat": args.repeat,
-                "suite": args.suite,
-                "elapsed_seconds": time.perf_counter() - started,
-                "repeat_elapsed_seconds": repeat_elapsed_seconds,
-                "diagnostic_rows": args.clusters * 86,
-                "forecast_rows": args.clusters * 86 * 8,
-                "hashes": observed_hashes[0],
-                "worker_exit_codes": [],
-                "resource_telemetry": resource_telemetry,
-            },
-            sort_keys=True,
-        )
-    )
+    payload = {
+        "schema_version": "1.0.0",
+        "status": "passed",
+        "phase": "completed",
+        "clusters": args.clusters,
+        "workers": args.workers,
+        "repeat": args.repeat,
+        "suite": args.suite,
+        "elapsed_seconds": time.perf_counter() - started,
+        "repeat_elapsed_seconds": repeat_elapsed_seconds,
+        "diagnostic_rows": args.clusters * 86,
+        "forecast_rows": args.clusters * 86 * 8,
+        "hashes": observed_hashes[0],
+        "runtime_failure_telemetry": None,
+        "worker_exit_codes": [],
+        "resource_telemetry": resource_telemetry,
+    }
+    _commit_progress(args.progress_file, payload)
+    print(json.dumps(payload, sort_keys=True))
     return 0
 
 

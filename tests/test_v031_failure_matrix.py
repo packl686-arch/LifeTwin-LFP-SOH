@@ -33,6 +33,8 @@ def test_result_blind_failure_matrix_covers_fit_lifecycle() -> None:
     assert set(cases) == {
         "verified_bundle_io",
         "pool_startup",
+        "worker_submission",
+        "worker_completion_wait",
         "worker_exception",
         "broken_process_pool",
         "invalid_worker_output",
@@ -40,6 +42,28 @@ def test_result_blind_failure_matrix_covers_fit_lifecycle() -> None:
     }
     assert all(
         case["status"] == "expected_failure_observed" for case in cases.values()
+    )
+    assert cases["verified_bundle_io"]["runtime_failure_telemetry"] is None
+    assert cases["pool_startup"]["runtime_failure_telemetry"]["phase"] == (
+        "process_pool_construction"
+    )
+    assert cases["worker_exception"]["runtime_failure_telemetry"]["phase"] == (
+        "worker_future_result"
+    )
+    assert cases["worker_submission"]["runtime_failure_telemetry"]["phase"] == (
+        "worker_submission"
+    )
+    assert cases["worker_completion_wait"]["runtime_failure_telemetry"]["phase"] == (
+        "worker_completion_wait"
+    )
+    assert cases["broken_process_pool"]["runtime_failure_telemetry"]["phase"] == (
+        "broken_process_pool"
+    )
+    assert cases["invalid_worker_output"]["runtime_failure_telemetry"]["phase"] == (
+        "worker_output_validation"
+    )
+    assert cases["executor_shutdown"]["runtime_failure_telemetry"]["phase"] == (
+        "process_pool_shutdown"
     )
     assert cases["verified_bundle_io"]["reason_code"] == (
         "INTEGRITY_ARTIFACT_HASH_MISMATCH"
