@@ -156,6 +156,7 @@ def test_result_blind_wrapper_preserves_native_exit_and_hashes(tmp_path: Path) -
     payload = json.loads(manifest.read_text(encoding="utf-8"))
     assert payload["wrapper_status"] == "completed"
     assert payload["process_exit_code"] == 7
+    assert payload["timed_out"] is False
     assert payload["launch_exception_class"] is None
     assert payload["stdout_sha256"] == hashlib.sha256(stdout.read_bytes()).hexdigest()
     assert payload["stderr_sha256"] == hashlib.sha256(stderr.read_bytes()).hexdigest()
@@ -165,3 +166,47 @@ def test_result_blind_wrapper_preserves_native_exit_and_hashes(tmp_path: Path) -
     second = subprocess.run(command, check=False, capture_output=True, text=True)
     assert second.returncode != 0
     assert json.loads(manifest.read_text(encoding="utf-8")) == payload
+
+
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("pwsh") is None,
+    reason="PowerShell wrapper is Windows-specific",
+)
+def test_result_blind_wrapper_enforces_process_tree_timeout(tmp_path: Path) -> None:
+    child = tmp_path / "sleep.py"
+    child.write_text("import time\ntime.sleep(30)\n", encoding="ascii")
+    stdout = tmp_path / "stdout.txt"
+    stderr = tmp_path / "stderr.txt"
+    manifest = tmp_path / "exit.json"
+
+    completed = subprocess.run(
+        (
+            "pwsh",
+            "-File",
+            str(ROOT / "scripts/run_result_blind_python.ps1"),
+            "-Python",
+            sys.executable,
+            "-Script",
+            str(child),
+            "-WorkingDirectory",
+            str(tmp_path),
+            "-StdoutPath",
+            str(stdout),
+            "-StderrPath",
+            str(stderr),
+            "-ExitManifestPath",
+            str(manifest),
+            "-TimeoutSeconds",
+            "1",
+        ),
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+
+    assert completed.returncode == 124, completed.stderr
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    assert payload["wrapper_status"] == "completed"
+    assert payload["process_exit_code"] == 124
+    assert payload["timed_out"] is True

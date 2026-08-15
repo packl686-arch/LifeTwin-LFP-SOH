@@ -18,6 +18,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ExitManifestPath,
 
+    [ValidateRange(0, 86400)]
+    [int]$TimeoutSeconds = 0,
+
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ScriptArguments = @()
 )
@@ -54,6 +57,7 @@ if ($outputs | Where-Object { Test-Path -LiteralPath $_ }) {
 $startedUtc = [DateTime]::UtcNow
 $exitCode = $null
 $launchExceptionClass = $null
+$timedOut = $false
 try {
     $arguments = @($scriptPath) + @($ScriptArguments)
     $process = Start-Process `
@@ -63,9 +67,19 @@ try {
         -RedirectStandardOutput $stdoutFull `
         -RedirectStandardError $stderrFull `
         -WindowStyle Hidden `
-        -Wait `
         -PassThru
-    $exitCode = $process.ExitCode
+    if ($TimeoutSeconds -eq 0) {
+        $process.WaitForExit()
+    }
+    else {
+        $exited = $process.WaitForExit($TimeoutSeconds * 1000)
+        if (-not $exited) {
+            $timedOut = $true
+            & taskkill.exe /PID $process.Id /T /F 2>&1 | Out-Null
+            $process.WaitForExit()
+        }
+    }
+    $exitCode = if ($timedOut) { 124 } else { $process.ExitCode }
 }
 catch {
     $launchExceptionClass = $_.Exception.GetType().Name
@@ -84,6 +98,7 @@ $payload = [ordered]@{
     schema_version = '1.0.0'
     wrapper_status = if ($null -eq $launchExceptionClass) { 'completed' } else { 'launch_failed' }
     process_exit_code = $exitCode
+    timed_out = $timedOut
     launch_exception_class = $launchExceptionClass
     started_utc = $startedUtc.ToString('o')
     finished_utc = $finishedUtc.ToString('o')

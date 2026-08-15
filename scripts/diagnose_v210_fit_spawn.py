@@ -9,6 +9,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -26,7 +27,10 @@ os.environ["PYTHONHASHSEED"] = "0"
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from v210_diagnostic_resources import ResourceSampler  # noqa: E402
+try:  # noqa: E402
+    from v210_diagnostic_resources import ResourceSampler
+except ModuleNotFoundError:  # pragma: no cover - import-mode compatibility
+    from scripts.v210_diagnostic_resources import ResourceSampler
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,9 +86,13 @@ def _structured_curve(index: int) -> np.ndarray:
         activation = 1.6 * (1.0 - np.exp(-days / 18.0)) * np.exp(-days / 240.0)
         values = 100.0 - scale * years**0.65 + activation
     elif kind == 5:
-        knee = 0.002 * 180.0 * (
-            _stable_softplus((days - 540.0) / 180.0)
-            - _stable_softplus(np.full_like(days, -3.0))
+        knee = (
+            0.002
+            * 180.0
+            * (
+                _stable_softplus((days - 540.0) / 180.0)
+                - _stable_softplus(np.full_like(days, -3.0))
+            )
         )
         values = 100.0 - scale * years**0.55 - knee
     elif kind == 6:
@@ -96,9 +104,7 @@ def _structured_curve(index: int) -> np.ndarray:
     elif kind == 9:
         values = 100.0 - 4.5 * (1.0 - np.exp(-days / 12.0)) - 0.2 * years
     elif kind == 10:
-        values = 100.0 + 2.5 * (1.0 - np.exp(-days / 8.0)) * np.exp(
-            -days / 300.0
-        )
+        values = 100.0 + 2.5 * (1.0 - np.exp(-days / 8.0)) * np.exp(-days / 300.0)
         values -= scale * years**0.5
     else:
         values = 100.0 - 8.0 * years**1.45
@@ -108,23 +114,24 @@ def _structured_curve(index: int) -> np.ndarray:
     return values
 
 
-def _randomized_curve(index: int) -> np.ndarray:
+def _randomized_curve(index: int, seed_root: int = 31_000_000) -> np.ndarray:
     days = np.asarray(PREFIX_DAYS, dtype=np.float64)
     years = days / 365.25
-    rng = np.random.Generator(np.random.PCG64DXSM(31_000_000 + index))
+    rng = np.random.Generator(np.random.PCG64DXSM(seed_root + index))
     loss = rng.uniform(0.0, 10.0) * np.power(years, rng.uniform(0.05, 2.2))
     loss += rng.uniform(0.0, 6.0) * np.power(years, rng.uniform(0.05, 2.2))
     loss += rng.uniform(0.0, 8.0) * (
-        1.0
-        - np.exp(
-            -np.power(days / rng.uniform(3.0, 1800.0), rng.uniform(0.15, 2.5))
-        )
+        1.0 - np.exp(-np.power(days / rng.uniform(3.0, 1800.0), rng.uniform(0.15, 2.5)))
     )
     knee_width = rng.uniform(5.0, 420.0)
     knee_day = rng.uniform(20.0, 900.0)
-    loss += rng.uniform(0.0, 0.015) * knee_width * (
-        _stable_softplus((days - knee_day) / knee_width)
-        - _stable_softplus(np.full_like(days, -knee_day / knee_width))
+    loss += (
+        rng.uniform(0.0, 0.015)
+        * knee_width
+        * (
+            _stable_softplus((days - knee_day) / knee_width)
+            - _stable_softplus(np.full_like(days, -knee_day / knee_width))
+        )
     )
     activation = (
         rng.uniform(-3.0, 6.0)
@@ -139,8 +146,7 @@ def _randomized_curve(index: int) -> np.ndarray:
     innovation_scale = sigma * math.sqrt(1.0 - rho**2)
     for position in range(1, len(days)):
         noise[position] = (
-            rho * noise[position - 1]
-            + innovation_scale * innovations[position]
+            rho * noise[position - 1] + innovation_scale * innovations[position]
         )
     values = 100.0 - loss + activation + noise - noise[0]
     values[0] = 100.0
@@ -150,13 +156,18 @@ def _randomized_curve(index: int) -> np.ndarray:
 def _fixture_tables(
     cluster_count: int,
     suite: str,
+    *,
+    seed_root: int = 31_000_000,
+    cluster_prefix: str = "v031-diagnostic",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     prefix_records: list[dict[str, object]] = []
     coordinate_records: list[dict[str, object]] = []
-    curve_factory = _structured_curve if suite == "structured" else _randomized_curve
     for index in range(cluster_count):
-        cluster_id = f"v031-diagnostic-{index:05d}"
-        curve = curve_factory(index)
+        cluster_id = f"{cluster_prefix}-{index:05d}"
+        if suite == "structured" or (suite == "mixed" and index % 2 == 0):
+            curve = _structured_curve(index)
+        else:
+            curve = _randomized_curve(index, seed_root)
         if not np.isfinite(curve).all():
             raise RuntimeError("Diagnostic curve is nonfinite")
         for day, observed in zip(PREFIX_DAYS, curve, strict=True):
@@ -254,14 +265,74 @@ def main() -> int:
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument(
         "--suite",
-        choices=("structured", "randomized"),
+        choices=("structured", "randomized", "mixed"),
         default="structured",
     )
+    parser.add_argument("--seed-root", type=int, default=31_000_000)
+    parser.add_argument("--cluster-prefix", default="v031-diagnostic")
+    parser.add_argument(
+        "--execution-profile",
+        choices=("nonformal", "v300-formal"),
+        default="nonformal",
+    )
+    parser.add_argument("--authorization-record", type=Path)
     parser.add_argument("--progress-file", type=Path)
     args = parser.parse_args()
     if args.clusters < 1 or args.repeat < 1:
         raise SystemExit("clusters and repeat must be positive")
-    prefix, coordinates = _fixture_tables(args.clusters, args.suite)
+    if args.workers < 1:
+        raise SystemExit("workers must be positive")
+    if args.seed_root < 0 or args.seed_root > 2**63 - args.clusters:
+        raise SystemExit("seed-root is outside the supported deterministic range")
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,62}", args.cluster_prefix) is None:
+        raise SystemExit("cluster-prefix is invalid")
+    formal_execution = args.execution_profile == "v300-formal"
+    if formal_execution:
+        from lifetwin.experiments.runtime_reliability_v300_protocol import (
+            V300_EXPECTED_JOBS,
+            V300_FORMAL_SEED_ROOT,
+            V300_ONLY_ATTEMPT_ID,
+            V300_PROTOCOL_ID,
+        )
+
+        expected_authorization = (
+            ROOT / "artifacts" / "v300-formal-20260815-authorization.json"
+        ).resolve()
+        if args.authorization_record is None:
+            raise SystemExit("v300-formal requires its fixed authorization record")
+        authorization_path = args.authorization_record.resolve()
+        try:
+            authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise SystemExit("v300-formal authorization is unreadable") from exc
+        if (
+            authorization_path != expected_authorization
+            or not isinstance(authorization, dict)
+            or authorization.get("protocol_id") != V300_PROTOCOL_ID
+            or authorization.get("attempt_id") != V300_ONLY_ATTEMPT_ID
+            or authorization.get("authorization_status") != "authorized_post_freeze"
+            or args.seed_root != V300_FORMAL_SEED_ROOT
+            or args.suite != "mixed"
+            or args.cluster_prefix != "v300-formal-runtime"
+            or args.repeat != 1
+            or (args.clusters, args.workers)
+            not in {(clusters, workers) for _, clusters, workers in V300_EXPECTED_JOBS}
+        ):
+            raise SystemExit("v300-formal profile identity is invalid")
+    elif args.authorization_record is not None:
+        raise SystemExit("nonformal probes cannot receive a formal authorization")
+    boundary = {
+        "formal_inputs_used": formal_execution,
+        "formal_rows_opened": False,
+        "formal_seeds_used": formal_execution,
+        "sealed_truth_opened": False,
+    }
+    prefix, coordinates = _fixture_tables(
+        args.clusters,
+        args.suite,
+        seed_root=args.seed_root,
+        cluster_prefix=args.cluster_prefix,
+    )
     observed_hashes: list[dict[str, str]] = []
     repeat_elapsed_seconds: list[float] = []
     sampler = ResourceSampler()
@@ -295,10 +366,7 @@ def main() -> int:
                     "elapsed_seconds": time.perf_counter() - started,
                     "hashes": observed_hashes[0],
                     "deterministic_so_far": deterministic_so_far,
-                    "formal_inputs_used": False,
-                    "formal_rows_opened": False,
-                    "formal_seeds_used": False,
-                    "sealed_truth_opened": False,
+                    **boundary,
                 },
             )
             if not deterministic_so_far:
@@ -326,6 +394,7 @@ def main() -> int:
                 else []
             ),
             "resource_telemetry": resource_telemetry,
+            **boundary,
         }
         _commit_progress(args.progress_file, payload)
         print(json.dumps(payload, sort_keys=True))
@@ -349,6 +418,7 @@ def main() -> int:
             "runtime_failure_telemetry": None,
             "worker_exit_codes": [],
             "resource_telemetry": resource_telemetry,
+            **boundary,
         }
         _commit_progress(args.progress_file, payload)
         print(json.dumps(payload, sort_keys=True))
@@ -369,6 +439,7 @@ def main() -> int:
         "runtime_failure_telemetry": None,
         "worker_exit_codes": [],
         "resource_telemetry": resource_telemetry,
+        **boundary,
     }
     _commit_progress(args.progress_file, payload)
     print(json.dumps(payload, sort_keys=True))
