@@ -408,8 +408,6 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 
 提交人：Jincheng Liu
 
-公开工程版本：`0.14.1`（标签冻结于 2026-08-07）
-
 最新研究证据：V3.0 runtime-reliability formal closeout
 [`v300-formal-success-20260816`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/tree/v300-formal-success-20260816)
 
