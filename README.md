@@ -27,8 +27,9 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
    [预注册](reports/runtime_reliability_v3_0_preregistration.md)与
    [实现审计](reports/runtime_reliability_v3_0_implementation_audit.md)：核对结果前规则和精确源码身份。
 3. [评委三分钟简报](JUDGE_BRIEF.md)：一屏了解问题、方法、关键结果和边界。
-4. [在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
-5. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
+4. [评委可视化 Demo](https://packl686-arch.github.io/LifeTwin-LFP-SOH/demo/)：六个视图快速了解定位、工作台、动态更新、模型比较、价值与证据边界；它是界面演示，不伪装成正式模型结果。
+5. [在线证据控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
+6. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
 
 前缀 CLI 面向源码或 editable checkout；当前版本不把冻结参考数据拆离 Git 仓库包装成
 standalone wheel 推理服务。

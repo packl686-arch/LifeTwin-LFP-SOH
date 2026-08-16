@@ -20,6 +20,8 @@ jobs:
           -e ".[dev,showcase]"
       - name: Lint release, audit, and reproduction paths
         run: ruff check src scripts showcase tests
+      - name: Validate judge demo
+        run: node scripts/validate_demo.js
 
   reproduce:
     name: reproduce (${{ matrix.os }})

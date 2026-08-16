@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LifeTwin Demo Summary",
+  "description": "公开、小型、已审查的模型结果摘要。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "model_id",
+    "status",
+    "prediction_commitment",
+    "scored",
+    "comparison"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "lifetwin_demo_summary/1.0"
+    },
+    "model_id": {
+      "type": "string"
+    },
+    "public_version": {
+      "type": "string"
+    },
+    "protocol_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scored",
+        "terminal_pre_prediction",
+        "unavailable"
+      ]
+    },
+    "prediction_commitment": {
+      "type": "boolean"
+    },
+    "scored": {
+      "type": "boolean"
+    },
+    "opened_truth_scope": {
+      "type": "string",
+      "enum": [
+        "none",
+        "development_only",
+        "scoring"
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "description": "仅 scored=true 时允许非空。",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "value",
+          "unit",
+          "role",
+          "evidence_grade"
+        ],
+        "properties": {
+          "value": {},
+          "unit": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "verified_fact",
+              "exploratory_result",
+              "pending_enterprise_validation",
+              "failure_record"
+            ]
+          },
+          "evidence_grade": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "terminal": {
+      "type": "object",
+      "description": "terminal_pre_prediction 时必填。",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "has_scored_result": {
+          "type": "boolean"
+        },
+        "opened_development_truth": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "category",
+        "has_scored_result",
+        "opened_development_truth"
+      ],
+      "additionalProperties": false
+    },
+    "claim_boundary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "source_links": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "description": "比较口径字段，两侧必须逐字段一致才允许数值比较。",
+      "required": [
+        "data_version",
+        "prefix_definition",
+        "prediction_range",
+        "partition_id",
+        "scoring_rule_id",
+        "metric_name",
+        "metric_unit",
+        "protocol_id",
+        "scored"
+      ],
+      "properties": {
+        "data_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefix_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prediction_range": {
+          "type": "string",
+          "minLength": 1
+        },
+        "partition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scoring_rule_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metric_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metric_unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scored": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": { "status": { "const": "scored" } }
+  },
+  "then": {
+    "properties": {
+      "prediction_commitment": { "const": true },
+      "scored": { "const": true }
+    },
+    "required": ["metrics"],
+    "not": { "required": ["terminal"] }
+  },
+  "else": {
+    "if": {
+      "properties": { "status": { "const": "terminal_pre_prediction" } }
+    },
+    "then": {
+      "properties": {
+        "prediction_commitment": { "const": false },
+        "scored": { "const": false }
+      },
+      "required": ["terminal"],
+      "not": { "required": ["metrics"] }
+    },
+    "else": {
+      "if": {
+        "properties": { "status": { "const": "unavailable" } }
+      },
+      "then": {
+        "properties": {
+          "prediction_commitment": { "const": false },
+          "scored": { "const": false }
+        },
+        "not": {
+          "anyOf": [
+            { "required": ["metrics"] },
+            { "required": ["terminal"] }
+          ]
+        }
+      }
+    }
+  }
+}

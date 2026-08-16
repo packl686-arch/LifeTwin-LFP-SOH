@@ -6,6 +6,9 @@ LifeTwin 解决的不是“用两年数据猜一个 25 年数字”，而是：*
 
 ## 立即体验
 
+- [打开评委可视化 Demo](https://packl686-arch.github.io/LifeTwin-LFP-SOH/demo/)：
+  六个视图快速了解定位、工作台、动态更新、双模型比较、价值与证据边界。
+  其中交互数据仅用于界面演示，不冒充正式模型实验结果。
 - [打开在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：
   零安装回放三个冻结案例，查看轨迹、模型路由、诊断区间和拒绝原因；
   [离线单文件](docs/judge-console/index.html)也随仓库冻结。它是静态证据回放，不伪装成实时推理。

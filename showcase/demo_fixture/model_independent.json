@@ -1,0 +1,20 @@
+{
+  "schema_version": "lifetwin_demo_summary/1.0",
+  "model_id": "independent",
+  "status": "unavailable",
+  "prediction_commitment": false,
+  "scored": false,
+  "opened_truth_scope": "none",
+  "claim_boundary": "当前独立模型尚无经过审计、适合公开的最新正式 summary；页面默认显示 unavailable。历史 Naumann 回顾性案例仅作为公开证据案例展示，不代表当前 independent、海辰产品或电站验证。",
+  "comparison": {
+    "data_version": "none",
+    "prefix_definition": "none",
+    "prediction_range": "none",
+    "partition_id": "none",
+    "scoring_rule_id": "none",
+    "metric_name": "none",
+    "metric_unit": "none",
+    "protocol_id": "none",
+    "scored": false
+  }
+}
