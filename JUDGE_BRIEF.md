@@ -19,6 +19,18 @@ python -m lifetwin.cli calendar-prefix-predict `
   --output-dir artifacts/product-demo
 ```
 
+## 最新冻结结论
+
+2026-08-16，独立预注册的 V3.0 运行时可靠性研究完成唯一获授权正式尝试
+`v300-formal-20260815-a1`，终态为 **`success`**：7/7 正常作业完成，固定 8-case
+故障矩阵通过，10/10 联合成功门通过，独立复算结论一致。完整证据见
+[正式收口报告](reports/runtime_reliability_v3_0_formal_closeout_20260816.md)和
+[机器可读结果](reports/runtime_reliability_v3_0_formal_result_20260816.json)。
+
+这个成功只回答“冻结的混合合成结构拟合工作负载能否在声明的 Windows 环境中确定性、
+有界且诊断透明地完成”。它没有接触密封真值，没有评估电池预测准确度，也不改写
+V0.14/V1 的科学失败或 V2.10 的预测前异常终态。
+
 ## 方法闭环
 
 `10 点短期前缀 → 严格未来标签防火墙 → 跨温度/SOC 层次先验更新 → 异常形状门控
@@ -64,11 +76,13 @@ V0.14 在查看真值前冻结代码、种子、终点和门槛，对 2,900 条�
 公开 Naumann 证据是 17 条条件均值轨迹、最长约 885 天；Geisbauer 仅是 120 天
 高温压力筛查。它们不能支持个体电芯、储能电站、海辰产品或 15–25 年准确度结论。
 合成长时域结构可辨识性 V1 已按冻结协议运行并失败，因而不会晋升当前门控方法。
-下一步是重新预注册 V2：分离中心预测与风险头，增加新真值族和可观测工况协变量，
-并把完全相同前缀的晚期分叉改为部分可识别区间问题。真正的模型确认仍等待许可明确、
-未被查看过结果的独立长期 LFP 队列。
+V2.10 唯一正式尝试在 prediction commitment 前异常终止且未评分；后续因果充分性门失败，
+V2.11 永久关闭。新立项的 V3.0 已证明运行时可靠性，但没有重做科学评分。真正的模型确认
+仍等待许可明确、未被查看过结果的独立长期 LFP 队列，并需要新的问题定义与独立预注册。
 
-完整证据从 [V0.14 长时域压力测试报告](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md)、
+完整证据从 [V3.0 正式收口报告](reports/runtime_reliability_v3_0_formal_closeout_20260816.md)、
+[V2.10 因果充分性终结审计](reports/synthetic_long_horizon_identifiability_v2_10_causal_sufficiency_closeout_20260815.md)、
+[V0.14 长时域压力测试报告](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md)、
 [开题报告补充材料](SUBMISSION_SUPPLEMENT.md)、
 [V0.12 稳健性报告](reports/robustness_and_long_term_protocol_2026-07-21.md) 和
 [发布复现入口](scripts/reproduce_public_release.py) 进入。
