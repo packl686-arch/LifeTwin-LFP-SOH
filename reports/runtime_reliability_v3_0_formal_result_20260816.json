@@ -1,0 +1,168 @@
+{
+  "schema_version": "lifetwin_v300_formal_result/1.0.0",
+  "protocol_id": "lifetwin_structure_fit_runtime_reliability_v3_0",
+  "attempt_id": "v300-formal-20260815-a1",
+  "disposition": "success",
+  "evaluation_passed": true,
+  "failed_gates": [],
+  "freeze_commit": "e5dda98f0b69f4ccc3ddf7eaf4730660f36c1af0",
+  "implementation_commit": "cb6e1908f64325178c7b714aa8c1e2fe61de27b0",
+  "protocol_commit": "942acfa9b221da0d34d4411a76cb37c584293c1f",
+  "authorization_record_sha256": "43a696f392d2bf2efb82a858b1efd89aa025c05f02ea30c51bb8b122270ad94f",
+  "started_utc": "2026-08-16T01:03:59.718724Z",
+  "finished_utc": "2026-08-16T04:33:44.929506Z",
+  "elapsed_seconds": 12585.210782,
+  "formal_seed_consumed": true,
+  "completed_jobs": [
+    "reference-96-serial",
+    "reference-96-parallel-a",
+    "reference-96-parallel-b",
+    "scale-1024-a",
+    "scale-1024-b",
+    "full-5950-a",
+    "full-5950-b"
+  ],
+  "aggregate_rows": {
+    "member_fit_diagnostics": 1224296,
+    "member_forecast_bundle": 9794368
+  },
+  "normal_jobs": [
+    {
+      "job_id": "reference-96-serial",
+      "clusters": 96,
+      "workers": 1,
+      "elapsed_seconds": 276.5096782000037,
+      "peak_working_set_bytes": 311865344,
+      "peak_private_bytes": 276639744,
+      "minimum_available_physical_memory_bytes": 5989068800
+    },
+    {
+      "job_id": "reference-96-parallel-a",
+      "clusters": 96,
+      "workers": 6,
+      "elapsed_seconds": 59.563842999981716,
+      "peak_working_set_bytes": 1084133376,
+      "peak_private_bytes": 1037348864,
+      "minimum_available_physical_memory_bytes": 6531170304
+    },
+    {
+      "job_id": "reference-96-parallel-b",
+      "clusters": 96,
+      "workers": 6,
+      "elapsed_seconds": 60.62147419998655,
+      "peak_working_set_bytes": 1083588608,
+      "peak_private_bytes": 1037312000,
+      "minimum_available_physical_memory_bytes": 6523973632
+    },
+    {
+      "job_id": "scale-1024-a",
+      "clusters": 1024,
+      "workers": 6,
+      "elapsed_seconds": 1083.7225409999955,
+      "peak_working_set_bytes": 1190584320,
+      "peak_private_bytes": 1144139776,
+      "minimum_available_physical_memory_bytes": 5342855168
+    },
+    {
+      "job_id": "scale-1024-b",
+      "clusters": 1024,
+      "workers": 6,
+      "elapsed_seconds": 1170.5915153999813,
+      "peak_working_set_bytes": 1194176512,
+      "peak_private_bytes": 1143611392,
+      "minimum_available_physical_memory_bytes": 5136408576
+    },
+    {
+      "job_id": "full-5950-a",
+      "clusters": 5950,
+      "workers": 6,
+      "elapsed_seconds": 5872.370114499994,
+      "peak_working_set_bytes": 1700737024,
+      "peak_private_bytes": 1733279744,
+      "minimum_available_physical_memory_bytes": 3816800256
+    },
+    {
+      "job_id": "full-5950-b",
+      "clusters": 5950,
+      "workers": 6,
+      "elapsed_seconds": 4035.1170987000223,
+      "peak_working_set_bytes": 1700585472,
+      "peak_private_bytes": 2040004608,
+      "minimum_available_physical_memory_bytes": 2144694272
+    }
+  ],
+  "hash_equivalence": {
+    "reference_96": {
+      "member_fit_diagnostics_sha256": "a80fba631b2e23e6e3c3a6edc0bb8fa096c4d082a41a95fe51c9ebea0848320a",
+      "member_forecast_bundle_sha256": "aea663636d47ca5fdd24e1b670003ec6f5e5a94589fcd4addf6d021a191e1dd4"
+    },
+    "scale_1024": {
+      "member_fit_diagnostics_sha256": "28a7f14fcf03f1895728d812f2aa381fbc30b0d7bb31471a6f1efaf4df752ca2",
+      "member_forecast_bundle_sha256": "fdd21ef2764a4927ccdd08d536b329b0ae767239a2f798d6e7aa9c2d9906102a"
+    },
+    "full_5950": {
+      "member_fit_diagnostics_sha256": "2e27ecb8c5c6c23e51def9733dfe9eb02ce0ada1c46cd5c7c5177104d52874c4",
+      "member_forecast_bundle_sha256": "1ad7518be34f436dee2fbc209fc488ff78de0fd1df8f3c6c1f924f9331d1876e"
+    }
+  },
+  "failure_matrix": {
+    "status": "passed",
+    "case_count": 8,
+    "result_blind": true,
+    "formal_inputs_used": false,
+    "formal_rows_opened": false,
+    "formal_seeds_used": false,
+    "sealed_truth_opened": false,
+    "cases": {
+      "verified_bundle_io": "verified_generation_extraction",
+      "pool_startup": "process_pool_construction",
+      "worker_submission": "worker_submission",
+      "worker_completion_wait": "worker_completion_wait",
+      "worker_exception": "worker_future_result",
+      "broken_process_pool": "broken_process_pool",
+      "invalid_worker_output": "worker_output_validation",
+      "executor_shutdown": "process_pool_shutdown"
+    }
+  },
+  "gates": {
+    "normal_record_contract": true,
+    "hash_equivalence": true,
+    "full_scale_elapsed": true,
+    "working_set_ceiling": true,
+    "private_bytes_ceiling": true,
+    "available_memory_floor": true,
+    "resource_sampling": true,
+    "worker_count_ceiling": true,
+    "failure_matrix_exact_phases": true,
+    "failure_matrix_result_blind": true
+  },
+  "integrity_verification": {
+    "independent_evaluation_recomputed": true,
+    "artifact_manifest_exact": true,
+    "artifact_manifest_file_count": 33,
+    "attempt_total_file_count_including_manifest": 34,
+    "terminal_record_sha256": "beed353e1644511d36fa01607e4eef9ad13ad6bbd24d1b0e69dbe3c081df9f1f",
+    "artifact_manifest_sha256": "716fa08e4fb10113ce0594dd72f7b9d292061371792f1e2644f8f6663a297e64",
+    "attempt_progress_sha256": "8af1214167ec4d0e5562dbdf39941b8ea551caad004a9d50a09335d1e43a2f8e",
+    "failure_matrix_stdout_sha256": "fe230fadaddee43c663fd103ec80b034fbb2a7c1866d225df3099fb8e052ffc6",
+    "runner_stdout_sha256": "2a8a0266be0557e884935343e4496e1d4e8b9e8475aa05dc78d79d73b22b163c",
+    "runner_stderr_byte_count": 0,
+    "git_clean_before_closeout": true
+  },
+  "sealed_result_bundle": {
+    "file": "v300-formal-result-20260816.zip",
+    "byte_count": 48087,
+    "sha256": "ffef0c67995c3043655bacd15179970b68578823c8ff7c5efb5c1ef175a2c1e5",
+    "internal_manifest_sha256": "f4f4dea087b5ebcf19131e1af6ceaf11f438010a0d1adeb63a2c82a7bba0d4c3"
+  },
+  "boundary": {
+    "normal_workload_formal_inputs_used": true,
+    "normal_workload_formal_seeds_used": true,
+    "formal_rows_opened": false,
+    "sealed_truth_opened": false,
+    "battery_prediction_accuracy_evaluated": false,
+    "v2_10_reclassified": false,
+    "replacement_attempt_created": false
+  },
+  "claim_boundary": "Success applies only to the preregistered truth-free structure-fit runtime reliability study on the frozen Windows environment. It does not establish battery prediction accuracy, real-cell validity or a repair/reclassification of V2.10."
+}
