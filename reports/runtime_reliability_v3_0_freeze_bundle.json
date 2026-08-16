@@ -1,0 +1,19 @@
+{
+  "schema_version": "lifetwin_v300_freeze_bundle/1.0.0",
+  "protocol_id": "lifetwin_structure_fit_runtime_reliability_v3_0",
+  "review_status": "implementation_frozen",
+  "protocol_commit": "942acfa9b221da0d34d4411a76cb37c584293c1f",
+  "implementation_commit": "cb6e1908f64325178c7b714aa8c1e2fe61de27b0",
+  "config_byte_sha256": "b30dbe205923632daa4e68df8e6be222be7be6e7c74c28f6936743ae44f168b3",
+  "config_semantic_sha256": "2c0c7c5e6361e0ace37f3149191c01a7a54685c4d546187d25800808dabdd9ee",
+  "preregistration_byte_sha256": "3e601b0719929d431e58864b8ca7ad45d62662135b7ce6888b92c7bd97687caf",
+  "requirements_byte_sha256": "6affd64bf8464f5449d3c70685504ff661f50933f8adb4d95abcbdf4aedafe85",
+  "implementation_source_tree_sha256": "3a3ff98c62de68b8391be0e9ca0d045eeda3dbdc9bac2ead7fc638989c21aab2",
+  "freeze_record_sha256": "bc8e5e72bd4337371403319c83925d0d39fa196cf4caa8083924108339086628",
+  "implementation_audit_sha256": "15b5fc854c15c817852605090a38b531de019b5f9ee0684eacd94c75992a959f",
+  "nonformal_validation_sha256": "4890d1a1f482ea1b3cce89a7d45b309fad0e7781d7f187659ff363cd8da1b931",
+  "formal_seed_consumed_before_freeze": false,
+  "formal_attempt_created_before_freeze": false,
+  "authorization_created_before_freeze": false,
+  "formal_root_created_before_freeze": false
+}
