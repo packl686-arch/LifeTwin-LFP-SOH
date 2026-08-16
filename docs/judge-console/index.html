@@ -273,23 +273,241 @@
       .auditline { grid-template-columns: 1fr; }
       .provenance { text-align: left; white-space: normal; }
     }
+
+    /* 2026 judge-facing refinement */
+    :root {
+      --paper: #f5f7f6;
+      --line: #dce3df;
+      --teal: #0b7569;
+      --teal-soft: #e1f0ec;
+      --orange: #b65a19;
+      --orange-soft: #fff1e5;
+      --red: #ad3732;
+      --red-soft: #fbeceb;
+      --green: #2f7250;
+      --green-soft: #e8f2eb;
+      --charcoal: #172824;
+    }
+    body { line-height: 1.45; }
+    a { color: inherit; }
+    .topbar {
+      min-height: 68px;
+      padding: 12px max(18px, calc((100vw - 1440px) / 2 + 18px));
+      border-bottom: 1px solid #31443f;
+      background: var(--charcoal);
+    }
+    .brand { color: #fff; text-decoration: none; align-items: center; gap: 11px; }
+    .brand .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #5c7a72;
+      border-radius: 5px;
+      color: #9ed3c9;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .brand-copy { display: block; }
+    .brand-copy strong { display: block; font-size: 18px; line-height: 1.1; }
+    .brand-copy span { display: block; margin-top: 4px; color: #b8c8c3; font-size: 11px; }
+    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    .top-link, .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid #50645f;
+      border-radius: 4px;
+      color: #ecf3f1;
+      text-decoration: none;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .top-link:hover { background: #243a34; border-color: #77948c; }
+    .mode-badge { color: #a9d5cc; border-color: #315f56; background: #1a302b; }
+    .scopebar {
+      min-height: 50px;
+      padding: 8px max(18px, calc((100vw - 1440px) / 2 + 18px));
+      justify-content: space-between;
+      gap: 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .scope-copy { display: flex; align-items: baseline; gap: 10px; min-width: 280px; }
+    .scope-copy strong { color: var(--ink); }
+    .scope-copy span { color: var(--muted); font-size: 12px; }
+    .scope-tags { display: flex; gap: 7px; overflow-x: auto; padding: 1px 0; }
+    .scope-tag { border-color: #e1c7b3; background: #fff9f4; color: #794826; }
+    .shell { max-width: 1440px; padding: 16px 18px 24px; }
+    .console-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(420px, 1fr);
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--red);
+      background: #fff;
+    }
+    .section-kicker { color: var(--red); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .console-intro h1 { margin: 4px 0 5px; font-size: 22px; line-height: 1.25; }
+    .console-intro p { margin: 0; color: var(--muted); font-size: 12px; }
+    .evidence-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid var(--line); }
+    .evidence-summary div { min-height: 58px; padding: 7px 12px; border-right: 1px solid var(--line); }
+    .evidence-summary span { display: block; color: var(--muted); font-size: 10px; }
+    .evidence-summary strong { display: block; margin-top: 5px; font-size: 15px; line-height: 1.2; }
+    .tabs { position: sticky; top: 0; z-index: 20; margin-bottom: 12px; border-color: #cfd8d3; box-shadow: 0 6px 18px rgba(23, 40, 36, .06); }
+    .tab { min-height: 76px; padding: 9px 12px; position: relative; }
+    .tab small { display: block; color: #7a8783; font-size: 9px; font-weight: 700; }
+    .tab strong { margin-top: 4px; font-size: 13px; line-height: 1.3; padding-right: 72px; }
+    .tab span { max-width: calc(100% - 78px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab em {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 6px;
+      border: 1px solid #e1aaa6;
+      border-radius: 4px;
+      background: var(--red-soft);
+      color: var(--red);
+      font-size: 9px;
+      font-style: normal;
+    }
+    .tab[aria-selected="true"] { box-shadow: inset 0 -3px 0 var(--teal); background: #f2f8f6; }
+    .workspace { grid-template-columns: minmax(0, 1fr) 370px; gap: 12px; }
+    .panel { border-color: #d8e0dc; box-shadow: 0 1px 2px rgba(23, 40, 36, .035); }
+    .visual-panel { padding: 17px 19px 13px; }
+    .visual-head h1 { font-size: 18px; }
+    .truth-control { padding: 7px 10px; background: #fff; }
+    .truth-control input {
+      appearance: none;
+      width: 32px;
+      height: 18px;
+      border: 1px solid #aab6b2;
+      border-radius: 9px;
+      background: #e7ebe9;
+      position: relative;
+      cursor: pointer;
+      transition: background .16s ease, border-color .16s ease;
+    }
+    .truth-control input::after {
+      content: "";
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      left: 2px;
+      top: 2px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(23, 40, 36, .25);
+      transition: transform .16s ease;
+    }
+    .truth-control input:checked { background: var(--teal); border-color: var(--teal); }
+    .truth-control input:checked::after { transform: translateX(14px); }
+    .prefix-strip { border-color: var(--line); background: #f8faf9; }
+    .decision-panel { border-top: 4px solid var(--red); }
+    .decision-head { padding: 15px 16px 13px; background: #fff9f8; }
+    .decision-title { font-size: 22px; }
+    .decision-code { margin-bottom: 6px; color: var(--red); font-size: 10px; font-weight: 800; }
+    .status-cell strong { overflow-wrap: anywhere; }
+    .reasons h2 { color: var(--red); }
+    .metrics { border-color: #d8e0dc; box-shadow: 0 1px 2px rgba(23, 40, 36, .035); }
+    .metric strong { font-size: 17px; }
+    details.auditline {
+      display: block;
+      padding: 0;
+      border-left: 0;
+      border-top: 3px solid var(--orange);
+      box-shadow: 0 1px 2px rgba(23, 40, 36, .03);
+    }
+    .auditline summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 46px;
+      padding: 9px 12px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .auditline summary::-webkit-details-marker { display: none; }
+    .auditline summary::before { content: "+"; color: var(--orange); font-size: 17px; font-weight: 700; }
+    .auditline[open] summary::before { content: "−"; }
+    .audit-summary-copy { flex: 1; }
+    .audit-summary-copy span { display: block; margin-top: 2px; color: var(--muted); }
+    .audit-detail { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+    .top-actions, .scope-tags, .tabs { scrollbar-width: none; }
+    .top-actions::-webkit-scrollbar, .scope-tags::-webkit-scrollbar, .tabs::-webkit-scrollbar { display: none; }
+    @media (max-width: 980px) {
+      .console-intro { grid-template-columns: 1fr; }
+      .evidence-summary { border-left: 0; border-top: 1px solid var(--line); padding-top: 9px; }
+      .workspace { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .topbar { padding: 10px 12px; gap: 9px; }
+      .brand { display: flex; }
+      .brand-copy span { display: block; }
+      .top-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 1px; }
+      .top-link, .mode-badge { min-height: 31px; padding: 5px 8px; }
+      .scopebar { display: block; padding: 8px 12px; }
+      .scope-copy { min-width: 0; }
+      .scope-copy span { display: none; }
+      .scope-tags { margin-top: 6px; }
+      .shell { padding: 10px 10px 18px; }
+      .console-intro { display: block; padding: 15px; }
+      .console-intro h1 { font-size: 19px; }
+      .evidence-summary { grid-template-columns: 1fr 1fr 1fr; margin-top: 12px; }
+      .evidence-summary div { min-height: 62px; padding: 7px; }
+      .evidence-summary strong { font-size: 13px; }
+      .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(225px, 76vw); grid-template-columns: none; overflow-x: auto; }
+      .tab { border-right: 1px solid var(--line); border-bottom: 0; }
+      .visual-panel { padding: 14px 12px 11px; }
+      .chart-wrap { height: 250px; }
+      .decision-panel { min-height: 0; }
+      .auditline summary { align-items: flex-start; }
+      .auditline .provenance { text-align: right; }
+    }
   </style>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><strong>LifeTwin</strong><span>评审证据控制台</span></div>
-    <div class="mode-badge">回顾性证据回放 · 非实时推理</div>
+    <a class="brand" href="./" aria-label="LifeTwin 评审证据控制台首页">
+      <span class="brand-mark">LT</span>
+      <span class="brand-copy"><strong>LifeTwin</strong><span>评审证据控制台</span></span>
+    </a>
+    <div class="top-actions">
+      <span class="mode-badge">回顾性证据回放 · 非实时推理</span>
+      <a class="top-link" href="../demo/">可视化 Demo</a>
+      <a class="top-link" href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">GitHub 证据仓库</a>
+    </div>
   </header>
   <section class="scopebar" aria-label="结论边界">
-    <strong>结论边界</strong>
-    <span class="scope-tag">公开 LFP</span>
-    <span class="scope-tag">条件均值 / 短时外部筛查</span>
-    <span class="scope-tag">最长 885 天</span>
-    <span class="scope-tag">非海辰产品证据</span>
-    <span class="scope-tag">不可支持 15–25 年</span>
+    <div class="scope-copy"><strong>证据边界</strong><span>冻结证据只回答“系统是否知道何时不该承诺”。</span></div>
+    <div class="scope-tags">
+      <span class="scope-tag">公开 LFP</span>
+      <span class="scope-tag">条件均值 / 短时外部筛查</span>
+      <span class="scope-tag">最长 885 天</span>
+      <span class="scope-tag">非海辰产品证据</span>
+      <span class="scope-tag">不可支持 15–25 年</span>
+    </div>
   </section>
 
   <main class="shell">
+    <section class="console-intro" aria-labelledby="console-title">
+      <div>
+        <div class="section-kicker">FROZEN EVIDENCE · FAIL CLOSED</div>
+        <h1 id="console-title">三条失败关闭路径，同一套审计口径</h1>
+        <p>回放通用回退、专用路由校准不足与外部负迁移。所有当前案例均保留诊断证据，并拒绝越过证据边界。</p>
+      </div>
+      <div class="evidence-summary" aria-label="证据控制台摘要">
+        <div><span>冻结案例</span><strong>3</strong></div>
+        <div><span>证据文件</span><strong id="source-count-top">0</strong></div>
+        <div><span>运营终态</span><strong>3 / 3 拒绝</strong></div>
+      </div>
+    </section>
     <nav id="tabs" class="tabs" aria-label="预置证据案例" role="tablist"></nav>
     <section class="workspace">
       <article class="panel visual-panel">
@@ -315,8 +533,9 @@
         </div>
       </article>
 
-      <aside class="panel decision-panel">
+      <aside class="panel decision-panel" aria-live="polite">
         <div class="decision-head">
+          <div class="decision-code">FAIL CLOSED · 主动关闭</div>
           <div class="eyebrow">运营结论</div>
           <div class="decision-title" id="decision-title"></div>
         </div>
@@ -334,8 +553,12 @@
     </section>
 
     <section class="metrics" id="metrics" aria-label="关键指标"></section>
-    <footer class="auditline">
-      <div>
+    <details class="auditline">
+      <summary>
+        <span class="audit-summary-copy"><strong>证据来源与审计指纹</strong><span>展开核对数据归属、成熟度口径与冻结文件摘要</span></span>
+        <span class="provenance"><span id="source-count"></span> 个冻结证据文件<br><code id="source-sha"></code></span>
+      </summary>
+      <div class="audit-detail">
         <strong>审计口径：</strong><span id="audit-copy"></span> E2/E1 是本控制台的证据成熟度标记，不是行业标准等级。
         <div class="attribution">
           数据归属：Naumann <a href="https://doi.org/10.17632/kxh42bfgtj.1">DOI 10.17632/kxh42bfgtj.1</a>；
@@ -346,8 +569,7 @@
           <a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">证据仓库</a>。
         </div>
       </div>
-      <div class="provenance"><span id="source-count"></span> 个冻结证据文件<br><code id="source-sha"></code></div>
-    </footer>
+    </details>
   </main>
 
   <noscript>此自包含证据控制台需要浏览器启用 JavaScript 才能绘图。</noscript>
@@ -382,11 +604,16 @@
         button.id = `tab-${item.id}`;
         button.setAttribute("aria-selected", index === state.active ? "true" : "false");
         button.setAttribute("aria-controls", "chart");
+        const small = document.createElement("small");
+        small.textContent = `CASE 0${index + 1} · ${item.evidence.grade}`;
         const strong = document.createElement("strong");
         strong.textContent = item.title;
         const span = document.createElement("span");
         span.textContent = index < 2 ? item.route : "外部负结果审计";
-        button.append(strong, span);
+        span.title = span.textContent;
+        const status = document.createElement("em");
+        status.textContent = index < 2 ? "拒绝签发" : "拒绝上线";
+        button.append(small, strong, span, status);
         button.addEventListener("click", () => {
           state.active = index;
           state.truth = false;
@@ -535,6 +762,7 @@
     function render() {
       const item = DATA.cases[state.active];
       renderTabs();
+      document.title = `${item.title} · LifeTwin 评审证据控制台`;
       document.getElementById("case-title").textContent = item.title;
       document.getElementById("case-subtitle").textContent = item.subtitle;
       document.getElementById("decision-title").textContent = item.decision.status;
@@ -577,6 +805,7 @@
       if (item.kind === "naumann") renderNaumannChart(item); else renderExternalChart(item);
       document.getElementById("audit-copy").textContent = DATA.evidence_scale[item.evidence.grade];
       document.getElementById("source-count").textContent = DATA.sources.length;
+      document.getElementById("source-count-top").textContent = DATA.sources.length;
       document.getElementById("source-sha").textContent = `页面证据指纹 ${DATA.sources[0].sha256.slice(0, 12)}…`;
     }
 

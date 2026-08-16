@@ -9,7 +9,7 @@ from showcase.build_judge_console import _self_check, build_payload, render_html
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = PROJECT_ROOT / "docs/judge-console/index.html"
 EXPECTED_SHA256 = (
-    "01077d1ffd46a79e23a6c4640c4821c32253a08e82e08e481d8230eed3f3031a"
+    "9552ce42da2e9e843b1ccf758f692f0df1dee6008c325c750f759a6a7179fb7a"
 )
 
 

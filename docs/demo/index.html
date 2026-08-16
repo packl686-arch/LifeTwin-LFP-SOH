@@ -94,37 +94,137 @@ ul.plain li{padding:6px 0;border-bottom:1px solid #edf0ec;color:#495753;font-siz
 ul.plain li:last-child{border-bottom:0}
 @media (max-width:980px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.page-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.chart-wrap{min-height:260px}}
 @media (max-width:680px){.topbar{align-items:flex-start;flex-direction:column;padding:11px 14px}.brand{display:block}.brand span{display:block;margin-top:3px}.scopebar{padding:7px 14px}.shell{padding:10px}.page-nav{grid-template-columns:1fr}.page-tab{border-right:0;border-bottom:1px solid var(--line)}.chart-wrap{height:240px;min-height:0;aspect-ratio:auto}.chart-note{display:block}.chart-note>div:last-child{margin-top:7px}.metrics{grid-template-columns:1fr 1fr}.metric:nth-child(2){border-right:0}.metric{border-bottom:1px solid var(--line)}.metric:nth-last-child(-n+2){border-bottom:0}.auditline{grid-template-columns:1fr}.provenance{text-align:left;white-space:normal}.control-row{flex-direction:column}.control{min-width:unset;flex:0 0 auto;width:100%}.control select,.control input{width:100%}}
+
+/* 2026 judge-facing refinement */
+:root{--paper:#f5f7f6;--panel:#fff;--line:#dce3df;--teal:#0b7569;--teal-soft:#e1f0ec;--orange:#b65a19;--orange-soft:#fff1e5;--red:#ad3732;--red-soft:#fbeceb;--green:#2f7250;--green-soft:#e8f2eb;--charcoal:#172824;--blue:#365f9d;--blue-soft:#edf2f8}
+body{line-height:1.45}
+a{color:inherit}
+.topbar{min-height:68px;padding:12px max(18px,calc((100vw - 1440px)/2 + 18px));border-bottom:1px solid #31443f;background:var(--charcoal)}
+.brand{color:#fff;text-decoration:none;align-items:center;gap:11px}
+.brand .brand-mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid #5c7a72;border-radius:5px;color:#9ed3c9;font-size:12px;font-weight:800}
+.brand-copy{display:block}
+.brand-copy strong{display:block;font-size:18px;line-height:1.1}
+.brand-copy span{display:block;margin-top:4px;color:#b8c8c3;font-size:11px}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.top-link,.mode-badge{display:inline-flex;align-items:center;min-height:34px;padding:7px 10px;border:1px solid #50645f;border-radius:4px;color:#ecf3f1;text-decoration:none;font-size:12px;white-space:nowrap}
+.top-link:hover{background:#243a34;border-color:#77948c}
+.mode-badge{color:#a9d5cc;border-color:#315f56;background:#1a302b}
+.scopebar{min-height:50px;padding:8px max(18px,calc((100vw - 1440px)/2 + 18px));justify-content:space-between;gap:16px;background:#fff;border-bottom:1px solid var(--line);overflow:visible}
+.scope-copy{display:flex;align-items:baseline;gap:10px;min-width:280px}
+.scope-copy strong{color:var(--ink)}
+.scope-copy span{color:var(--muted);font-size:12px}
+.scope-tags{display:flex;gap:7px;overflow-x:auto;padding:1px 0}
+.scope-tag{border-color:#e1c7b3;background:#fff9f4;color:#794826}
+.shell{max-width:1440px;padding:16px 18px 24px}
+.page-nav{position:sticky;top:0;z-index:20;margin-bottom:16px;border-color:#cfd8d3;box-shadow:0 6px 18px rgba(23,40,36,.06)}
+.page-tab{min-height:54px;padding:8px 12px}
+.page-tab strong{font-size:12px}
+.page-tab span{font-size:10px;color:#71807c}
+.page-tab[aria-selected=true]{box-shadow:inset 0 -3px 0 var(--teal);background:#f2f8f6}
+.panel{border-color:#d8e0dc;box-shadow:0 1px 2px rgba(23,40,36,.035)}
+.panel-head{padding:15px 17px 12px}
+.panel-head h1{font-size:16px}
+.panel-body{padding:15px 17px}
+.overview-intro{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:12px;padding:20px 22px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal)}
+.overview-intro h1{margin:4px 0 5px;font-size:24px;line-height:1.25}
+.overview-intro p{max-width:850px;margin:0;color:var(--muted);font-size:13px}
+.section-kicker{color:var(--teal);font-size:10px;font-weight:800;text-transform:uppercase}
+.intro-actions{display:flex;gap:8px;flex:0 0 auto}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-primary:hover{background:#075f56}
+.runtime-panel{border-left:5px solid var(--green)}
+.runtime-summary{display:grid;grid-template-columns:minmax(260px,1.25fr) minmax(0,2fr);gap:18px;align-items:center}
+.runtime-copy h2{margin:3px 0 5px;font-size:16px}
+.runtime-copy p{margin:0;color:var(--muted);font-size:12px}
+.runtime-score{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-left:1px solid var(--line)}
+.runtime-score-item{min-height:64px;padding:8px 14px;border-right:1px solid var(--line)}
+.runtime-score-item span{display:block;color:var(--muted);font-size:10px}
+.runtime-score-item strong{display:block;margin-top:5px;font-size:17px}
+.flow-scroll{overflow-x:auto;padding-bottom:2px}
+.flow-scroll svg{min-width:820px}
+.scenario-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.scenario-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.scenario-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.scenario-preset{min-height:78px;padding:11px 12px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink);cursor:pointer;text-align:left}
+.scenario-preset small{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px}
+.scenario-preset strong{display:block;margin-top:6px;font-size:13px;line-height:1.35}
+.scenario-preset em{display:block;margin-top:5px;color:var(--red);font-size:10px;font-style:normal}
+.scenario-preset[aria-pressed=true]{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal);background:#f2f8f6}
+.advanced-controls{margin-top:10px;border-top:1px solid var(--line)}
+.advanced-controls summary{padding:10px 0;color:var(--teal);font-size:12px;cursor:pointer}
+.advanced-controls .control-row{padding:2px 0 4px}
+.decision-box{position:relative;overflow:hidden;padding:15px 16px}
+.decision-box::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:currentColor;opacity:.8}
+.decision-title{font-size:22px}
+.decision-detail{margin:6px 0 0;color:#52605c;font-size:11px;line-height:1.45}
+.status-grid,.metrics{border-color:#d8e0dc}
+.metric strong{font-size:17px}
+.section-block{min-width:0;padding:14px 15px;border-top:1px solid var(--line);background:#fafcfb}
+.section-block .panel-head,.section-block .panel-body{padding:0;border:0}
+.section-block .panel-head{margin-bottom:8px}
+.section-block .panel-head h1{font-size:14px}
+.panel-body>.grid-2>.section-block:nth-child(-n+2),.panel-body>.grid-2>.section-block:first-child{border-top:3px solid var(--teal)}
+.explain-band{margin-top:14px;padding:14px 15px;border-left:4px solid var(--orange);background:#fff8f1}
+.explain-band h1{margin:0 0 8px;font-size:15px}
+.auditline{border-left:0;border-top:3px solid var(--orange);box-shadow:0 1px 2px rgba(23,40,36,.03)}
+.top-actions,.scope-tags,.page-nav,.flow-scroll{scrollbar-width:none}
+.top-actions::-webkit-scrollbar,.scope-tags::-webkit-scrollbar,.page-nav::-webkit-scrollbar,.flow-scroll::-webkit-scrollbar{display:none}
+@media(max-width:980px){.runtime-summary{grid-template-columns:1fr}.runtime-score{border-left:0;border-top:1px solid var(--line);padding-top:10px}.scenario-presets{grid-template-columns:1fr}.overview-intro{align-items:flex-start}.intro-actions{flex-direction:column}}
+@media(max-width:680px){.topbar{padding:10px 12px;gap:9px}.brand{display:flex}.brand-copy span{display:block}.top-actions{width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:1px}.top-link,.mode-badge{min-height:31px;padding:5px 8px}.scopebar{padding:8px 12px;display:block}.scope-copy{min-width:0}.scope-copy span{display:none}.scope-tags{margin-top:6px}.shell{padding:10px 10px 18px}.page-nav{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(142px,48vw);grid-template-columns:none;overflow-x:auto}.page-tab{border-right:1px solid var(--line);border-bottom:0}.overview-intro{display:block;padding:16px}.overview-intro h1{font-size:20px}.intro-actions{margin-top:12px;flex-direction:row}.runtime-score{grid-template-columns:1fr 1fr}.runtime-score-item:nth-child(2n){border-right:0}.runtime-score-item:nth-child(-n+2){border-bottom:1px solid var(--line)}.scenario-head{display:block}.chart-wrap{height:260px}.status-grid{grid-template-columns:1fr 1fr}.control-row{flex-direction:column}.section-block{padding:12px}.auditline{padding:12px}}
 </style>
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><strong>LifeTwin</strong><span>评委可视化 Demo</span></div>
-  <div class="mode-badge">界面交互演示 · 非实时推理</div>
+  <a class="brand" href="./" aria-label="LifeTwin 评委可视化 Demo 首页">
+    <span class="brand-mark">LT</span>
+    <span class="brand-copy"><strong>LifeTwin</strong><span>评委可视化 Demo</span></span>
+  </a>
+  <div class="top-actions">
+    <span class="mode-badge">界面交互演示 · 非实时推理</span>
+    <a class="top-link" href="../judge-console/">证据控制台</a>
+    <a class="top-link" href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">GitHub 证据仓库</a>
+  </div>
 </header>
 <section class="scopebar" aria-label="结论边界">
-  <strong>结论边界</strong>
-  <span class="scope-tag">公开 LFP</span>
-  <span class="scope-tag">条件均值 / 短时外部筛查</span>
-  <span class="scope-tag">最长 885 天</span>
-  <span class="scope-tag">非海辰产品证据</span>
-  <span class="scope-tag">不可支持 15–25 年</span>
+  <div class="scope-copy"><strong>证据边界</strong><span>只展示冻结公开证据，产品级结论必须另行验证。</span></div>
+  <div class="scope-tags">
+    <span class="scope-tag">公开 LFP</span>
+    <span class="scope-tag">条件均值 / 短时外部筛查</span>
+    <span class="scope-tag">最长 885 天</span>
+    <span class="scope-tag">非海辰产品证据</span>
+    <span class="scope-tag">不可支持 15–25 年</span>
+  </div>
 </section>
 <main class="shell">
   <nav id="page-nav" class="page-nav" aria-label="Demo 页面"></nav>
   <section id="page-overview" class="page" aria-labelledby="page-overview-title">
-    <article class="panel" style="margin-bottom:14px" aria-labelledby="runtime-status-title">
-      <div class="panel-head">
-        <h1 id="runtime-status-title">V3.0 正式运行时可靠性</h1>
-        <p>唯一获授权正式尝试 <code>v300-formal-20260815-a1</code>，冻结 Windows 环境，未接触密封真值。</p>
+    <section class="overview-intro">
+      <div>
+        <div class="section-kicker">JUDGE PATH · EVIDENCE FIRST</div>
+        <h1>从早期 SOH 检查点到可审计签发决策</h1>
+        <p>LifeTwin 把预测轨迹、不确定性、模型路由和拒绝原因放在同一条证据链上。系统可以输出诊断结果，但只有通过证据门后才允许运营签发。</p>
       </div>
-      <div class="panel-body">
-        <div class="status-grid">
-          <div class="status-cell"><span>正式终态</span><strong class="risk-low">success</strong></div>
-          <div class="status-cell"><span>正常作业</span><strong>7 / 7</strong></div>
-          <div class="status-cell"><span>故障矩阵</span><strong>8 / 8</strong></div>
-          <div class="status-cell"><span>联合门</span><strong>10 / 10</strong></div>
+      <div class="intro-actions">
+        <button class="btn btn-primary" type="button" data-page-target="1">进入决策工作台</button>
+        <a class="btn" href="../judge-console/">核验冻结证据</a>
+      </div>
+    </section>
+    <article class="panel runtime-panel" style="margin-bottom:14px" aria-labelledby="runtime-status-title">
+      <div class="panel-body runtime-summary">
+        <div class="runtime-copy">
+          <div class="section-kicker">唯一正式尝试</div>
+          <h2 id="runtime-status-title">V3.0 运行时可靠性已关闭</h2>
+          <p><code>v300-formal-20260815-a1</code> · 冻结 Windows 环境 · 未接触密封真值</p>
         </div>
-        <div class="note" style="margin-top:12px"><strong>声明边界：</strong>这是结构拟合运行时可靠性成功，不是电池预测准确度成功，也不修复或改写 V1 科学失败与 V2.10 历史终态。</div>
+        <div class="runtime-score" aria-label="V3.0 验收摘要">
+          <div class="runtime-score-item"><span>正式终态</span><strong class="risk-low">SUCCESS</strong></div>
+          <div class="runtime-score-item"><span>正常作业</span><strong>7 / 7</strong></div>
+          <div class="runtime-score-item"><span>故障矩阵</span><strong>8 / 8</strong></div>
+          <div class="runtime-score-item"><span>联合门</span><strong>10 / 10</strong></div>
+        </div>
+      </div>
+      <div class="panel-body" style="border-top:1px solid var(--line);padding-top:11px;padding-bottom:11px">
+        <div class="note"><strong>结论口径：</strong>这是结构拟合运行时可靠性成功，不等于电池预测准确度成功，也不改写 V1 科学失败与 V2.10 历史终态。</div>
         <div class="btn-row">
           <a class="btn" href="https://github.com/packl686-arch/LifeTwin-LFP-SOH/blob/main/reports/runtime_reliability_v3_0_formal_closeout_20260816.md">正式收口报告</a>
           <a class="btn" href="https://github.com/packl686-arch/LifeTwin-LFP-SOH/releases/tag/v300-formal-success-20260816">不可变成功标签</a>
@@ -138,7 +238,7 @@ ul.plain li:last-child{border-bottom:0}
       </div>
       <div class="panel-body">
         <div class="note">本页面为界面演示。除非公开结果明确验证，否则以下展示的数值和流程不代表正式模型实验结果。</div>
-        <div style="margin-top:14px"><svg id="overview-flow" viewBox="0 0 900 260" style="width:100%;height:auto;min-height:220px"></svg></div>
+        <div class="flow-scroll" style="margin-top:14px"><svg id="overview-flow" viewBox="0 0 1000 190" style="width:100%;height:auto;min-height:190px"></svg></div>
       </div>
     </div>
     <div class="grid-2">
@@ -166,21 +266,29 @@ ul.plain li:last-child{border-bottom:0}
         <p>选择工况与观测条件，查看历史检查点、SOH 轨迹、预测区间、风险等级与当前决策。</p>
       </div>
       <div class="panel-body">
-        <div class="control-row">
-          <div class="control"><label for="wb-temp">温度 (°C)</label><select id="wb-temp"></select></div>
-          <div class="control"><label for="wb-soc">SOC (%)</label><select id="wb-soc"></select></div>
-          <div class="control"><label for="wb-prefix">已观测检查点数</label><select id="wb-prefix"></select></div>
-          <div class="control"><label for="wb-horizon">预测时域 (天)</label><select id="wb-horizon"></select></div>
-          <div class="control"><label for="wb-quality">数据质量</label><select id="wb-quality"></select></div>
-          <div class="control"><label for="wb-domain">域支持状态</label><select id="wb-domain"></select></div>
+        <div class="scenario-head">
+          <div><div class="section-kicker">冻结演示案例</div><p>三条路径分别展示通用回退、专用路由校准不足与域外拒绝。</p></div>
+          <span class="tag tag-teal">3 个可复核场景</span>
         </div>
+        <div id="wb-presets" class="scenario-presets" role="group" aria-label="工作台预置场景"></div>
+        <details class="advanced-controls">
+          <summary>调整冻结参数组合</summary>
+          <div class="control-row">
+            <div class="control"><label for="wb-temp">温度 (°C)</label><select id="wb-temp"></select></div>
+            <div class="control"><label for="wb-soc">SOC (%)</label><select id="wb-soc"></select></div>
+            <div class="control"><label for="wb-prefix">已观测检查点数</label><select id="wb-prefix"></select></div>
+            <div class="control"><label for="wb-horizon">预测时域 (天)</label><select id="wb-horizon"></select></div>
+            <div class="control"><label for="wb-quality">数据质量</label><select id="wb-quality"></select></div>
+            <div class="control"><label for="wb-domain">域支持状态</label><select id="wb-domain"></select></div>
+          </div>
+        </details>
         <div class="grid-2" style="margin-top:14px">
           <div>
             <div class="chart-wrap"><svg id="chart" viewBox="0 0 820 360" role="img"></svg></div>
             <div class="chart-note"><div class="legend" id="legend"></div><div id="chart-source" class="provenance"></div></div>
           </div>
           <div>
-            <div id="wb-decision" class="decision-box"></div>
+            <div id="wb-decision" class="decision-box" aria-live="polite"></div>
             <div class="status-grid" style="margin-top:12px">
               <div class="status-cell"><span>模型路由</span><strong id="wb-route"></strong></div>
               <div class="status-cell"><span>区间状态</span><strong id="wb-interval"></strong></div>
@@ -241,11 +349,11 @@ ul.plain li:last-child{border-bottom:0}
       <div class="panel-body">
         <div class="note">只有当两个模型满足同一 data_version、prefix_definition、prediction_range、partition_id、scoring_rule_id、metric_name、metric_unit、protocol_id，且两侧 scored=true 时，页面才显示数值比较；否则显示“当前尚无同口径比较结论”。</div>
         <div class="grid-2" style="margin-top:14px">
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>主模型</h1></div>
             <div class="panel-body"><div id="compare-main"></div></div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>独立模型</h1></div>
             <div class="panel-body"><div id="compare-independent"></div></div>
           </article>
@@ -262,7 +370,7 @@ ul.plain li:last-child{border-bottom:0}
       </div>
       <div class="panel-body">
         <div class="grid-2">
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>研发</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -273,7 +381,7 @@ ul.plain li:last-child{border-bottom:0}
               <div class="tag tag-gray" style="margin-top:10px">待企业数据验证</div>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>质保</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -283,7 +391,7 @@ ul.plain li:last-child{border-bottom:0}
               <div class="tag tag-gray" style="margin-top:10px">待企业数据验证</div>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>运维</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -294,7 +402,7 @@ ul.plain li:last-child{border-bottom:0}
               <div class="tag tag-gray" style="margin-top:10px">待企业数据验证</div>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>梯次利用</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -316,7 +424,7 @@ ul.plain li:last-child{border-bottom:0}
       </div>
       <div class="panel-body">
         <div class="grid-2">
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>已核验事实</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -328,7 +436,7 @@ ul.plain li:last-child{border-bottom:0}
               </ul>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>探索性结果</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -339,7 +447,7 @@ ul.plain li:last-child{border-bottom:0}
               <div class="tag tag-orange" style="margin-top:10px">探索性结果 · 非确认性验证</div>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>待企业数据验证</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -351,7 +459,7 @@ ul.plain li:last-child{border-bottom:0}
               <div class="tag tag-red" style="margin-top:10px">未验证 · 不可用于产品承诺</div>
             </div>
           </article>
-          <article class="panel">
+          <article class="section-block">
             <div class="panel-head"><h1>失败 / 拒绝记录</h1></div>
             <div class="panel-body">
               <ul class="plain">
@@ -364,9 +472,9 @@ ul.plain li:last-child{border-bottom:0}
             </div>
           </article>
         </div>
-        <div class="panel" style="margin-top:14px">
-          <div class="panel-body">
-            <h1 style="margin:0 0 8px;font-size:15px">为什么“没有预测”有时是正确行为</h1>
+        <div class="explain-band">
+          <div>
+            <h1>为什么“没有预测”有时是正确行为</h1>
             <p style="margin:0;font-size:12px;color:#495753;line-height:1.6">
               当前公开 LFP 数据的最长观测约 885 天，而储能电站设计寿命通常为 15–25 年。当数据、校准或域支持不足时，强制输出一个看似精确的寿命区间，会把不确定性包装成信心。LifeTwin 的核心安全机制是：在证据不足时明确扩大区间、回退稳定模型，或在无法证明可靠时拒绝签发。这不是保守过头，而是避免把“猜测”伪装成“承诺”。
             </p>
@@ -396,14 +504,14 @@ ul.plain li:last-child{border-bottom:0}
 const DATA = JSON.parse(document.getElementById('demo-data').textContent);
 const NS = 'http://www.w3.org/2000/svg';
 const PAGES = [
-  {id:'overview',title:'总览',subtitle:'定位、流程图与双模型状态'},
-  {id:'workbench',title:'工作台',subtitle:'预测、区间、风险与决策'},
-  {id:'update',title:'动态更新',subtitle:'新检查点如何改变判断'},
-  {id:'compare',title:'双模型对比',subtitle:'证据边界与可比较性'},
-  {id:'value',title:'研发与业务价值',subtitle:'待企业数据验证的工作流'},
-  {id:'limits',title:'证据与限制',subtitle:'已核验事实与待验证内容'}
+  {id:'overview',title:'证据总览',subtitle:'范围、流程与运行状态'},
+  {id:'workbench',title:'决策工作台',subtitle:'轨迹、区间、风险与签发'},
+  {id:'update',title:'滚动更新',subtitle:'新增检查点后的判断变化'},
+  {id:'compare',title:'双模型审计',subtitle:'口径一致才允许比较'},
+  {id:'value',title:'落地价值',subtitle:'研发、质保、运维与梯次'},
+  {id:'limits',title:'边界与失败',subtitle:'已核验、探索性与未验证'}
 ];
-const state = {page:0, updateStep:1};
+const state = {page:0, updateStep:1, workbenchScenario:0};
 
 function el(name, attrs, text) {
   const node = document.createElementNS(NS, name);
@@ -434,6 +542,7 @@ function renderNav() {
 function showPage(index) {
   state.page = index;
   document.querySelectorAll('.page').forEach((el, idx) => { el.hidden = idx !== index; });
+  window.history.replaceState(null, '', '#' + PAGES[index].id);
   renderNav();
   if (index === 0) renderOverview();
   if (index === 1) renderWorkbench();
@@ -501,17 +610,25 @@ function renderFlow() {
   if (!svg) return;
   svg.replaceChildren();
   const nodes = [
-    {x:40,y:120,label:'数据质检'}, {x:160,y:120,label:'层次先验'}, {x:280,y:120,label:'短期更新'},
-    {x:400,y:120,label:'模型路由'}, {x:520,y:80,label:'预测 / 区间'}, {x:520,y:160,label:'拒绝 / 回退'}, {x:640,y:120,label:'滚动更新'}
+    {x:20,label:'冻结输入',detail:'检查点 / 工况 / 数据质量'},
+    {x:220,label:'群体先验',detail:'跨温度、跨 SOC 规律'},
+    {x:420,label:'个体更新',detail:'新增容量检查点'},
+    {x:620,label:'安全门',detail:'域支持 / 区间 / 校准'},
+    {x:820,label:'签发决策',detail:'输出 / 回退 / 主动拒绝'}
   ];
-  const arrows = [[0,1],[1,2],[2,3],[3,4],[3,5],[4,6],[5,6]];
-  arrows.forEach(([a,b]) => {
-    svg.appendChild(el('line', {x1:nodes[a].x+50,y1:nodes[a].y,x2:nodes[b].x-50,y2:nodes[b].y,stroke:'#087b72','stroke-width':2}));
+  nodes.slice(0, -1).forEach((node, index) => {
+    const start = node.x + 160;
+    const end = nodes[index + 1].x - 8;
+    svg.appendChild(el('line', {x1:start,y1:91,x2:end,y2:91,stroke:'#0b7569','stroke-width':2}));
+    svg.appendChild(el('polygon', {points:`${end},86 ${end + 8},91 ${end},96`,fill:'#0b7569'}));
   });
-  nodes.forEach(n => {
-    svg.appendChild(el('rect', {x:n.x,y:n.y-24,width:100,height:48,rx:6,ry:6,fill:'#ffffff',stroke:'#d9ded9','stroke-width':1}));
-    svg.appendChild(el('text', {x:n.x+50,y:n.y+4,'text-anchor':'middle',fill:'#17201f','font-size':12}, n.label));
+  nodes.forEach((node, index) => {
+    svg.appendChild(el('rect', {x:node.x,y:48,width:160,height:86,rx:5,ry:5,fill:index === 4 ? '#fff1e5' : '#ffffff',stroke:index === 4 ? '#d7a276' : '#d4dfda','stroke-width':1.2}));
+    svg.appendChild(el('text', {x:node.x+16,y:70,fill:'#71807c','font-size':10,'font-weight':700}, '0' + (index + 1)));
+    svg.appendChild(el('text', {x:node.x+16,y:96,fill:'#17201f','font-size':15,'font-weight':700}, node.label));
+    svg.appendChild(el('text', {x:node.x+16,y:116,fill:'#61706d','font-size':10}, node.detail));
   });
+  svg.appendChild(el('text', {x:20,y:166,fill:'#61706d','font-size':11}, '关键规则：诊断输出不等于运营签发；证据不足时保留失败并停止承诺。'));
 }
 
 function renderWorkbench() {
@@ -542,9 +659,44 @@ function renderWorkbench() {
     domainSelect.value = initial.domain_support;
 
     [tempSelect, socSelect, prefixSelect, horizonSelect, qualitySelect, domainSelect].forEach(sel => {
-      sel.addEventListener('change', updateWorkbench);
+      sel.addEventListener('change', () => {
+        state.workbenchScenario = -1;
+        updateWorkbench();
+      });
     });
   }
+  renderWorkbenchPresets();
+  updateWorkbench();
+}
+
+function renderWorkbenchPresets() {
+  const container = document.getElementById('wb-presets');
+  if (!container) return;
+  container.replaceChildren();
+  DATA.workbenchScenarios.scenarios.forEach((scenario, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'scenario-preset';
+    button.setAttribute('aria-pressed', index === state.workbenchScenario ? 'true' : 'false');
+    const operational = operationalDecision(scenario);
+    button.innerHTML = '<small><span>CASE 0' + (index + 1) + '</span><span>' + scenario.temperature_c + '°C · SOC ' + Math.round(scenario.soc_fraction * 100) + '%</span></small>' +
+      '<strong>' + scenario.label + '</strong><em>' + operational.preset + '</em>';
+    button.addEventListener('click', () => applyWorkbenchScenario(index));
+    container.appendChild(button);
+  });
+}
+
+function applyWorkbenchScenario(index) {
+  const scenario = DATA.workbenchScenarios.scenarios[index];
+  if (!scenario) return;
+  state.workbenchScenario = index;
+  document.getElementById('wb-temp').value = String(scenario.temperature_c);
+  document.getElementById('wb-soc').value = String(Math.round(scenario.soc_fraction * 100));
+  document.getElementById('wb-prefix').value = String(scenario.prefix_count);
+  document.getElementById('wb-horizon').value = String(scenario.horizon_days);
+  document.getElementById('wb-quality').value = scenario.data_quality;
+  document.getElementById('wb-domain').value = scenario.domain_support;
+  renderWorkbenchPresets();
   updateWorkbench();
 }
 
@@ -565,6 +717,9 @@ function updateWorkbench() {
     s.data_quality === quality &&
     s.domain_support === domain
   );
+
+  state.workbenchScenario = scenario ? scenarios.indexOf(scenario) : -1;
+  renderWorkbenchPresets();
 
   if (!scenario) {
     document.getElementById('chart').replaceChildren();
@@ -591,8 +746,9 @@ function updateWorkbench() {
   document.getElementById('chart-source').textContent = '来源：' + scenario.id + ' · 演示 fixture · 证据等级：E2';
 
   const decisionEl = document.getElementById('wb-decision');
-  decisionEl.className = 'decision-box ' + decisionClass(scenario.decision);
-  decisionEl.innerHTML = '<div class="eyebrow">当前决策</div><div class="decision-title">' + decisionLabel(scenario.decision) + '</div>';
+  const operational = operationalDecision(scenario);
+  decisionEl.className = 'decision-box ' + operational.className;
+  decisionEl.innerHTML = '<div class="eyebrow">' + operational.eyebrow + '</div><div class="decision-title">' + operational.title + '</div><p class="decision-detail">' + operational.detail + '</p>';
 
   document.getElementById('wb-route').textContent = scenario.route || '—';
   document.getElementById('wb-interval').textContent = scenario.interval_available ? '可用' : '不可用';
@@ -615,6 +771,25 @@ function decisionLabel(decision) {
   if (decision === 'predict') return '预测';
   if (decision === 'fallback') return '回退';
   return '拒绝签发';
+}
+
+function operationalDecision(scenario) {
+  const reasons = scenario.reasons || [];
+  const signingRejected = scenario.decision === 'reject' || reasons.some(reason => reason.includes('运营签发拒绝') || reason.includes('主动拒绝'));
+  if (signingRejected) {
+    const diagnosticAvailable = scenario.decision === 'predict';
+    return {
+      className:'decision-reject',
+      eyebrow:diagnosticAvailable ? '诊断层可输出 · 运营层关闭' : '安全门终态',
+      title:'拒绝签发',
+      detail:diagnosticAvailable ? '轨迹与名义诊断区间可用于回顾性查看，但尚未通过独立校准证据门。' : '区间、校准或域支持未达到签发条件，系统停止输出运营承诺。',
+      preset:diagnosticAvailable ? '诊断可用 · 拒绝签发' : '证据不足 · 主动拒绝'
+    };
+  }
+  if (scenario.decision === 'fallback') {
+    return {className:'decision-fallback',eyebrow:'安全门终态',title:'保守回退',detail:'专用路由不稳定，转入更保守的通用路径。',preset:'保守回退'};
+  }
+  return {className:'decision-predict',eyebrow:'安全门终态',title:'允许诊断输出',detail:'当前冻结场景通过诊断输出条件；不自动等同于产品或运营承诺。',preset:'允许诊断输出'};
 }
 
 function renderChart(containerId, checkpoints, forecast, intervalAvailable) {
@@ -679,22 +854,25 @@ function renderChart(containerId, checkpoints, forecast, intervalAvailable) {
   });
 }
 
-function renderLegend(decision, intervalAvailable) {
-  const legend = document.getElementById('legend');
+function renderLegend(decision, intervalAvailable, containerId) {
+  const legend = document.getElementById(containerId || 'legend');
   legend.replaceChildren();
-  legend.innerHTML = '<span class="legend-item"><span class="legend-check"></span> 历史检查点</span><span class="legend-item"><span class="legend-line"></span> 预测轨迹</span><span class="legend-item"><span class="legend-band"></span> 名义诊断区间</span><span class="legend-item"><span class="legend-truth"></span> 最终真值</span><span class="legend-item" style="color:var(--muted);font-size:11px">决策：' + decisionLabel(decision) + ' · 区间：' + (intervalAvailable ? '可用' : '不可用') + '</span>';
+  legend.innerHTML = '<span class="legend-item"><span class="legend-check"></span> 历史检查点</span><span class="legend-item"><span class="legend-line"></span> 预测轨迹</span>' +
+    (intervalAvailable ? '<span class="legend-item"><span class="legend-band"></span> 名义诊断区间</span>' : '') +
+    '<span class="legend-item" style="color:var(--muted);font-size:11px">诊断决策：' + decisionLabel(decision) + ' · 区间：' + (intervalAvailable ? '可用' : '不可用') + '</span>';
 }
 
 function renderUpdate() {
   const sequence = DATA.updateSequence.sequence;
   const slider = document.getElementById('update-slider');
-  if (slider.options.length === 0) {
+  if (slider.dataset.initialized !== 'true') {
     slider.min = 1;
     slider.max = sequence.length;
     slider.value = state.updateStep;
     slider.addEventListener('input', () => { state.updateStep = Number(slider.value); renderUpdateStep(); });
     document.getElementById('update-prev').addEventListener('click', () => { if (state.updateStep > 1) { state.updateStep -= 1; slider.value = state.updateStep; renderUpdateStep(); } });
     document.getElementById('update-next').addEventListener('click', () => { if (state.updateStep < sequence.length) { state.updateStep += 1; slider.value = state.updateStep; renderUpdateStep(); } });
+    slider.dataset.initialized = 'true';
   }
   slider.value = state.updateStep;
   renderUpdateStep();
@@ -706,7 +884,7 @@ function renderUpdateStep() {
   if (!step) return;
   document.getElementById('update-step-label').textContent = '步骤 ' + state.updateStep + ' / ' + sequence.length + '：' + step.label;
   renderChart('update-chart', step.checkpoints, step.forecast || [], step.interval_width !== null && step.interval_width !== undefined);
-  renderLegend(step.decision, step.interval_width !== null && step.interval_width !== undefined);
+  renderLegend(step.decision, step.interval_width !== null && step.interval_width !== undefined, 'update-legend');
 
   const decisionEl = document.getElementById('update-decision');
   decisionEl.className = 'decision-box ' + decisionClass(step.decision);
@@ -725,6 +903,8 @@ function renderUpdateStep() {
     '同路由校准不足或域外支持不足时，区间变为不可用，系统主动拒绝签发，而不是强制输出数字。',
   ];
   document.getElementById('update-note').textContent = notes[state.updateStep - 1] || '';
+  document.getElementById('update-prev').disabled = state.updateStep === 1;
+  document.getElementById('update-next').disabled = state.updateStep === sequence.length;
 }
 
 function renderCompare() {
@@ -799,7 +979,12 @@ function modelCompareHTML(model) {
 
 function init() {
   document.getElementById('source-count').textContent = '5';
-  showPage(0);
+  const requestedPage = PAGES.findIndex(item => item.id === decodeURIComponent(window.location.hash.slice(1)));
+  if (requestedPage >= 0) state.page = requestedPage;
+  document.querySelectorAll('[data-page-target]').forEach(button => {
+    button.addEventListener('click', () => showPage(Number(button.dataset.pageTarget)));
+  });
+  showPage(state.page);
 }
 
 init();
