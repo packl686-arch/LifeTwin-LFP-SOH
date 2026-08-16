@@ -9,7 +9,7 @@
   "unfrozen_tracked_allowlist": [],
   "frozen_files_sha256": {
     ".gitattributes": "16e2294e00fd82f446fbc77fa05f54a04026254a6ed0ecc42e3bb4ad545cd18e",
-    ".github/workflows/ci.yml": "4736850a295359339342c8f19c4d81a302ae3e138836f20a35fd4cef1e962fbc",
+    ".github/workflows/ci.yml": "83c8ee73732de86f3fc21aac868905e663e05cd7edeb532d3a4e436960a2ce53",
     ".gitignore": "65e3c3a3de41291b74c43430b4b375d175753f850f7bc43e30a4772315030b0b",
     "CITATION.cff": "89ef3ed8a6dc84e7b979d757c8a9136bf567c16085f461373df521d10c54b7fe",
     "JUDGE_BRIEF.md": "ec968e013b2084c5f8c46699b60a3e0afc9b553590053b68757b92a696f5c53c",
