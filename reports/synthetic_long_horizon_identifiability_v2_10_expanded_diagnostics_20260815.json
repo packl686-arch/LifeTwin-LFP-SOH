@@ -1,0 +1,145 @@
+{
+  "aggregate": {
+    "completed_cluster_fits": 26236,
+    "diagnostic_rows": 2256296,
+    "elapsed_seconds": 18892.448807600013,
+    "forecast_rows": 18050368,
+    "minimum_available_physical_memory_bytes": 1968652288,
+    "peak_process_tree_private_bytes": 1997172736,
+    "peak_process_tree_working_set_bytes": 1719750656
+  },
+  "audit_date": "2026-08-15",
+  "causal_sufficiency_gate": {
+    "failing_before_passing_after_reproduction": false,
+    "minimal_causal_fix_identified": false,
+    "natural_failure_reproduced": false,
+    "outcome": "v2_11_permanently_closed",
+    "unique_mechanism_identified": false
+  },
+  "conditional_artifacts": {
+    "formal_attempt_created": false,
+    "formal_bundle_created": false,
+    "formal_preflight_run": false,
+    "formal_run_authorization_requested": false,
+    "underlying_fix_commit_c_created": false,
+    "v0_26_implementation_commit_i_created": false,
+    "v2_11_freeze_commit_f_created": false,
+    "v2_11_protocol_commit_p_created": false,
+    "v2_11_seed_created": false
+  },
+  "development_commits": {
+    "exception_chain_diagnostics": "9aa9f0863a4fd95c7643ca120821311ca8763ce5",
+    "result_blind_failure_probes": "14b1c3df388d96bae649298a2a8fccb364985a21"
+  },
+  "diagnostic_boundary": {
+    "formal_generator_used": false,
+    "formal_inputs_used": false,
+    "formal_rows_opened": false,
+    "formal_seeds_used": false,
+    "sealed_truth_opened": false
+  },
+  "discarded_operational_artifact": {
+    "byte_count": 0,
+    "counted_as_computational_failure": false,
+    "path": "scale-5950.json",
+    "reason": "ui_or_tool_polling_interrupted_before_terminal_json"
+  },
+  "failure_matrix": {
+    "case_count": 6,
+    "cases": [
+      "verified_bundle_io",
+      "pool_startup",
+      "worker_exception",
+      "broken_process_pool",
+      "invalid_worker_output",
+      "executor_shutdown"
+    ],
+    "record_sha256": "67c2d6ec487434e93e7305b4a335408996f214391726760b433bfbe22ad66152",
+    "status": "passed",
+    "worker_exit_code_calibration": 71
+  },
+  "formal_terminal": {
+    "attempt_id": "v030-formal-20260814-a1",
+    "failure_window_seconds": 397,
+    "frozen_git_commit": "3b0e4008bad4c82fe5741391c65e004424e19f77",
+    "reason_code": "UNKNOWN_PRE_PREDICTION_EXCEPTION",
+    "scientific_status": "unclassified_terminal_not_success"
+  },
+  "record_root": "D:\\.AAA-current\\LIFE\\v031-expanded-diagnostics-20260815",
+  "scale_probes": [
+    {
+      "clusters": 1024,
+      "elapsed_seconds": 1457.508037200023,
+      "hashes": {
+        "member_fit_diagnostics.csv": "80506b9fe1d17ee7e5e34c14e63633ad20c1c19c311176525dd303a0150cbd78",
+        "member_forecast_bundle.csv": "43b0ad5baf62158a152ce0a50fd5220f6c41b8885348bf9ea3a50d9eabd73bc7"
+      },
+      "peak_process_tree_working_set_bytes": 1267990528,
+      "record": "scale-1024.json",
+      "record_sha256": "945ccae48640ba93380b38d2717281b4fcd4d616978fe422cdb20b67910eb2d8",
+      "repeat": 2,
+      "status": "passed"
+    },
+    {
+      "clusters": 2048,
+      "elapsed_seconds": 3033.8481492000283,
+      "hashes": {
+        "member_fit_diagnostics.csv": "137b4b0a15880a6dce5c5e83bafacf56ac3d66cf05040e27c5f217a25107d49d",
+        "member_forecast_bundle.csv": "88ec34467b1056e29e0e20f9726bbb8f1dd4b48f49f8f9e41c84ab33d96e007c"
+      },
+      "peak_process_tree_working_set_bytes": 1446445056,
+      "record": "scale-2048.json",
+      "record_sha256": "19e4d5b75bce8fd1bfb3a84b096fa5593ad80096d1eb6f833afc0e5fe896da34",
+      "repeat": 2,
+      "status": "passed"
+    },
+    {
+      "clusters": 4096,
+      "elapsed_seconds": 5395.643634399981,
+      "hashes": {
+        "member_fit_diagnostics.csv": "4afc151f7dbc98deb63afd7049772cb597c8abeb9d627fecae2ea38984f49116",
+        "member_forecast_bundle.csv": "1a9b1612d0c09ead14e85b625be75501c7324624a2e41b00477a042bbb33d674"
+      },
+      "peak_process_tree_working_set_bytes": 1595031552,
+      "record": "scale-4096.json",
+      "record_sha256": "9e2e123d0cee6ac0007fe2ec8e5d41ee96d2de9cb40a128801aa3b4d7fa5b99e",
+      "repeat": 2,
+      "status": "passed"
+    },
+    {
+      "clusters": 5950,
+      "elapsed_seconds": 4881.7556649000035,
+      "hashes": {
+        "member_fit_diagnostics.csv": "441fe48ef175b7ac9e0592ea57c8dc6cbc7cc313c7a728f03464324a083ed457",
+        "member_forecast_bundle.csv": "d8b1bfb770ba98181d4322630b8a747ea6db5b2a99bf6719b6fca65faf4dba7d"
+      },
+      "peak_process_tree_working_set_bytes": 1719750656,
+      "record": "scale-5950-a.json",
+      "record_sha256": "8bb015f1b4335de43bd88af5a9405b2cc691dad47745af2ad1254d84bd5970e0",
+      "repeat": 1,
+      "status": "passed"
+    },
+    {
+      "clusters": 5950,
+      "elapsed_seconds": 4123.693321899977,
+      "hashes": {
+        "member_fit_diagnostics.csv": "441fe48ef175b7ac9e0592ea57c8dc6cbc7cc313c7a728f03464324a083ed457",
+        "member_forecast_bundle.csv": "d8b1bfb770ba98181d4322630b8a747ea6db5b2a99bf6719b6fca65faf4dba7d"
+      },
+      "peak_process_tree_working_set_bytes": 1688313856,
+      "record": "scale-5950-b.json",
+      "record_sha256": "b24d4a3bc7e922a236c759891e2234d333bdf18dbb83a9ab269d3513ed082395",
+      "repeat": 1,
+      "status": "passed"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "verification": {
+    "compileall": "passed",
+    "expanded_record_verifier": "V031_EXPANDED_DIAGNOSTICS_OK",
+    "full_suite_excluding_optional_showcase": "1195 passed, 8 repository-state failures in 929.61s",
+    "optional_showcase_in_existing_matplotlib_environment": "2 passed in 2.77s",
+    "ruff": "All checks passed!",
+    "targeted_v031": "5 passed in 8.77s"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "schema_version": "lifetwin_v300_nonformal_validation/1.0.0",
+  "protocol_id": "lifetwin_structure_fit_runtime_reliability_v3_0",
+  "validation_date": "2026-08-16",
+  "implementation_commit": "cb6e1908f64325178c7b714aa8c1e2fe61de27b0",
+  "status": "passed",
+  "record_root": "D:\\.AAA-current\\LIFE\\v300-nonformal-validation-20260815",
+  "boundary": {
+    "formal_inputs_used": false,
+    "formal_rows_opened": false,
+    "formal_seeds_used": false,
+    "sealed_truth_opened": false,
+    "formal_attempt_created": false,
+    "formal_root_created": false,
+    "authorization_record_created": false,
+    "v2_10_formal_rows_opened": false,
+    "v2_10_sealed_truth_opened": false,
+    "development_seed_root": 31000000,
+    "cluster_id_prefix": "v300-development"
+  },
+  "verification": {
+    "targeted_v300_and_shared_fit": "40 passed in 41.80s",
+    "post_amend_v300_lifecycle_targeted": "20 passed in 6.21s",
+    "full_repository_at_implementation_commit": "1229 passed, 2 optional-showcase skips in 1031.77s",
+    "optional_showcase_skip_reason": "The active .venv does not contain optional matplotlib; the two showcase tests were separately verified in the existing matplotlib environment during Stage 1.",
+    "ruff_check": "All checks passed",
+    "ruff_format_check": "8 implementation files already formatted",
+    "compileall": "passed",
+    "git_diff_check": "passed",
+    "git_worktree_at_validation_end": "implementation paths match I; only declared freeze metadata paths pending F",
+    "formal_attempt_root_absent": true,
+    "authorization_record_absent": true
+  },
+  "failure_matrix": {
+    "status": "passed",
+    "case_count": 8,
+    "record": "failure-matrix/stdout.json",
+    "record_sha256": "106d3c605162fcb44808867c8f084d0defbe8f4d38552d885190945d80b3fb90",
+    "exit_manifest_sha256": "f6dd23e61c00b9a50596c9e9356596a31ec4a394aa31d9caa29ab22d7ce4c4a7",
+    "stderr_byte_count": 0,
+    "runtime_phases": {
+      "verified_bundle_io": null,
+      "pool_startup": "process_pool_construction",
+      "worker_submission": "worker_submission",
+      "worker_completion_wait": "worker_completion_wait",
+      "worker_exception": "worker_future_result",
+      "broken_process_pool": "broken_process_pool",
+      "invalid_worker_output": "worker_output_validation",
+      "executor_shutdown": "process_pool_shutdown"
+    }
+  },
+  "reference_equivalence": {
+    "status": "passed",
+    "clusters": 96,
+    "hashes": {
+      "member_fit_diagnostics.csv": "edd442d268319b86f5e04e036637c7c6402f099f88b697abf1a8e2253453ab41",
+      "member_forecast_bundle.csv": "84fce5f535ff0977077d143f9a3563d69eaaaefe7062794766a80b01f1cdd336"
+    },
+    "exact_hash_equivalence": true,
+    "runs": [
+      {
+        "run_id": "reference-96-serial",
+        "workers": 1,
+        "elapsed_seconds": 530.6340675000101,
+        "stdout_sha256": "d86f8b23fafa3bd590cea45b6d93b1bf42afb34520051e2ea71c42a84e3cdd8e",
+        "progress_sha256": "e223446430076d7866433589ac8beec04e8b9bc150db224f609aaca60380e90e",
+        "exit_manifest_sha256": "2fca551bbba099fed706e54debb3a230a17be3576c419edb7852a506dae6bc0b",
+        "stderr_byte_count": 0,
+        "peak_process_tree_working_set_bytes": 311611392,
+        "peak_process_tree_private_bytes": 277159936,
+        "minimum_available_physical_memory_bytes": 4198014976,
+        "sampling_error_count": 0
+      },
+      {
+        "run_id": "reference-96-parallel-a",
+        "workers": 6,
+        "elapsed_seconds": 90.76150289998623,
+        "stdout_sha256": "cfbe7d35c5070ab4f497fb84889d8e230eb24e93282fceb59168c3bffc07c674",
+        "progress_sha256": "44ecae93e91ac14b8906e084b10746e57344e82ac525a8260cf7f4b576191850",
+        "exit_manifest_sha256": "b7d76ce1fa53fd8e9519aced380fdab1029b9625dad1e7f49c0dfe67a265d6cd",
+        "stderr_byte_count": 0,
+        "peak_process_tree_working_set_bytes": 1070718976,
+        "peak_process_tree_private_bytes": 1035427840,
+        "minimum_available_physical_memory_bytes": 3279405056,
+        "sampling_error_count": 0
+      },
+      {
+        "run_id": "reference-96-parallel-b",
+        "workers": 6,
+        "elapsed_seconds": 71.44879549997859,
+        "stdout_sha256": "1faad60d192ddccfe4a070fee7be36d1903afacfed0e0e2f8fc3cae5a255af29",
+        "progress_sha256": "53a574bd632c587946b6f04db6876410e1f1e4db005e5a8cc883118581e2bb71",
+        "exit_manifest_sha256": "be24e05c137c6e392c58518b36669b51d2b01f64427353ddb2db4fde6653411f",
+        "stderr_byte_count": 0,
+        "peak_process_tree_working_set_bytes": 1072844800,
+        "peak_process_tree_private_bytes": 1036701696,
+        "minimum_available_physical_memory_bytes": 4082671616,
+        "sampling_error_count": 0
+      }
+    ]
+  },
+  "full_scale_validation": {
+    "status": "passed",
+    "run_id": "full-5950-b",
+    "clusters": 5950,
+    "workers": 6,
+    "elapsed_seconds": 4246.406647099997,
+    "diagnostic_rows": 511700,
+    "forecast_rows": 4093600,
+    "hashes": {
+      "member_fit_diagnostics.csv": "373f2eb2d7b01e84e0ef5bf3fdf9243dfdc69ae3ad0205186e42a96532434a7a",
+      "member_forecast_bundle.csv": "348e0044d057e27a105e8481a9921e9a01d2107e3524faa1fc2b12695071331c"
+    },
+    "stdout_sha256": "c21b181be1a1f8a6a9a4943cd9a7bbddfcfc44f16c869f87a86c7071c342a50c",
+    "progress_sha256": "b155a526c1e6c7ad47d067149a8c051f320fd699c285f06c9d33368d068c3f94",
+    "exit_manifest_sha256": "215a8a681479457021662fc0b9b916666c224eca949d935364918a999e96f72d",
+    "stderr_byte_count": 0,
+    "resource_telemetry": {
+      "backend": "windows_toolhelp_psapi_v1",
+      "sample_count": 19277,
+      "sampling_error_count": 0,
+      "peak_process_tree_process_count": 7,
+      "peak_worker_process_count": 6,
+      "peak_process_tree_working_set_bytes": 1720983552,
+      "peak_process_tree_private_bytes": 1732968448,
+      "minimum_available_physical_memory_bytes": 5568704512,
+      "disk_free_start_bytes": 162673000448,
+      "disk_free_end_bytes": 162501509120
+    },
+    "gates": {
+      "elapsed_seconds_at_most_7200": true,
+      "working_set_at_most_2415919104": true,
+      "private_bytes_at_most_2952790016": true,
+      "available_memory_at_least_1073741824": true,
+      "sampling_error_count_zero": true,
+      "worker_count_at_most_6": true,
+      "worker_exit_codes_empty": true,
+      "stderr_empty": true,
+      "progress_equals_stdout": true,
+      "wrapper_exit_code_zero": true
+    }
+  },
+  "external_interruption": {
+    "record": "full-5950",
+    "classification": "external_tool_session_interruption",
+    "counted_as_computational_failure": false,
+    "observed_outer_exit_code": 1073807364,
+    "stdout_byte_count": 0,
+    "stderr_byte_count": 0,
+    "exit_manifest_created": false,
+    "progress_record_created": false,
+    "worker_process_left_running": false,
+    "disposition": "retained_not_reused_or_overwritten"
+  },
+  "overall_gates": {
+    "failure_matrix_exact_phases": true,
+    "reference_worker_count_invariance": true,
+    "reference_fresh_process_determinism": true,
+    "full_scale_completion": true,
+    "full_scale_resource_bounds": true,
+    "result_blind_output_boundary": true,
+    "formal_firewall_preserved": true,
+    "all_required_tests_and_static_checks": true
+  },
+  "claim_boundary": "This validates only the nonformal truth-free development workload on the implementation runtime. It is not a formal V3.0 result, does not use the V3.0 formal seed and does not repair, explain or reclassify V2.10."
+}

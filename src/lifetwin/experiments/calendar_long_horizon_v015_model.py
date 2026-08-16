@@ -130,7 +130,7 @@ class LogisticRiskState:
     def decision_function(self, features: Sequence[Sequence[float]]) -> np.ndarray:
         standardized = self.standardizer.transform(features)
         coefficients = np.asarray(self.coefficients, dtype=np.float64)
-        return standardized @ coefficients + self.intercept
+        return np.sum(standardized * coefficients, axis=1) + self.intercept
 
     def predict_probability(self, features: Sequence[Sequence[float]]) -> np.ndarray:
         return expit(self.decision_function(features))

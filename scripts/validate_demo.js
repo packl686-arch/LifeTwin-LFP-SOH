@@ -266,7 +266,7 @@ try {
       assert(model.scored === false, filename + ': unavailable must have scored=false');
       assert(!model.metrics || Object.keys(model.metrics).length === 0, filename + ': unavailable must not have metrics');
       assert(!model.terminal, filename + ': unavailable must not have terminal');
-      assert(!model.gages, filename + ': unavailable must not have gages');
+      assert(!model.gates, filename + ': unavailable must not have gates');
       assert(!model.public_version, filename + ': unavailable must not have public_version');
       assert(!model.protocol_id, filename + ': unavailable must not have protocol_id');
     }
@@ -415,12 +415,12 @@ try {
     fs.unlinkSync(tmpPath);
   }
 
-  // 11. Check no gages in any fixture
+  // 11. Check no gates in any fixture
   for (const file of jsonFiles) {
     const content = fs.readFileSync(path.join(FIXTURE_DIR, file), 'utf8');
-    assert(!content.includes('"gages"'), file + ' should not contain gages field');
+    assert(!content.includes('"gates"'), file + ' should not contain gates field');
   }
-  results.push('PASS: No gages field in any fixture');
+  results.push('PASS: No gates field in any fixture');
 
   // 12. Check release_manifest.json is not self-referential
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'release_manifest.json'), 'utf8'));

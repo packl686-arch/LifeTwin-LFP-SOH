@@ -1,0 +1,49 @@
+{
+  "schema_version": "lifetwin_v300_freeze_record/1.0.0",
+  "protocol_id": "lifetwin_structure_fit_runtime_reliability_v3_0",
+  "review_status": "implementation_frozen",
+  "created_utc": "2026-08-16T00:56:43Z",
+  "design_commit": "e418d9916a014ee3b8ba416081ca5f0f90d09a06",
+  "protocol_commit": "942acfa9b221da0d34d4411a76cb37c584293c1f",
+  "implementation_commit": "cb6e1908f64325178c7b714aa8c1e2fe61de27b0",
+  "implementation_parent_commit": "942acfa9b221da0d34d4411a76cb37c584293c1f",
+  "direct_child_attestation_required": true,
+  "config_byte_sha256": "b30dbe205923632daa4e68df8e6be222be7be6e7c74c28f6936743ae44f168b3",
+  "config_semantic_sha256": "2c0c7c5e6361e0ace37f3149191c01a7a54685c4d546187d25800808dabdd9ee",
+  "preregistration_byte_sha256": "3e601b0719929d431e58864b8ca7ad45d62662135b7ce6888b92c7bd97687caf",
+  "requirements_byte_sha256": "6affd64bf8464f5449d3c70685504ff661f50933f8adb4d95abcbdf4aedafe85",
+  "implementation_paths": [
+    "scripts/authorize_runtime_reliability_v300.py",
+    "scripts/diagnose_v210_fit_spawn.py",
+    "scripts/run_result_blind_python.ps1",
+    "scripts/run_runtime_reliability_v300.py",
+    "scripts/verify_runtime_reliability_v300_freeze.py",
+    "src/lifetwin/experiments/runtime_reliability_v300_protocol.py",
+    "src/lifetwin/experiments/runtime_reliability_v300_runner.py",
+    "tests/test_v300_formal_profile.py",
+    "tests/test_v300_runtime_hardening.py"
+  ],
+  "implementation_source_byte_hashes": {
+    "scripts/authorize_runtime_reliability_v300.py": "a1bd0a41bff17aa2932bdaa6209e253f91ff05487fdfd64b8909f077045d280c",
+    "scripts/diagnose_v210_fit_spawn.py": "441d23efeb653f0289e3984ab68e6d243dfc5b4e9c5d162624ef9d6fe512ef22",
+    "scripts/run_result_blind_python.ps1": "b042d487ae776026435b376ee85de84e5fd6c3d705aff3eecf3d832e97fff4c2",
+    "scripts/run_runtime_reliability_v300.py": "d9c183a5489567ddaa0707d5bc86f50cb7fe1f704d86a6d91b2a29c06db36261",
+    "scripts/verify_runtime_reliability_v300_freeze.py": "da62c80589a0c0fa06c3ba062bc4d13843f34502322025a0e7170ccfefc3135b",
+    "src/lifetwin/experiments/runtime_reliability_v300_protocol.py": "c4bdcb076887939c34a76ca9060948a25340f6b0c7e43a761f268e4f88391468",
+    "src/lifetwin/experiments/runtime_reliability_v300_runner.py": "961bb67b584607826e340c8c21994661a2c68d2d9bb0068230fbdd1f204af02e",
+    "tests/test_v300_formal_profile.py": "f59d6ea7f429ec128328d675db08822a61d3dee35b0057a1356500c78fa32856",
+    "tests/test_v300_runtime_hardening.py": "90e918ec5fd56376650118432f1a3d149d9a4a96d874f8cf279b56cf9278c2e4"
+  },
+  "implementation_source_tree_sha256": "3a3ff98c62de68b8391be0e9ca0d045eeda3dbdc9bac2ead7fc638989c21aab2",
+  "freeze_metadata_paths": [
+    "reports/runtime_reliability_v3_0_freeze_bundle.json",
+    "reports/runtime_reliability_v3_0_freeze_record.json",
+    "reports/runtime_reliability_v3_0_implementation_audit.md",
+    "reports/runtime_reliability_v3_0_nonformal_validation.json"
+  ],
+  "formal_seed_consumed_before_freeze": false,
+  "formal_attempt_created_before_freeze": false,
+  "authorization_created_before_freeze": false,
+  "formal_root_created_before_freeze": false,
+  "nonformal_validation_status": "passed"
+}

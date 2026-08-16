@@ -3,10 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 import uuid
 
-import matplotlib.image as mpimg
 import numpy as np
+import pytest
 
-from showcase.analyze_v014_synthetic_identifiability import build_figure
+mpimg = pytest.importorskip("matplotlib.image")
+
+from showcase.analyze_v014_synthetic_identifiability import build_figure  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

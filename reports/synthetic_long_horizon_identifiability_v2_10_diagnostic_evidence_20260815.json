@@ -1,0 +1,137 @@
+{
+  "audit_date": "2026-08-15",
+  "diagnostic_boundary": {
+    "formal_generator_used": false,
+    "formal_rows_opened": false,
+    "formal_seeds_used": false,
+    "sealed_truth_opened": false
+  },
+  "formal_terminal": {
+    "attempt_id": "v030-formal-20260814-a1",
+    "failure_window_seconds": 397,
+    "frozen_git_commit": "3b0e4008bad4c82fe5741391c65e004424e19f77",
+    "last_completed_phase": "actual_analysis_hash_ledger_committed",
+    "pending_phase": "label_free_fit_committed",
+    "reason_code": "UNKNOWN_PRE_PREDICTION_EXCEPTION",
+    "scientific_status": "unclassified_terminal_not_success"
+  },
+  "formal_terminal_evidence_sha256": {
+    "evidence_tar": "73602810a3fefa18aedf293a0c864e0369f4abfd15a252b80fe1da27664d9e40",
+    "frozen_repository_bundle": "47a3dd4789b39562c791301771bec2ca4faa401c83b6547cdca360e92d9ec6b1",
+    "terminal_attempt_record": "e1b826f72c5c335023a5dffef07158bb88be17cb6eb9ae4299d9a5061700bb05",
+    "terminal_manifest": "493b7254d4cb060f470b67e70db15fc8da8efbc1d6a394446bd91950e67bd83d"
+  },
+  "spawn_probes": [
+    {
+      "clusters": 96,
+      "diagnostic_rows": 8256,
+      "elapsed_seconds": 110.70720229996368,
+      "forecast_rows": 66048,
+      "hashes": {
+        "member_fit_diagnostics.csv": "adf228639e62a4d370afcbe7d192b59fc033d501a91dc62de16ba798a11cb125",
+        "member_forecast_bundle.csv": "5d1edf8e8b31f6001490e77cd9bd916eaef49e2298c3ee13151c862f9278c1eb"
+      },
+      "status": "passed",
+      "suite": "structured",
+      "workers": 6
+    },
+    {
+      "clusters": 384,
+      "diagnostic_rows": 33024,
+      "elapsed_seconds": 246.91554209997412,
+      "forecast_rows": 264192,
+      "hashes": {
+        "member_fit_diagnostics.csv": "161bbe1336ad9545fc75fe0333002be0b7a4d620e7852f9bacf51f0b5d6dc57b",
+        "member_forecast_bundle.csv": "bc5ceee47e839e49766cd5de3db3c960b6fd92c46764070bf397f1641e60e5b8"
+      },
+      "status": "passed",
+      "suite": "randomized",
+      "workers": 6
+    },
+    {
+      "clusters": 640,
+      "diagnostic_rows": 55040,
+      "elapsed_seconds": 415.88589229999343,
+      "forecast_rows": 440320,
+      "hashes": {
+        "member_fit_diagnostics.csv": "24397573505ff9a577ad3ba901ab8a6eaca1031811883276d9ec4c47901be37b",
+        "member_forecast_bundle.csv": "dd102b61d97e2d2502004f56418d2c9c6cb3d8da8161f1f5c9e76f3e75eacce4"
+      },
+      "status": "passed",
+      "suite": "randomized",
+      "workers": 6
+    },
+    {
+      "clusters": 96,
+      "diagnostic_rows": 8256,
+      "elapsed_seconds": 111.07990999997128,
+      "forecast_rows": 66048,
+      "hashes": {
+        "member_fit_diagnostics.csv": "adf228639e62a4d370afcbe7d192b59fc033d501a91dc62de16ba798a11cb125",
+        "member_forecast_bundle.csv": "5d1edf8e8b31f6001490e77cd9bd916eaef49e2298c3ee13151c862f9278c1eb"
+      },
+      "status": "passed_committed_script_verification",
+      "suite": "structured",
+      "workers": 6
+    }
+  ],
+  "system_event_window": {
+    "application_error_or_wer_or_python_event_count": 0,
+    "crash_dump_or_wer_file_count": 0,
+    "resource_exhaustion_or_kernel_power_event_count": 0,
+    "window_end_local": "2026-08-14T23:28:00+08:00",
+    "window_start_local": "2026-08-14T23:19:00+08:00"
+  },
+  "test_runs": [
+    {
+      "result": "2 passed in 13.48s",
+      "tests": [
+        "tests/test_v015_prediction.py::test_one_worker_and_six_workers_are_canonical_byte_identical",
+        "tests/test_v015_prediction.py::test_worker_exception_fails_closed"
+      ]
+    },
+    {
+      "result": "15 passed in 15.67s",
+      "tests": [
+        "tests/test_v015_prediction.py"
+      ]
+    },
+    {
+      "result": "10 passed in 0.85s",
+      "tests": [
+        "tests/test_v031_terminal_diagnostics.py",
+        "tests/test_v019_terminal_contract.py"
+      ]
+    },
+    {
+      "result": "24 passed in 1.70s",
+      "tests": [
+        "tests/test_v019_fit_commitment_atomicity.py",
+        "tests/test_v020_identity_source_of_truth.py",
+        "V2.5 through V2.10 checkpoint-classification regressions"
+      ]
+    },
+    {
+      "result": "1 passed in 3.12s",
+      "tests": [
+        "tests/test_v031_fit_capability_diagnosis.py"
+      ],
+      "verified_counts": {
+        "clusters": 5950,
+        "forecast_coordinates.csv": 47600,
+        "prefix_pack.csv": 71400
+      },
+      "verified_path": "fresh-bundle membership/hash/frame revalidation, deep-copy extraction, formal cardinality, and V2.10-to-V2 fit identity adapter"
+    },
+    {
+      "result": "35 passed in 5.41s",
+      "tests": [
+        "post-commit terminal diagnostics, exact-cardinality capability, V2.4 terminal/fit/identity, and V2.5 through V2.10 checkpoint regressions"
+      ]
+    }
+  ],
+  "static_checks": {
+    "python_compileall": "passed",
+    "ruff": "All checks passed!"
+  }
+}

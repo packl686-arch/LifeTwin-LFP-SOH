@@ -1,6 +1,6 @@
 # LifeTwin
 
-[![public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml/badge.svg)](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml)
+[![V3.0 branch CI](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml/badge.svg?branch=codex%2Fv300-formalization-20260815)](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml?query=branch%3Acodex%2Fv300-formalization-20260815)
 
 面向储能 LFP 电池的证据优先型 SOH 寿命数字孪生。
 
@@ -11,18 +11,33 @@ LifeTwin 不试图用一条短曲线直接“猜出 25 年寿命”，而是先�
 > 本仓库是独立竞赛研究原型，不是海辰官方产品，不含海辰内部数据，当前
 > 结果也不构成海辰电芯或储能电站的产品精度承诺。
 
+> **最新冻结状态（2026-08-16）**：唯一获授权的 V3.0 正式尝试
+> `v300-formal-20260815-a1` 已终结为 **`success`**。这是冻结 Windows 环境下、
+> 不接触密封真值的结构拟合**运行时可靠性**成功；它不等于电池预测精度成功，
+> 不修复或改写 V1 科学失败及 V2.10 的历史终态。
+
 ## 评委快速入口
 
 先用三分钟看到系统如何工作，再按需深入证据：
 
-1. [评委三分钟简报](JUDGE_BRIEF.md)：一屏了解问题、方法、四个关键结果和边界。
-2. [在线评审控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
-3. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
+1. [V3.0 正式收口报告](reports/runtime_reliability_v3_0_formal_closeout_20260816.md)与
+   [机器可读结果](reports/runtime_reliability_v3_0_formal_result_20260816.json)：查看唯一正式尝试、
+   10 项联合门、资源上限、确定性哈希与声明边界。
+2. [冻结协议](configs/experiments/runtime_reliability_v3_0.json)、
+   [预注册](reports/runtime_reliability_v3_0_preregistration.md)与
+   [实现审计](reports/runtime_reliability_v3_0_implementation_audit.md)：核对结果前规则和精确源码身份。
+3. [评委三分钟简报](JUDGE_BRIEF.md)：一屏了解问题、方法、关键结果和边界。
+4. [评委可视化 Demo](https://packl686-arch.github.io/LifeTwin-LFP-SOH/demo/)：六个视图快速了解定位、工作台、动态更新、模型比较、价值与证据边界；它是界面演示，不伪装成正式模型结果。
+5. [在线证据控制台](https://packl686-arch.github.io/LifeTwin-LFP-SOH/judge-console/)：零安装交互查看通用回退、专用路由和外部负迁移三个冻结案例；[离线单文件](docs/judge-console/index.html)也随仓库冻结。
+6. [真实前缀预测入口](showcase/product_demo/README.md)：用不含未来容量的请求生成预测、区间状态、拒绝原因和哈希。
 
 前缀 CLI 面向源码或 editable checkout；当前版本不把冻结参考数据拆离 Git 仓库包装成
 standalone wheel 推理服务。
 
-深入证据：[V0.14 预注册长时域压力测试报告](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md) ·
+深入证据：[V3.0 设计记录](reports/runtime_reliability_v3_0_design_20260815.md) ·
+[V3.0 冻结记录](reports/runtime_reliability_v3_0_freeze_record.json) ·
+[V2.10 因果充分性终结审计](reports/synthetic_long_horizon_identifiability_v2_10_causal_sufficiency_closeout_20260815.md) ·
+[V0.14 预注册长时域压力测试报告](reports/synthetic_long_horizon_identifiability_result_v1_2026-07-22.md) ·
 [V0.16 / V2.1 正式终态与根因收口](reports/synthetic_long_horizon_identifiability_v2_1_formal_closeout_20260809.md) ·
 [V0.14 机器可读证据](showcase/evidence_v014/README.md) ·
 [V0.13 可操作入口报告](reports/product_entry_v013_2026-07-22.md) ·
@@ -31,6 +46,54 @@ standalone wheel 推理服务。
 [独立长期验证预注册](docs/independent_long_term_lfp_preregistration.md) ·
 [Phase 1 对抗性审计](reports/phase1_adversarial_audit_2026-07-20.md) ·
 [参考资料](docs/references.md)
+
+## V3.0 正式运行时可靠性结果
+
+V3.0 把 V2.10 未能充分记录的运行时问题拆成一个新的、结果盲、独立预注册研究。
+协议先冻结设计、依赖、工作负载、资源门槛、确定性门槛和八类故障阶段，之后才由
+`packl686-arch <packl686@gmail.com>` 授权唯一正式尝试。该尝试自然完成，独立复算得到
+相同的 `success`，`failed_gates=[]`。
+
+| 正式验收项 | 结果 |
+|---|---:|
+| 正常作业 | `7 / 7` 完成 |
+| 固定故障矩阵 | `8 / 8` 符合预注册阶段 |
+| 联合成功门 | `10 / 10` 通过 |
+| 诊断 / forecast 聚合行数 | `1,224,296 / 9,794,368` |
+| 两次 5,950-cluster 作业 | `5,872.370 s / 4,035.117 s` |
+| wrapper / child 非零退出、stderr、采样错误 | `0 / 0 / 0` |
+
+96、1,024 和 5,950 cluster 三组各自逐字节得到相同 canonical SHA-256。两个全规模
+作业都低于预注册的单作业 `7,200 s` 上限；总编排耗时约 3 小时 29 分 45 秒，因为七个
+正常作业与故障矩阵按顺序执行，总时长不是该单作业门槛。
+
+| 冻结身份 | Git 对象 |
+|---|---|
+| 协议 P | [`942acfa9b221`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/commit/942acfa9b221da0d34d4411a76cb37c584293c1f) |
+| 实现 I | [`cb6e1908f643`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/commit/cb6e1908f64325178c7b714aa8c1e2fe61de27b0) |
+| 冻结 F | [`e5dda98f0b69`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/commit/e5dda98f0b69f4ccc3ddf7eaf4730660f36c1af0) |
+| 正式结果收口 | [`2dd8a35aab8a`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/commit/2dd8a35aab8ae32b1510fedbb4f3d3303e6b4a3d) |
+| 不可变正式标签 | [`v300-formal-success-20260816`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/tree/v300-formal-success-20260816) |
+
+冻结环境为 64-bit Windows、CPython `3.12.13`，直接依赖精确锁定在
+[`requirements/v300-formal.txt`](requirements/v300-formal.txt)。源码基本检查可运行：
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements\v300-formal.txt
+$env:PYTHONPATH = 'src'
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider tests\test_v300_runtime_hardening.py
+.\.venv\Scripts\ruff.exe check src scripts tests
+```
+
+冻结 formal CLI 为 `scripts/run_runtime_reliability_v300.py --execute`，这里只记录历史入口，
+**不得再次执行**：唯一 attempt 已消耗且终结，不允许续跑、替换、创建 `a2` 或移动正式标签。
+仓库不上传 formal attempt artifacts、授权文件、sealed/raw 数据；公开报告保留足以核对结论、
+哈希、环境和源码身份的脱敏摘要。
+
+**声明边界**：V3.0 只证明声明的混合合成 structure-fit 工作负载在冻结环境中能够确定性、
+有界且诊断透明地运行。它没有打开密封真值，没有评估 15-25 年电池预测准确度，也不支持
+真实电芯、储能电站、安全、质保或商业结果宣称。
 
 ## V0.14 预注册长时域压力测试
 
@@ -295,10 +358,19 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
   预注册结论为 failure，不晋升为长期预测方法。
 - 合成长时域 V2.1：唯一正式尝试在 prediction commitment 前因实现契约作用域不匹配而
   终止；没有生成预测，没有评分，不属于成功或已评分失败，历史终态不追溯改写。
-- V2.2：仅有未预注册、未授权执行的候选设计；2026-08-16 前保持 No-Go，优先完成参赛
-  方案、演示与答辩。
+- V2.2-V2.9：逐轮冻结并保留模型契约、分区、checkpoint 与运行边界的修订记录；这些
+  工程推进不追溯改写 V1 科学失败，也不能单独称为预测准确度成功。
+- V2.10：唯一正式尝试在 prediction commitment 前异常终止，冻结终态为
+  `terminal_pre_prediction / unclassified_terminal_not_success`；没有评分。后续因果充分性门
+  未通过，V2.11 永久关闭。
+- V3.0 运行时可靠性：作为独立问题、独立预注册和独立正式 seed 的新研究链，唯一正式
+  尝试完成 7/7 正常作业、8/8 故障矩阵并通过 10/10 联合门，终态为 `success`；结论仅限
+  冻结 Windows 环境中的 truth-free structure-fit 运行时可靠性。
 - Ubuntu/Windows fresh-clone CI：`v0.14.1` 发布链路均为 914 项测试通过、0 项跳过；
   工程复现通过不增加模型精度或独立验证证据。
+- V3.0 GitHub 分支 CI：正式收口提交及后续说明文档提交由
+  [public-release-ci](https://github.com/packl686-arch/LifeTwin-LFP-SOH/actions/workflows/ci.yml?query=branch%3Acodex%2Fv300-formalization-20260815)
+  独立记录；CI 成功仍只代表公开源码工程验收。
 - 独立长期 LFP 队列验证：待完成。
 - 海辰大容量电芯与真实电站验证：待完成。
 - 15-25 年产品精度承诺：当前不允许。
@@ -326,9 +398,19 @@ Stanford Lam/Joule 长期数据和作者代码在本项目审计时未发现明�
 - **2026-08-08—09｜V2.1 正式终态**：唯一正式尝试在预测前终止；只打开中心开发真值，
   未形成 prediction commitment，score 为空。根因收口为 7,200 行合法分区子集误用了
   71,400 行全量包契约；不重跑、不续跑，V2.2 在赛事提交前保持 No-Go。
+- **2026-08-10—14｜V2.2-V2.10 冻结链**：逐轮收紧模型、分区、checkpoint、评分与生命周期
+  契约；V2.10 唯一正式尝试在预测前异常终止，没有打开密封真值、没有评分。
+- **2026-08-15｜因果门与 V3.0 独立预注册**：结果盲故障注入和长稳探针无法唯一恢复
+  V2.10 已丢失的底层异常，因果门失败并永久关闭 V2.11；另立 V3.0 运行时可靠性问题，
+  完成设计、预注册、实现审计与冻结。
+- **2026-08-16｜V3.0 正式成功**：唯一获授权 attempt 完成 7 个正常作业和 8-case 故障矩阵，
+  独立复算 10 项联合门全部通过；结果只晋升运行时可靠性，不晋升电池预测准确度。
 
 提交人：Jincheng Liu
 
 公开工程版本：`0.14.1`（标签冻结于 2026-08-07）
 
-研究状态更新：2026-08-09
+最新研究证据：V3.0 runtime-reliability formal closeout
+[`v300-formal-success-20260816`](https://github.com/packl686-arch/LifeTwin-LFP-SOH/tree/v300-formal-success-20260816)
+
+研究状态更新：2026-08-16

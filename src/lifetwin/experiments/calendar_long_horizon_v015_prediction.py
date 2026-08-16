@@ -15,6 +15,7 @@ from concurrent.futures import (
     ProcessPoolExecutor,
     wait,
 )
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 import multiprocessing
 
@@ -45,6 +46,60 @@ _MAXIMUM_HAND_FIXTURE_WORKERS = 64
 
 class V015PredictionError(RuntimeError):
     """Raised when the label-free prediction run cannot commit all outputs."""
+
+
+class V015WorkerPoolError(V015PredictionError):
+    """Base class for a result-blind structure-fit lifecycle failure."""
+
+    phase = "worker_pool"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        worker_exit_codes: tuple[int, ...] = (),
+    ) -> None:
+        super().__init__(message)
+        self.worker_exit_codes = tuple(
+            sorted(code for code in worker_exit_codes if type(code) is int)
+        )
+        self.shutdown_exception_class: str | None = None
+
+    def record_shutdown_failure(self, error: BaseException) -> None:
+        """Attach only the safe class identity of a secondary shutdown failure."""
+
+        name = type(error).__name__
+        self.shutdown_exception_class = (
+            name if name.isidentifier() and len(name) <= 128 else "Exception"
+        )
+
+
+class V015WorkerPoolStartupError(V015WorkerPoolError):
+    phase = "process_pool_construction"
+
+
+class V015WorkerSubmissionError(V015WorkerPoolError):
+    phase = "worker_submission"
+
+
+class V015WorkerExecutionError(V015WorkerPoolError):
+    phase = "worker_future_result"
+
+
+class V015WorkerWaitError(V015WorkerPoolError):
+    phase = "worker_completion_wait"
+
+
+class V015WorkerPoolBrokenError(V015WorkerExecutionError):
+    phase = "broken_process_pool"
+
+
+class V015WorkerOutputError(V015WorkerPoolError):
+    phase = "worker_output_validation"
+
+
+class V015WorkerShutdownError(V015WorkerPoolError):
+    phase = "process_pool_shutdown"
 
 
 @dataclass(frozen=True)
@@ -174,20 +229,59 @@ def _require_worker_output(
     output: object,
 ) -> _ClusterFitOutput:
     if not isinstance(output, _ClusterFitOutput):
-        raise V015PredictionError("A fit worker returned an invalid result type")
+        raise V015WorkerOutputError("A fit worker returned an invalid result type")
     if output.key != task.key:
-        raise V015PredictionError("A fit worker returned a different cluster key")
+        raise V015WorkerOutputError("A fit worker returned a different cluster key")
     for frame, label in (
         (output.member_fit_diagnostics, "diagnostics"),
         (output.member_forecast_bundle, "member forecasts"),
     ):
         if not isinstance(frame, pd.DataFrame):
-            raise V015PredictionError(f"A fit worker returned invalid {label}")
+            raise V015WorkerOutputError(f"A fit worker returned invalid {label}")
         if _cluster_keys(frame) != {task.key}:
-            raise V015PredictionError(
+            raise V015WorkerOutputError(
                 f"A fit worker returned missing or extra {label} clusters"
             )
     return output
+
+
+def _executor_exit_codes(executor: ProcessPoolExecutor) -> tuple[int, ...]:
+    processes = getattr(executor, "_processes", None)
+    if not isinstance(processes, dict):
+        return ()
+    return tuple(
+        sorted(
+            int(exit_code)
+            for process in processes.values()
+            if type(exit_code := getattr(process, "exitcode", None)) is int
+        )
+    )
+
+
+def result_blind_worker_failure_telemetry(
+    error: BaseException,
+) -> dict[str, object] | None:
+    """Return phase and exit-code metadata without messages, IDs, or values."""
+
+    current: BaseException | None = error
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, V015WorkerPoolError):
+            return {
+                "schema_version": "1.0.0",
+                "phase": current.phase,
+                "exception_class": type(current).__name__,
+                "worker_exit_codes": list(current.worker_exit_codes),
+                "shutdown_exception_class": current.shutdown_exception_class,
+            }
+        if current.__cause__ is not None:
+            current = current.__cause__
+        elif not current.__suppress_context__:
+            current = current.__context__
+        else:
+            current = None
+    return None
 
 
 def _collect_worker_outputs(
@@ -201,28 +295,54 @@ def _collect_worker_outputs(
             mp_context=context,
         )
     except Exception as exc:
-        raise V015PredictionError(
+        raise V015WorkerPoolStartupError(
             "The structure-fit worker pool could not be started"
         ) from exc
     futures: dict[Future[_ClusterFitOutput], _ClusterFitTask] = {}
-    failed = False
+    caught: BaseException | None = None
+    shutdown_cause: BaseException | None = None
+    outputs: dict[tuple[str, str], _ClusterFitOutput] = {}
     try:
         task_iterator = iter(tasks)
         maximum_in_flight = max(worker_count * 2, 1)
         for _ in range(min(maximum_in_flight, len(tasks))):
             task = next(task_iterator)
-            futures[executor.submit(_fit_cluster_worker, task)] = task
-        outputs: dict[tuple[str, str], _ClusterFitOutput] = {}
+            try:
+                future = executor.submit(_fit_cluster_worker, task)
+            except Exception as exc:
+                raise V015WorkerSubmissionError(
+                    "A structure-fit task could not be submitted",
+                    worker_exit_codes=_executor_exit_codes(executor),
+                ) from exc
+            futures[future] = task
         while futures:
-            completed, _ = wait(
-                tuple(futures),
-                return_when=FIRST_COMPLETED,
-            )
+            try:
+                completed, _ = wait(
+                    tuple(futures),
+                    return_when=FIRST_COMPLETED,
+                )
+            except Exception as exc:
+                raise V015WorkerWaitError(
+                    "The structure-fit worker wait boundary failed",
+                    worker_exit_codes=_executor_exit_codes(executor),
+                ) from exc
             for future in completed:
                 task = futures.pop(future)
-                output = _require_worker_output(task, future.result())
+                try:
+                    raw_output = future.result()
+                except BrokenProcessPool as exc:
+                    raise V015WorkerPoolBrokenError(
+                        "A structure-fit worker terminated abruptly",
+                        worker_exit_codes=_executor_exit_codes(executor),
+                    ) from exc
+                except Exception as exc:
+                    raise V015WorkerExecutionError(
+                        "A structure-fit worker failed; no prediction result was produced",
+                        worker_exit_codes=_executor_exit_codes(executor),
+                    ) from exc
+                output = _require_worker_output(task, raw_output)
                 if output.key in outputs:
-                    raise V015PredictionError(
+                    raise V015WorkerOutputError(
                         "Fit workers returned a duplicate cluster"
                     )
                 outputs[output.key] = output
@@ -230,29 +350,46 @@ def _collect_worker_outputs(
                     next_task = next(task_iterator)
                 except StopIteration:
                     continue
-                futures[executor.submit(_fit_cluster_worker, next_task)] = next_task
+                try:
+                    next_future = executor.submit(_fit_cluster_worker, next_task)
+                except Exception as exc:
+                    raise V015WorkerSubmissionError(
+                        "A structure-fit task could not be submitted",
+                        worker_exit_codes=_executor_exit_codes(executor),
+                    ) from exc
+                futures[next_future] = next_task
         expected = {task.key for task in tasks}
         if set(outputs) != expected:
-            raise V015PredictionError("Fit workers returned an incomplete cluster set")
-        return tuple(outputs[key] for key in sorted(expected))
-    except KeyboardInterrupt:
-        failed = True
-        for future in futures:
-            future.cancel()
-        raise
+            raise V015WorkerOutputError(
+                "Fit workers returned an incomplete cluster set"
+            )
+    except KeyboardInterrupt as exc:
+        caught = exc
     except BaseException as exc:
-        failed = True
+        caught = exc
+    if caught is not None:
         for future in futures:
             future.cancel()
-        if isinstance(exc, V015PredictionError):
-            raise
-        if not isinstance(exc, Exception):
-            raise
-        raise V015PredictionError(
-            "A structure-fit worker failed; no prediction result was produced"
-        ) from exc
-    finally:
-        executor.shutdown(wait=not failed, cancel_futures=failed)
+    try:
+        executor.shutdown(
+            wait=caught is None,
+            cancel_futures=caught is not None,
+        )
+    except Exception as exc:
+        if caught is None:
+            caught = V015WorkerShutdownError(
+                "The structure-fit worker pool could not be shut down",
+                worker_exit_codes=_executor_exit_codes(executor),
+            )
+            shutdown_cause = exc
+        elif isinstance(caught, V015WorkerPoolError):
+            caught.record_shutdown_failure(exc)
+    if caught is not None:
+        if shutdown_cause is not None:
+            raise caught from shutdown_cause
+        raise caught
+    expected = {task.key for task in tasks}
+    return tuple(outputs[key] for key in sorted(expected))
 
 
 def _concat_fitted_tables(
@@ -452,8 +589,17 @@ def run_nonformal_label_free_prediction(
 __all__ = [
     "V015PredictionError",
     "V015PredictionResult",
+    "V015WorkerExecutionError",
+    "V015WorkerOutputError",
+    "V015WorkerPoolBrokenError",
+    "V015WorkerPoolError",
+    "V015WorkerPoolStartupError",
+    "V015WorkerShutdownError",
+    "V015WorkerSubmissionError",
+    "V015WorkerWaitError",
     "fit_structure_library_formal",
     "fit_structure_library_parallel",
+    "result_blind_worker_failure_telemetry",
     "run_nonformal_label_free_prediction",
     "run_pipeline_from_fitted",
 ]

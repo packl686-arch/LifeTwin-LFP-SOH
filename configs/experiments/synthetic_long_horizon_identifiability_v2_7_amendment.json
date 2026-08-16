@@ -1,0 +1,162 @@
+{
+  "schema_version": "lifetwin_synthetic_long_horizon_v2_7/1.0.0",
+  "protocol_id": "synthetic_long_horizon_identifiability_v2_7",
+  "implementation_profile": "v0.22",
+  "status": "implementation_frozen",
+  "design_date": "2026-08-13",
+  "base_contract": {
+    "protocol_id": "synthetic_long_horizon_identifiability_v2_6",
+    "amendment_path": "configs/experiments/synthetic_long_horizon_identifiability_v2_6_amendment.json",
+    "amendment_byte_sha256": "6784cace2f2d3f4f561ef8abdbde580d4800343787748c52fa7280af7b4ddb81",
+    "amendment_semantic_sha256": "fd090ca56e3d0ad2c91fe442e272a928d6e778571b4e93a4e45a28780124cc54",
+    "fixed_core_commit": "43ca947a02b15ab373422a7b066a361ed711cd1b"
+  },
+  "change_scope": {
+    "allowed": [
+      "new protocol, attempt, seed, generated-data and path identities",
+      "pass the authenticated view artifact contract to the calibration-mask started exposure event",
+      "formal and prediction process attestation of the same immutable identity"
+    ],
+    "forbidden": [
+      "changing any generating family, equation, feature, model, optimizer or parameter bound",
+      "changing any threshold, partition, endpoint, denominator, gate, confidence rule or success condition",
+      "adding an alias to the authenticated view, accepting multiple exposure contract types or using the predecessor base config hash",
+      "formal=False, skipped hashes, relaxed firewalls or result-dependent changes",
+      "reusing any predecessor seed, row, ID, hash, state, prediction, score or attempt root"
+    ]
+  },
+  "attempt_registry": {
+    "only_attempt_id": "v027-formal-20260813-a1",
+    "maximum_attempts": 1,
+    "a2_or_replacement_attempt_forbidden": true,
+    "retry_or_resume_for_better_result_forbidden": true,
+    "formal_execution_status": "reserved_pending_post_freeze_authorization",
+    "formal_generation_before_freeze_forbidden": true
+  },
+  "fresh_generation": {
+    "generation_has_started": false,
+    "seed_consumed": false,
+    "sealed_truth_created_or_opened": false,
+    "pilot_or_test_generation_forbidden": true,
+    "seed_roots": {
+      "center_development": 202608130701,
+      "risk_development": 202608130702,
+      "calibration": 202608130703,
+      "test": 202608130704,
+      "audit": 202608130705,
+      "novel_mechanism_test": 202608130706,
+      "novel_mechanism_audit": 202608130707,
+      "intrinsic_matched_pairs": 202608130708,
+      "stress_plan_matched_pairs": 202608130709,
+      "random_rankings": 202608130710,
+      "bootstrap": 202608130711,
+      "stress_permutations": 202608130712,
+      "placebo_covariate": 202608130713
+    },
+    "seed_derivation": "For each named stream, derive the first 16 hexadecimal digits of SHA256(protocol_id|seed_root|partition|family_id|zero_based_index|stream_name), interpret as unsigned and reduce modulo 2^63-1. Use numpy.random.Generator(PCG64DXSM) only in the frozen environment."
+  },
+  "path_isolation": {
+    "label_free_root": "artifacts/v027-formal-20260813-a1-label-free",
+    "sealed_truth_root": "artifacts/v027-formal-20260813-a1-sealed-truth",
+    "score_root": "artifacts/v027-formal-20260813-a1-score",
+    "termination_root": "artifacts/v027-formal-20260813-a1-termination",
+    "formal_roots_must_be_absent_before_launch": true,
+    "resolved_roots_must_be_pairwise_distinct": true,
+    "all_predecessor_roots_are_read_only_and_disjoint": true
+  },
+  "exposure_contract_fix": {
+    "binding": "The calibration_mask_committed started event passes view.artifacts to the FrozenArtifactContract-only phase append boundary.",
+    "truth_firewall_binding": "Truth firewall entry points continue to receive the authenticated contract view.",
+    "base_config_hash_substitution_forbidden": true,
+    "ledger_schema_and_phase_order_unchanged": true,
+    "all_phase_and_failure_append_callers_use_artifact_contract": true
+  },
+  "partition_contract_view": {
+    "binding": "fit structure passes the one authenticated contract view to whole-bundle validation",
+    "naked_artifacts_fail_closed": true,
+    "resolver_relaxation_forbidden": true,
+    "fit_commitment_order": "write, fresh read-back, whole validation through authenticated view, commitment, completed phase"
+  },
+  "checkpoint_registry_contract": {
+    "binding": "the inherited immutable V0.20 exact-set registry remains shared by producer, verifier, truth firewall, calibration manifest and model-state validation",
+    "center_development_count": 10,
+    "risk_development_count": 11,
+    "calibration_count": 14,
+    "failure_rule": "Any missing, extra, renamed, reordered, mutable or byte-drifted registered input is a typed pre-result integrity failure and truth reveal count remains zero."
+  },
+  "scientific_inheritance": {
+    "rule": "Every scientific field in the committed V2.6 amendment remains binding unless explicitly listed in change_scope.allowed. Omission never weakens inheritance.",
+    "unchanged": [
+      "six generating families, equations, distributions and noise",
+      "seven partitions, cluster counts, twelve prefix days, eight forecast days and units",
+      "exact 86 variants, models, features, optimizers, parameter bounds and fit credibility",
+      "risk, isotonic, mean baseline, split-conformal, routing, fallback and rejection rules",
+      "five primary endpoints, eight-family, novel-mechanism and safety gates",
+      "placebo, stress-permutation and information-firewall negative controls",
+      "bootstrap, Clopper-Pearson, permutation and confidence-interval rules",
+      "success, scored failure, terminal inconclusive, integrity void and unknown terminal classifications",
+      "whole-bundle and partition cardinality, schema, key, unit, hash and numeric contracts",
+      "fit commitment, prediction commitment, truth-open, scoring and terminal ordering"
+    ],
+    "post_result_review_only": [
+      "strong simple baselines",
+      "stratified and worst-condition behavior",
+      "out-of-domain refusal",
+      "interval calibration",
+      "physical plausibility and clipping dependence",
+      "public-to-enterprise domain gap",
+      "dynamic updating",
+      "business decision mapping",
+      "single champion selection",
+      "same-protocol Model B comparison"
+    ]
+  },
+  "predecessor_terminal": {
+    "attempt_id": "v026-formal-20260812-a1",
+    "terminal_state": "terminal_pre_prediction",
+    "scientific_status": "unclassified_terminal_not_success",
+    "classification_mode": "unknown_default",
+    "reason_code": "UNKNOWN_PRE_PREDICTION_EXCEPTION",
+    "last_completed_phase": "risk_state_committed",
+    "opened_truth_files": [
+      "center_development_truth.csv",
+      "risk_development_truth.csv"
+    ],
+    "fit_commitment_created": true,
+    "prediction_commitment_created": false,
+    "score_created": false,
+    "immutable_and_not_reusable": true
+  },
+  "lifecycle_order": [
+    "static environment, source, history, collision and path preflight without seed consumption",
+    "capability-minimal fresh generation",
+    "whole-bundle formal validation and fit commitment",
+    "center, risk and calibration checkpoints through the canonical registry",
+    "prediction commitment",
+    "heldout truth opening and deterministic scoring",
+    "exactly one scored or terminal registry",
+    "independent post-run hash and history audit"
+  ],
+  "terminal_rules": {
+    "scientific_classifications_inherited_from_v2_6": true,
+    "known_integrity_contract_mismatch_is_void": true,
+    "unknown_exception_preserves_unknown_default": true,
+    "prediction_and_terminal_registries_mutually_exclusive": true,
+    "terminal_registry_exact_files": [
+      "terminal_attempt_record.json",
+      "terminal_artifact_manifest.json",
+      "terminal_exposure_log_snapshot.jsonl"
+    ]
+  },
+  "freeze_requirements": {
+    "preregistration": "reports/synthetic_long_horizon_identifiability_prereg_v2_7.md",
+    "environment_lock": "requirements/v027-formal.txt",
+    "implementation_audit": "reports/synthetic_long_horizon_identifiability_implementation_audit_v2_7.md",
+    "freeze_record": "reports/synthetic_long_horizon_identifiability_freeze_record_v2_7.json",
+    "linear_topology": "P parent is 43ca947a02b15ab373422a7b066a361ed711cd1b; I is the direct child of P; F is the direct child of I.",
+    "source_tree_byte_semantic_and_file_sha_required": true,
+    "clean_worktree_and_remote_identity_required": true,
+    "no_source_or_protocol_change_after_F": true
+  },
+  "claim_boundary": "Any future V2.7 result is limited to the frozen six-core-family synthetic 25-year protocol. It is not evidence of real LFP cells, Hithium products, storage stations or 15-25 year real-world predictive accuracy."
+}
