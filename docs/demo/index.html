@@ -107,6 +107,7 @@ a{color:inherit}
 .brand-copy span{display:block;margin-top:4px;color:#b8c8c3;font-size:11px}
 .top-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .top-link,.mode-badge{display:inline-flex;align-items:center;min-height:34px;padding:7px 10px;border:1px solid #50645f;border-radius:4px;color:#ecf3f1;text-decoration:none;font-size:12px;white-space:nowrap}
+.top-action-button{background:transparent;font:inherit;cursor:pointer}
 .top-link:hover{background:#243a34;border-color:#77948c}
 .mode-badge{color:#a9d5cc;border-color:#315f56;background:#1a302b}
 .scopebar{min-height:50px;padding:8px max(18px,calc((100vw - 1440px)/2 + 18px));justify-content:space-between;gap:16px;background:#fff;border-bottom:1px solid var(--line);overflow:visible}
@@ -169,8 +170,57 @@ a{color:inherit}
 .auditline{border-left:0;border-top:3px solid var(--orange);box-shadow:0 1px 2px rgba(23,40,36,.03)}
 .top-actions,.scope-tags,.page-nav,.flow-scroll{scrollbar-width:none}
 .top-actions::-webkit-scrollbar,.scope-tags::-webkit-scrollbar,.page-nav::-webkit-scrollbar,.flow-scroll::-webkit-scrollbar{display:none}
+.top-action-button{font:inherit;cursor:pointer}
+.btn:disabled{cursor:not-allowed;opacity:.45}
+.tour-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin:-4px 0 14px;padding:11px 13px;border:1px solid #b8d4cd;border-left:4px solid var(--teal);background:#f2f8f6}
+.tour-count{display:grid;place-items:center;width:42px;height:42px;border:1px solid #9fc8be;border-radius:5px;background:#fff;color:var(--teal);font-size:11px;font-weight:800}
+.tour-copy strong{display:block;font-size:13px}
+.tour-copy span{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+.tour-actions,.toolbar-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.toolbar-actions{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+.action-status{min-height:18px;color:var(--teal);font-size:11px}
+.comparison-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px;border:1px solid var(--line);background:#fafcfb}
+.comparison-summary div{min-height:62px;padding:9px 12px;border-right:1px solid var(--line)}
+.comparison-summary div:last-child{border-right:0}
+.comparison-summary span{display:block;color:var(--muted);font-size:10px}
+.comparison-summary strong{display:block;margin-top:5px;font-size:15px}
+.comparison-table-wrap{margin-top:12px;overflow-x:auto;border:1px solid var(--line)}
+.comparison-table{width:100%;min-width:680px;border-collapse:collapse;background:#fff;font-size:11px}
+.comparison-table th,.comparison-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.comparison-table th{background:#f3f6f5;color:#52605c;font-weight:700}
+.comparison-table tr:last-child td{border-bottom:0}
+.comparison-table code{font-family:Consolas,monospace;font-size:10px;overflow-wrap:anywhere}
+.gate-pass{color:var(--green);font-weight:700}
+.gate-block{color:var(--red);font-weight:700}
+.value-calculator{margin-bottom:14px;border:1px solid #cfdcd6;border-top:4px solid var(--blue);background:#fff}
+.value-calculator-head{display:flex;justify-content:space-between;gap:16px;padding:14px 15px 11px;border-bottom:1px solid var(--line)}
+.value-calculator-head h2{margin:0;font-size:15px}
+.value-calculator-head p{margin:4px 0 0;color:var(--muted);font-size:11px}
+.value-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:0}
+.value-controls{padding:13px 15px;border-right:1px solid var(--line)}
+.range-control{padding:9px 0;border-bottom:1px solid #edf0ee}
+.range-control:last-child{border-bottom:0}
+.range-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.range-head label{font-size:12px;font-weight:650}
+.range-head output{color:var(--blue);font-size:12px;font-weight:750;white-space:nowrap}
+.range-control input[type=range]{width:100%;margin:9px 0 0;accent-color:var(--blue)}
+.range-scale{display:flex;justify-content:space-between;color:#81908b;font-size:9px}
+.value-results{padding:14px 15px;background:#f5f8fb}
+.value-result-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d7e0eb;background:#fff}
+.value-result{min-height:84px;padding:11px 12px;border-right:1px solid #d7e0eb;border-bottom:1px solid #d7e0eb}
+.value-result:nth-child(2n){border-right:0}
+.value-result:nth-last-child(-n+2){border-bottom:0}
+.value-result span{display:block;color:var(--muted);font-size:10px}
+.value-result strong{display:block;margin-top:7px;color:#254a79;font-size:19px}
+.value-formula{margin:11px 0 0;padding:9px 10px;border-left:3px solid var(--blue);background:#fff;color:#526374;font-size:10px;line-height:1.55}
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.process-band{padding:13px 14px;border-top:3px solid var(--orange);background:#fff8f2}
+.process-band.after{border-top-color:var(--teal);background:#f2f8f6}
+.process-band h2{margin:0 0 7px;font-size:13px}
+.process-band ul{margin:0;padding-left:18px;color:#495753;font-size:11px;line-height:1.65}
 @media(max-width:980px){.runtime-summary{grid-template-columns:1fr}.runtime-score{border-left:0;border-top:1px solid var(--line);padding-top:10px}.scenario-presets{grid-template-columns:1fr}.overview-intro{align-items:flex-start}.intro-actions{flex-direction:column}}
-@media(max-width:680px){.topbar{padding:10px 12px;gap:9px}.brand{display:flex}.brand-copy span{display:block}.top-actions{width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:1px}.top-link,.mode-badge{min-height:31px;padding:5px 8px}.scopebar{padding:8px 12px;display:block}.scope-copy{min-width:0}.scope-copy span{display:none}.scope-tags{margin-top:6px}.shell{padding:10px 10px 18px}.page-nav{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(142px,48vw);grid-template-columns:none;overflow-x:auto}.page-tab{border-right:1px solid var(--line);border-bottom:0}.overview-intro{display:block;padding:16px}.overview-intro h1{font-size:20px}.intro-actions{margin-top:12px;flex-direction:row}.runtime-score{grid-template-columns:1fr 1fr}.runtime-score-item:nth-child(2n){border-right:0}.runtime-score-item:nth-child(-n+2){border-bottom:1px solid var(--line)}.scenario-head{display:block}.chart-wrap{height:260px}.status-grid{grid-template-columns:1fr 1fr}.control-row{flex-direction:column}.section-block{padding:12px}.auditline{padding:12px}}
+@media(max-width:980px){.value-layout{grid-template-columns:1fr}.value-controls{border-right:0;border-bottom:1px solid var(--line)}}
+@media(max-width:680px){.topbar{padding:10px 12px;gap:9px}.brand{display:flex}.brand-copy span{display:block}.top-actions{width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:1px}.top-link,.mode-badge{min-height:31px;padding:5px 8px}.scopebar{padding:8px 12px;display:block}.scope-copy{min-width:0}.scope-copy span{display:none}.scope-tags{margin-top:6px}.shell{padding:10px 10px 18px}.page-nav{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(142px,48vw);grid-template-columns:none;overflow-x:auto}.page-tab{border-right:1px solid var(--line);border-bottom:0}.overview-intro{display:block;padding:16px}.overview-intro h1{font-size:20px}.intro-actions{margin-top:12px;flex-direction:row}.runtime-score{grid-template-columns:1fr 1fr}.runtime-score-item:nth-child(2n){border-right:0}.runtime-score-item:nth-child(-n+2){border-bottom:1px solid var(--line)}.scenario-head{display:block}.chart-wrap{height:260px}.status-grid{grid-template-columns:1fr 1fr}.control-row{flex-direction:column}.section-block{padding:12px}.auditline{padding:12px}.tour-bar{grid-template-columns:auto 1fr}.tour-actions{grid-column:1/-1;justify-content:flex-end}.comparison-summary{grid-template-columns:1fr}.comparison-summary div{border-right:0;border-bottom:1px solid var(--line)}.comparison-summary div:last-child{border-bottom:0}.value-calculator-head{display:block}.value-calculator-head .tag{margin-top:8px}.value-result-grid{grid-template-columns:1fr}.value-result{border-right:0}.value-result:nth-child(-n+3){border-bottom:1px solid #d7e0eb}.before-after{grid-template-columns:1fr}.toolbar-actions .btn{flex:1 1 auto;justify-content:center}}
 </style>
 </head>
 <body>
@@ -181,6 +231,7 @@ a{color:inherit}
   </a>
   <div class="top-actions">
     <span class="mode-badge">界面交互演示 · 非实时推理</span>
+    <button id="tour-start" class="top-link top-action-button" type="button">3 分钟导览</button>
     <a class="top-link" href="../judge-console/">证据控制台</a>
     <a class="top-link" href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">GitHub 证据仓库</a>
   </div>
@@ -197,6 +248,15 @@ a{color:inherit}
 </section>
 <main class="shell">
   <nav id="page-nav" class="page-nav" aria-label="Demo 页面"></nav>
+  <section id="tour-bar" class="tour-bar" hidden aria-live="polite">
+    <div id="tour-count" class="tour-count">1 / 6</div>
+    <div class="tour-copy"><strong id="tour-title"></strong><span id="tour-description"></span></div>
+    <div class="tour-actions">
+      <button id="tour-prev" class="btn" type="button">上一步</button>
+      <button id="tour-next" class="btn btn-primary" type="button">下一步</button>
+      <button id="tour-end" class="btn" type="button">结束导览</button>
+    </div>
+  </section>
   <section id="page-overview" class="page" aria-labelledby="page-overview-title">
     <section class="overview-intro">
       <div>
@@ -302,6 +362,12 @@ a{color:inherit}
               <div class="metric"><span>时域</span><strong id="wb-horizon-label"></strong></div>
             </div>
             <div style="margin-top:12px"><div class="eyebrow">拒绝原因 / 风险信号</div><ul id="wb-reasons" class="plain" style="margin-top:6px"></ul></div>
+            <div class="toolbar-actions" aria-label="当前场景操作">
+              <button id="wb-download" class="btn btn-primary" type="button">导出决策 JSON</button>
+              <button id="wb-share" class="btn" type="button">复制场景链接</button>
+              <a id="wb-evidence-link" class="btn" href="../judge-console/">核验对应证据</a>
+              <span id="wb-action-status" class="action-status" role="status"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -319,6 +385,7 @@ a{color:inherit}
           <button id="update-prev" class="btn">上一步</button>
           <input id="update-slider" type="range" min="1" max="4" step="1" value="1">
           <button id="update-next" class="btn">下一步</button>
+          <button id="update-play" class="btn" type="button" aria-pressed="false">自动演示</button>
           <span id="update-step-label" class="tag tag-teal">步骤 1 / 4</span>
         </div>
         <div class="grid-2" style="margin-top:14px">
@@ -332,7 +399,7 @@ a{color:inherit}
               <div class="status-cell"><span>模型路由</span><strong id="update-route"></strong></div>
               <div class="status-cell"><span>区间状态</span><strong id="update-interval"></strong></div>
               <div class="status-cell"><span>风险等级</span><strong id="update-risk"></strong></div>
-              <div class="status-cell"><span>当前决策</span><strong id="update-decision-label"></strong></div>
+              <div class="status-cell"><span>诊断决策</span><strong id="update-decision-label"></strong></div>
             </div>
             <div style="margin-top:12px"><div class="eyebrow">本步骤变化说明</div><p id="update-note" style="margin:6px 0 0;font-size:12px;color:#495753;line-height:1.5"></p></div>
           </div>
@@ -348,6 +415,13 @@ a{color:inherit}
       </div>
       <div class="panel-body">
         <div class="note">只有当两个模型满足同一 data_version、prefix_definition、prediction_range、partition_id、scoring_rule_id、metric_name、metric_unit、protocol_id，且两侧 scored=true 时，页面才显示数值比较；否则显示“当前尚无同口径比较结论”。</div>
+        <div id="compare-summary" class="comparison-summary" aria-label="可比较性门摘要"></div>
+        <div class="comparison-table-wrap">
+          <table class="comparison-table">
+            <thead><tr><th>协议字段</th><th>主模型</th><th>独立模型</th><th>门状态</th></tr></thead>
+            <tbody id="compare-matrix"></tbody>
+          </table>
+        </div>
         <div class="grid-2" style="margin-top:14px">
           <article class="section-block">
             <div class="panel-head"><h1>主模型</h1></div>
@@ -369,6 +443,55 @@ a{color:inherit}
         <p>以“待企业数据验证的工作流”展示潜在用途。以下内容不代表已为海辰节省成本、提升寿命或部署到电站。</p>
       </div>
       <div class="panel-body">
+        <section class="value-calculator" aria-labelledby="value-calculator-title">
+          <div class="value-calculator-head">
+            <div><h2 id="value-calculator-title">企业流程价值情景测算</h2><p>只测算重复评审与数据汇总的时间等价，不代表已实现收益，也不推断电池寿命提升。</p></div>
+            <span class="tag tag-orange">参数透明 · 待企业数据校准</span>
+          </div>
+          <div class="value-layout">
+            <form id="value-controls" class="value-controls">
+              <div class="range-control">
+                <div class="range-head"><label for="value-plans">年度试验或批次任务数</label><output id="value-plans-output">120 项</output></div>
+                <input id="value-plans" type="range" min="20" max="500" step="10" value="120">
+                <div class="range-scale"><span>20</span><span>500</span></div>
+              </div>
+              <div class="range-control">
+                <div class="range-head"><label for="value-hours">每轮人工汇总与评审时间</label><output id="value-hours-output">2.5 小时</output></div>
+                <input id="value-hours" type="range" min="0.5" max="8" step="0.5" value="2.5">
+                <div class="range-scale"><span>0.5 小时</span><span>8 小时</span></div>
+              </div>
+              <div class="range-control">
+                <div class="range-head"><label for="value-rounds">每项任务平均评审轮次</label><output id="value-rounds-output">3 轮</output></div>
+                <input id="value-rounds" type="range" min="1" max="6" step="1" value="3">
+                <div class="range-scale"><span>1 轮</span><span>6 轮</span></div>
+              </div>
+              <div class="range-control">
+                <div class="range-head"><label for="value-coverage">AI 可辅助覆盖比例</label><output id="value-coverage-output">60%</output></div>
+                <input id="value-coverage" type="range" min="10" max="90" step="5" value="60">
+                <div class="range-scale"><span>10%</span><span>90%</span></div>
+              </div>
+              <div class="range-control">
+                <div class="range-head"><label for="value-cost">综合人时成本</label><output id="value-cost-output">¥220 / 小时</output></div>
+                <input id="value-cost" type="range" min="80" max="600" step="20" value="220">
+                <div class="range-scale"><span>¥80</span><span>¥600</span></div>
+              </div>
+            </form>
+            <div class="value-results" aria-live="polite">
+              <div class="value-result-grid">
+                <div class="value-result"><span>年度基线评审工时</span><strong id="value-baseline">900 h</strong></div>
+                <div class="value-result"><span>情景节省工时</span><strong id="value-saved-hours">540 h</strong></div>
+                <div class="value-result"><span>折合 8 小时人日</span><strong id="value-days">67.5 天</strong></div>
+                <div class="value-result"><span>人时成本等价值</span><strong id="value-cost-result">¥118,800</strong></div>
+              </div>
+              <p id="value-formula" class="value-formula"></p>
+              <button id="value-reset" class="btn" type="button">恢复示例参数</button>
+            </div>
+          </div>
+        </section>
+        <div class="before-after" aria-label="流程前后对比">
+          <section class="process-band"><h2>Before · 人工串联</h2><ul><li>跨表汇总工况、检查点与版本信息</li><li>手工判断区间、路由和风险信号</li><li>失败原因分散，复核成本高</li></ul></section>
+          <section class="process-band after"><h2>After · 证据工作流</h2><ul><li>同屏关联轨迹、区间、路由与证据等级</li><li>安全门自动输出签发、回退或拒绝</li><li>报告与来源指纹可直接导出复核</li></ul></section>
+        </div>
         <div class="grid-2">
           <article class="section-block">
             <div class="panel-head"><h1>研发</h1></div>
@@ -511,7 +634,24 @@ const PAGES = [
   {id:'value',title:'落地价值',subtitle:'研发、质保、运维与梯次'},
   {id:'limits',title:'边界与失败',subtitle:'已核验、探索性与未验证'}
 ];
-const state = {page:0, updateStep:1, workbenchScenario:0};
+const COMPARISON_FIELDS = [
+  ['data_version','数据版本'],['prefix_definition','前缀定义'],['prediction_range','预测范围'],['partition_id','分区标识'],
+  ['scoring_rule_id','评分规则'],['metric_name','指标名称'],['metric_unit','指标单位'],['protocol_id','协议标识']
+];
+const EVIDENCE_CASE_BY_SCENARIO = {
+  scenario_fallback:'naumann-fallback',
+  scenario_specialist_reject:'naumann-specialist',
+  scenario_ood_reject:'geisbauer-negative-transfer'
+};
+const TOUR_STEPS = [
+  {page:0,title:'先看结论边界',description:'运行时可靠性成功与预测准确度成功被明确分开。'},
+  {page:1,scenario:0,title:'诊断可输出，仍拒绝运营签发',description:'通用回退可以画出名义诊断区间，但独立校准证据不足。'},
+  {page:1,scenario:1,title:'专用路由校准不足',description:'模型给出点轨迹，但区间不可用，安全门主动拒绝。'},
+  {page:1,scenario:2,title:'域外工况直接关闭',description:'高温、噪声与前缀支持不足时不强制生成寿命数字。'},
+  {page:2,updateStep:4,title:'新增检查点触发拒绝',description:'滚动更新会让风险上升，并在校准不足时关闭签发。'},
+  {page:4,title:'最后核对可量化价值',description:'用透明参数测算流程工时，不把情景估算写成既成收益。'}
+];
+const state = {page:0, updateStep:1, workbenchScenario:0, tourStep:-1, updateTimer:null};
 
 function el(name, attrs, text) {
   const node = document.createElementNS(NS, name);
@@ -525,6 +665,34 @@ function fmt(value, digits) {
   return Number(value).toFixed(digits || 1);
 }
 
+function routeURL() {
+  const url = new URL(window.location.href);
+  url.hash = PAGES[state.page].id;
+  url.searchParams.delete('case');
+  url.searchParams.delete('step');
+  if (state.page === 1 && state.workbenchScenario >= 0) {
+    const scenario = DATA.workbenchScenarios.scenarios[state.workbenchScenario];
+    if (scenario) url.searchParams.set('case', scenario.id);
+  }
+  if (state.page === 2) url.searchParams.set('step', String(state.updateStep));
+  return url.pathname + url.search + url.hash;
+}
+
+function writeRoute(mode) {
+  const method = mode === 'push' ? 'pushState' : 'replaceState';
+  window.history[method](null, '', routeURL());
+}
+
+function routeState() {
+  const pageId = decodeURIComponent(window.location.hash.slice(1)).split('?')[0];
+  const page = PAGES.findIndex(item => item.id === pageId);
+  const scenarioId = new URL(window.location.href).searchParams.get('case');
+  const scenario = DATA.workbenchScenarios.scenarios.findIndex(item => item.id === scenarioId);
+  const rawStep = Number(new URL(window.location.href).searchParams.get('step'));
+  const updateStep = Number.isInteger(rawStep) ? Math.min(DATA.updateSequence.sequence.length, Math.max(1, rawStep)) : 1;
+  return {page:page >= 0 ? page : 0,scenario:scenario >= 0 ? scenario : 0,updateStep};
+}
+
 function renderNav() {
   const nav = document.getElementById('page-nav');
   nav.replaceChildren();
@@ -534,20 +702,25 @@ function renderNav() {
     button.type = 'button';
     button.setAttribute('aria-selected', index === state.page ? 'true' : 'false');
     button.innerHTML = '<strong>' + item.title + '</strong><span>' + item.subtitle + '</span>';
-    button.addEventListener('click', () => showPage(index));
+    button.addEventListener('click', () => showPage(index, {history:'push'}));
     nav.appendChild(button);
   });
 }
 
-function showPage(index) {
+function showPage(index, options) {
+  const settings = Object.assign({history:'replace',scroll:false}, options || {});
+  if (state.page === 2 && index !== 2) stopUpdatePlayback();
   state.page = index;
   document.querySelectorAll('.page').forEach((el, idx) => { el.hidden = idx !== index; });
-  window.history.replaceState(null, '', '#' + PAGES[index].id);
+  document.title = PAGES[index].title + ' · LifeTwin 评委可视化 Demo';
   renderNav();
   if (index === 0) renderOverview();
   if (index === 1) renderWorkbench();
   if (index === 2) renderUpdate();
   if (index === 3) renderCompare();
+  if (index === 4) renderValueCalculator();
+  if (settings.history) writeRoute(settings.history);
+  if (settings.scroll) document.getElementById('page-' + PAGES[index].id)?.scrollIntoView({block:'start'});
 }
 
 function renderOverview() {
@@ -633,40 +806,55 @@ function renderFlow() {
 
 function renderWorkbench() {
   const scenarios = DATA.workbenchScenarios.scenarios;
-  const tempSelect = document.getElementById('wb-temp');
-  const socSelect = document.getElementById('wb-soc');
-  const prefixSelect = document.getElementById('wb-prefix');
-  const horizonSelect = document.getElementById('wb-horizon');
-  const qualitySelect = document.getElementById('wb-quality');
-  const domainSelect = document.getElementById('wb-domain');
+  const definitions = [
+    {id:'wb-temp',field:'temperature_c',format:value => value + ' °C'},
+    {id:'wb-soc',field:'soc_percent',format:value => value + '%'},
+    {id:'wb-prefix',field:'prefix_count',format:value => value + ' 点'},
+    {id:'wb-horizon',field:'horizon_days',format:value => value + ' 天'},
+    {id:'wb-quality',field:'data_quality',format:value => value === 'standard' ? '标准' : '高噪声'},
+    {id:'wb-domain',field:'domain_support',format:value => value === 'in_distribution' ? '域内' : '域外'}
+  ];
 
-  if (tempSelect.options.length === 0) {
-    const temps = [...new Set(scenarios.map(s => s.temperature_c))].sort((a,b)=>a-b);
-    temps.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t + ' °C'; tempSelect.appendChild(opt); });
-    const socs = [...new Set(scenarios.map(s => Math.round(s.soc_fraction*100)))].sort((a,b)=>a-b);
-    socs.forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.textContent = s + '%'; socSelect.appendChild(opt); });
-    [3,5,7,10].forEach(n => { const opt = document.createElement('option'); opt.value = n; opt.textContent = n + ' 点'; prefixSelect.appendChild(opt); });
-    [365,885].forEach(h => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h + ' 天'; horizonSelect.appendChild(opt); });
-    ['standard','noisy'].forEach(q => { const opt = document.createElement('option'); opt.value = q; opt.textContent = q === 'standard' ? '标准' : '高噪声'; qualitySelect.appendChild(opt); });
-    ['in_distribution','out_of_distribution'].forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d === 'in_distribution' ? '域内' : '域外'; domainSelect.appendChild(opt); });
-
-    const initial = scenarios[0];
-    tempSelect.value = String(initial.temperature_c);
-    socSelect.value = String(Math.round(initial.soc_fraction * 100));
-    prefixSelect.value = String(initial.prefix_count);
-    horizonSelect.value = String(initial.horizon_days);
-    qualitySelect.value = initial.data_quality;
-    domainSelect.value = initial.domain_support;
-
-    [tempSelect, socSelect, prefixSelect, horizonSelect, qualitySelect, domainSelect].forEach(sel => {
-      sel.addEventListener('change', () => {
-        state.workbenchScenario = -1;
-        updateWorkbench();
+  if (document.getElementById('wb-temp').options.length === 0) {
+    definitions.forEach(definition => {
+      const select = document.getElementById(definition.id);
+      const values = [...new Set(scenarios.map(scenario => scenarioFieldValue(scenario, definition.field)))].sort((a,b) => typeof a === 'number' ? a - b : String(a).localeCompare(String(b)));
+      values.forEach(value => {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = definition.format(value);
+        select.appendChild(option);
       });
+      select.addEventListener('change', () => selectScenarioForField(definition.field, select.value));
     });
+    bindWorkbenchActions();
   }
+  state.workbenchScenario = Math.min(Math.max(state.workbenchScenario, 0), scenarios.length - 1);
+  syncWorkbenchControls(scenarios[state.workbenchScenario]);
   renderWorkbenchPresets();
   updateWorkbench();
+}
+
+function scenarioFieldValue(scenario, field) {
+  if (field === 'soc_percent') return Math.round(scenario.soc_fraction * 100);
+  return scenario[field];
+}
+
+function syncWorkbenchControls(scenario) {
+  if (!scenario) return;
+  document.getElementById('wb-temp').value = String(scenario.temperature_c);
+  document.getElementById('wb-soc').value = String(Math.round(scenario.soc_fraction * 100));
+  document.getElementById('wb-prefix').value = String(scenario.prefix_count);
+  document.getElementById('wb-horizon').value = String(scenario.horizon_days);
+  document.getElementById('wb-quality').value = scenario.data_quality;
+  document.getElementById('wb-domain').value = scenario.domain_support;
+}
+
+function selectScenarioForField(field, value) {
+  const scenarios = DATA.workbenchScenarios.scenarios;
+  const candidates = scenarios.map((scenario,index) => ({scenario,index})).filter(item => String(scenarioFieldValue(item.scenario, field)) === String(value));
+  const current = candidates.find(item => item.index === state.workbenchScenario);
+  applyWorkbenchScenario((current || candidates[0] || {index:0}).index, 'push');
 }
 
 function renderWorkbenchPresets() {
@@ -681,46 +869,24 @@ function renderWorkbenchPresets() {
     const operational = operationalDecision(scenario);
     button.innerHTML = '<small><span>CASE 0' + (index + 1) + '</span><span>' + scenario.temperature_c + '°C · SOC ' + Math.round(scenario.soc_fraction * 100) + '%</span></small>' +
       '<strong>' + scenario.label + '</strong><em>' + operational.preset + '</em>';
-    button.addEventListener('click', () => applyWorkbenchScenario(index));
+    button.addEventListener('click', () => applyWorkbenchScenario(index, 'push'));
     container.appendChild(button);
   });
 }
 
-function applyWorkbenchScenario(index) {
+function applyWorkbenchScenario(index, historyMode) {
   const scenario = DATA.workbenchScenarios.scenarios[index];
   if (!scenario) return;
   state.workbenchScenario = index;
-  document.getElementById('wb-temp').value = String(scenario.temperature_c);
-  document.getElementById('wb-soc').value = String(Math.round(scenario.soc_fraction * 100));
-  document.getElementById('wb-prefix').value = String(scenario.prefix_count);
-  document.getElementById('wb-horizon').value = String(scenario.horizon_days);
-  document.getElementById('wb-quality').value = scenario.data_quality;
-  document.getElementById('wb-domain').value = scenario.domain_support;
+  syncWorkbenchControls(scenario);
   renderWorkbenchPresets();
   updateWorkbench();
+  if (state.page === 1 && historyMode) writeRoute(historyMode);
 }
 
 function updateWorkbench() {
-  const temp = Number(document.getElementById('wb-temp').value);
-  const soc = Number(document.getElementById('wb-soc').value);
-  const prefix = Number(document.getElementById('wb-prefix').value);
-  const horizon = Number(document.getElementById('wb-horizon').value);
-  const quality = document.getElementById('wb-quality').value;
-  const domain = document.getElementById('wb-domain').value;
-
   const scenarios = DATA.workbenchScenarios.scenarios;
-  const scenario = scenarios.find(s =>
-    s.temperature_c === temp &&
-    Math.round(s.soc_fraction*100) === soc &&
-    s.prefix_count === prefix &&
-    s.horizon_days === horizon &&
-    s.data_quality === quality &&
-    s.domain_support === domain
-  );
-
-  state.workbenchScenario = scenario ? scenarios.indexOf(scenario) : -1;
-  renderWorkbenchPresets();
-
+  const scenario = scenarios[state.workbenchScenario];
   if (!scenario) {
     document.getElementById('chart').replaceChildren();
     document.getElementById('legend').replaceChildren();
@@ -735,13 +901,13 @@ function updateWorkbench() {
     document.getElementById('wb-grade').textContent = '—';
     document.getElementById('wb-width').textContent = '—';
     document.getElementById('wb-final').textContent = '—';
-    document.getElementById('wb-count').textContent = prefix + ' 点';
-    document.getElementById('wb-horizon-label').textContent = horizon + ' 天';
+    document.getElementById('wb-count').textContent = '—';
+    document.getElementById('wb-horizon-label').textContent = '—';
     document.getElementById('wb-reasons').innerHTML = '<li>当前选择器组合没有对应演示场景。</li>';
     return;
   }
 
-  renderChart('chart', scenario.checkpoints.slice(0, prefix), scenario.forecast || [], scenario.interval_available);
+  renderChart('chart', scenario.checkpoints.slice(0, scenario.prefix_count), scenario.forecast || [], scenario.interval_available);
   renderLegend(scenario.decision, scenario.interval_available);
   document.getElementById('chart-source').textContent = '来源：' + scenario.id + ' · 演示 fixture · 证据等级：E2';
 
@@ -757,9 +923,46 @@ function updateWorkbench() {
   document.getElementById('wb-grade').textContent = 'E2';
   document.getElementById('wb-width').textContent = scenario.interval_width !== null && scenario.interval_width !== undefined ? fmt(scenario.interval_width, 2) + ' pp' : '不可用';
   document.getElementById('wb-final').textContent = scenario.forecast.length ? fmt(scenario.forecast[scenario.forecast.length-1].prediction, 2) + ' %' : '—';
-  document.getElementById('wb-count').textContent = prefix + ' 点';
-  document.getElementById('wb-horizon-label').textContent = horizon + ' 天';
+  document.getElementById('wb-count').textContent = scenario.prefix_count + ' 点';
+  document.getElementById('wb-horizon-label').textContent = scenario.horizon_days + ' 天';
   document.getElementById('wb-reasons').innerHTML = (scenario.reasons || []).map(r => '<li>' + r + '</li>').join('');
+  const evidenceCase = EVIDENCE_CASE_BY_SCENARIO[scenario.id];
+  document.getElementById('wb-evidence-link').href = '../judge-console/#' + evidenceCase;
+  document.getElementById('wb-action-status').textContent = '';
+}
+
+function bindWorkbenchActions() {
+  document.getElementById('wb-download').addEventListener('click', downloadWorkbenchReport);
+  document.getElementById('wb-share').addEventListener('click', copyWorkbenchLink);
+}
+
+function workbenchReport(scenario) {
+  const operational = operationalDecision(scenario);
+  return {
+    schema_version:'lifetwin_demo_decision/1.0',
+    generated_at:new Date().toISOString(),
+    mode:'interface_demo_not_live_inference',
+    scenario:{
+      id:scenario.id,label:scenario.label,temperature_c:scenario.temperature_c,soc_fraction:scenario.soc_fraction,
+      prefix_count:scenario.prefix_count,horizon_days:scenario.horizon_days,data_quality:scenario.data_quality,domain_support:scenario.domain_support
+    },
+    diagnostic:{decision:scenario.decision,route:scenario.route,interval_available:scenario.interval_available,interval_width_pp:scenario.interval_width,nominal_interval_level:scenario.nominal_interval_level,risk_level:scenario.risk_level},
+    operational:{decision:operational.title,reasons:scenario.reasons || []},
+    evidence:{grade:'E2',fixture:scenario.id,corresponding_console_case:EVIDENCE_CASE_BY_SCENARIO[scenario.id],claim_boundary:'演示 fixture；不代表海辰产品、储能电站或 15–25 年验证。'}
+  };
+}
+
+function downloadWorkbenchReport() {
+  const scenario = DATA.workbenchScenarios.scenarios[state.workbenchScenario];
+  if (!scenario) return;
+  downloadJSON('lifetwin-' + scenario.id + '-decision.json', workbenchReport(scenario));
+  document.getElementById('wb-action-status').textContent = '决策报告已生成。';
+}
+
+async function copyWorkbenchLink() {
+  writeRoute('replace');
+  const copied = await copyText(window.location.href);
+  document.getElementById('wb-action-status').textContent = copied ? '场景链接已复制。' : '无法自动复制，请使用浏览器地址栏。';
 }
 
 function decisionClass(decision) {
@@ -869,13 +1072,51 @@ function renderUpdate() {
     slider.min = 1;
     slider.max = sequence.length;
     slider.value = state.updateStep;
-    slider.addEventListener('input', () => { state.updateStep = Number(slider.value); renderUpdateStep(); });
-    document.getElementById('update-prev').addEventListener('click', () => { if (state.updateStep > 1) { state.updateStep -= 1; slider.value = state.updateStep; renderUpdateStep(); } });
-    document.getElementById('update-next').addEventListener('click', () => { if (state.updateStep < sequence.length) { state.updateStep += 1; slider.value = state.updateStep; renderUpdateStep(); } });
+    slider.addEventListener('input', () => setUpdateStep(Number(slider.value), 'replace'));
+    document.getElementById('update-prev').addEventListener('click', () => setUpdateStep(state.updateStep - 1, 'push'));
+    document.getElementById('update-next').addEventListener('click', () => setUpdateStep(state.updateStep + 1, 'push'));
+    document.getElementById('update-play').addEventListener('click', toggleUpdatePlayback);
     slider.dataset.initialized = 'true';
   }
   slider.value = state.updateStep;
   renderUpdateStep();
+}
+
+function setUpdateStep(nextStep, historyMode) {
+  const maximum = DATA.updateSequence.sequence.length;
+  state.updateStep = Math.min(maximum, Math.max(1, nextStep));
+  document.getElementById('update-slider').value = state.updateStep;
+  renderUpdateStep();
+  if (state.page === 2 && historyMode) writeRoute(historyMode);
+}
+
+function toggleUpdatePlayback() {
+  if (state.updateTimer) {
+    stopUpdatePlayback();
+    return;
+  }
+  if (state.updateStep === DATA.updateSequence.sequence.length) setUpdateStep(1, 'replace');
+  const button = document.getElementById('update-play');
+  button.textContent = '暂停演示';
+  button.setAttribute('aria-pressed','true');
+  state.updateTimer = window.setInterval(() => {
+    if (state.updateStep >= DATA.updateSequence.sequence.length) {
+      stopUpdatePlayback();
+      return;
+    }
+    setUpdateStep(state.updateStep + 1, 'replace');
+    if (state.updateStep >= DATA.updateSequence.sequence.length) stopUpdatePlayback();
+  }, 1400);
+}
+
+function stopUpdatePlayback() {
+  if (state.updateTimer) window.clearInterval(state.updateTimer);
+  state.updateTimer = null;
+  const button = document.getElementById('update-play');
+  if (button) {
+    button.textContent = '自动演示';
+    button.setAttribute('aria-pressed','false');
+  }
 }
 
 function renderUpdateStep() {
@@ -887,14 +1128,17 @@ function renderUpdateStep() {
   renderLegend(step.decision, step.interval_width !== null && step.interval_width !== undefined, 'update-legend');
 
   const decisionEl = document.getElementById('update-decision');
-  decisionEl.className = 'decision-box ' + decisionClass(step.decision);
-  decisionEl.innerHTML = '<div class="eyebrow">当前决策</div><div class="decision-title">' + decisionLabel(step.decision) + '</div>';
+  const diagnosticLabel = decisionLabel(step.decision);
+  const combinedLabel = diagnosticLabel === '拒绝签发' ? diagnosticLabel : diagnosticLabel + ' / 拒绝签发';
+  decisionEl.className = 'decision-box decision-reject';
+  decisionEl.innerHTML = '<div class="eyebrow">诊断状态 / 运营签发</div><div class="decision-title">' + combinedLabel + '</div><p class="decision-detail">演示序列未提供独立确认队列校准证据，因此运营层始终关闭。</p>';
 
   document.getElementById('update-route').textContent = step.route || '—';
   document.getElementById('update-interval').textContent = step.interval_width !== null && step.interval_width !== undefined ? '可用' : '不可用';
   document.getElementById('update-risk').textContent = step.risk_level ? step.risk_level.toUpperCase() : '—';
   document.getElementById('update-risk').className = 'risk-' + (step.risk_level || 'critical');
   document.getElementById('update-decision-label').textContent = decisionLabel(step.decision);
+  document.getElementById('update-source').textContent = '来源：update_demo.json · 演示 fixture';
 
   const notes = [
     '初始阶段数据充足，通用幂律回退给出可用诊断区间，但运营签发仍因校准证据非独立而拒绝。',
@@ -914,6 +1158,41 @@ function renderCompare() {
   document.getElementById('compare-main').innerHTML = modelCompareHTML(main);
   document.getElementById('compare-independent').innerHTML = modelCompareHTML(independent);
 
+  let passedFields = 0;
+  const matrix = document.getElementById('compare-matrix');
+  matrix.replaceChildren();
+  COMPARISON_FIELDS.forEach(([key,label]) => {
+    const mainValue = (main.comparison && main.comparison[key]) || '';
+    const independentValue = (independent.comparison && independent.comparison[key]) || '';
+    const mainValid = Boolean(mainValue && mainValue !== 'none');
+    const independentValid = Boolean(independentValue && independentValue !== 'none');
+    const matched = mainValid && independentValid && mainValue === independentValue;
+    if (matched) passedFields += 1;
+    const row = document.createElement('tr');
+    [label,mainValid ? mainValue : '缺失',independentValid ? independentValue : '缺失'].forEach((value,index) => {
+      const cell = document.createElement('td');
+      if (index > 0) {
+        const code = document.createElement('code');
+        code.textContent = value;
+        cell.appendChild(code);
+      } else {
+        cell.textContent = value;
+      }
+      row.appendChild(cell);
+    });
+    const gate = document.createElement('td');
+    gate.className = matched ? 'gate-pass' : 'gate-block';
+    gate.textContent = matched ? '通过' : (!mainValid || !independentValid ? '字段缺失' : '口径不同');
+    row.appendChild(gate);
+    matrix.appendChild(row);
+  });
+
+  const scoredSides = Number(main.scored === true) + Number(independent.scored === true);
+  document.getElementById('compare-summary').innerHTML =
+    '<div><span>协议字段通过</span><strong>' + passedFields + ' / ' + COMPARISON_FIELDS.length + '</strong></div>' +
+    '<div><span>已评分模型</span><strong>' + scoredSides + ' / 2</strong></div>' +
+    '<div><span>数值比较门</span><strong class="' + (passedFields === COMPARISON_FIELDS.length && scoredSides === 2 ? 'gate-pass' : 'gate-block') + '">' + (passedFields === COMPARISON_FIELDS.length && scoredSides === 2 ? 'OPEN' : 'BLOCKED') + '</strong></div>';
+
   const comparable = compareModels(main, independent);
   const conclusion = document.getElementById('compare-conclusion');
   if (comparable) {
@@ -921,7 +1200,7 @@ function renderCompare() {
     conclusion.innerHTML = '<div class="eyebrow">比较结论</div><div class="decision-title">当前有同口径比较结论（演示）</div><p style="margin:6px 0 0;font-size:12px;color:#495753">同 data_version、prefix_definition、prediction_range、partition_id、scoring_rule_id、metric_name、metric_unit、protocol_id，且两侧 scored。</p>';
   } else {
     conclusion.className = 'decision-box decision-fallback';
-    conclusion.innerHTML = '<div class="eyebrow">比较结论</div><div class="decision-title">当前尚无同口径比较结论</div><p style="margin:6px 0 0;font-size:12px;color:#495753">任一口径字段缺失、不同或任一侧未评分，均不显示数值比较。</p>';
+    conclusion.innerHTML = '<div class="eyebrow">比较结论</div><div class="decision-title">当前尚无同口径比较结论</div><p style="margin:6px 0 0;font-size:12px;color:#495753">当前通过 ' + passedFields + ' / ' + COMPARISON_FIELDS.length + ' 个协议字段，已评分模型 ' + scoredSides + ' / 2。门关闭时不显示误导性的优劣排名。</p>';
   }
 }
 
@@ -977,14 +1256,141 @@ function modelCompareHTML(model) {
   return html;
 }
 
+function renderValueCalculator() {
+  const form = document.getElementById('value-controls');
+  if (!form) return;
+  if (form.dataset.initialized !== 'true') {
+    ['value-plans','value-hours','value-rounds','value-coverage','value-cost'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateValueCalculator);
+    });
+    document.getElementById('value-reset').addEventListener('click', () => {
+      const defaults = {'value-plans':120,'value-hours':2.5,'value-rounds':3,'value-coverage':60,'value-cost':220};
+      Object.entries(defaults).forEach(([id,value]) => { document.getElementById(id).value = String(value); });
+      updateValueCalculator();
+    });
+    form.dataset.initialized = 'true';
+  }
+  updateValueCalculator();
+}
+
+function updateValueCalculator() {
+  const plans = Number(document.getElementById('value-plans').value);
+  const hours = Number(document.getElementById('value-hours').value);
+  const rounds = Number(document.getElementById('value-rounds').value);
+  const coverage = Number(document.getElementById('value-coverage').value);
+  const hourlyCost = Number(document.getElementById('value-cost').value);
+  const baseline = plans * hours * rounds;
+  const saved = baseline * coverage / 100;
+  const days = saved / 8;
+  const cost = saved * hourlyCost;
+
+  document.getElementById('value-plans-output').textContent = plans.toLocaleString('zh-CN') + ' 项';
+  document.getElementById('value-hours-output').textContent = hours.toFixed(1) + ' 小时';
+  document.getElementById('value-rounds-output').textContent = rounds + ' 轮';
+  document.getElementById('value-coverage-output').textContent = coverage + '%';
+  document.getElementById('value-cost-output').textContent = '¥' + hourlyCost.toLocaleString('zh-CN') + ' / 小时';
+  document.getElementById('value-baseline').textContent = baseline.toLocaleString('zh-CN',{maximumFractionDigits:1}) + ' h';
+  document.getElementById('value-saved-hours').textContent = saved.toLocaleString('zh-CN',{maximumFractionDigits:1}) + ' h';
+  document.getElementById('value-days').textContent = days.toLocaleString('zh-CN',{maximumFractionDigits:1}) + ' 天';
+  document.getElementById('value-cost-result').textContent = '¥' + Math.round(cost).toLocaleString('zh-CN');
+  document.getElementById('value-formula').textContent = '公式：' + plans + ' 项 × ' + hours.toFixed(1) + ' 小时 × ' + rounds + ' 轮 × ' + coverage + '% = ' + saved.toLocaleString('zh-CN',{maximumFractionDigits:1}) + ' 小时；再按 ¥' + hourlyCost + ' / 小时折算。该结果仅为可调情景估算。';
+}
+
+function downloadJSON(filename, payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2) + '\n'], {type:'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function copyText(value) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly','');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  } catch (error) {
+    return false;
+  }
+}
+
+function bindTour() {
+  document.getElementById('tour-start').addEventListener('click', startTour);
+  document.getElementById('tour-prev').addEventListener('click', () => moveTour(-1));
+  document.getElementById('tour-next').addEventListener('click', () => moveTour(1));
+  document.getElementById('tour-end').addEventListener('click', endTour);
+}
+
+function startTour() {
+  state.tourStep = 0;
+  document.getElementById('tour-bar').hidden = false;
+  applyTourStep();
+}
+
+function moveTour(direction) {
+  const next = state.tourStep + direction;
+  if (next >= TOUR_STEPS.length) {
+    endTour();
+    return;
+  }
+  state.tourStep = Math.max(0, next);
+  applyTourStep();
+}
+
+function applyTourStep() {
+  const step = TOUR_STEPS[state.tourStep];
+  if (!step) return;
+  document.getElementById('tour-count').textContent = (state.tourStep + 1) + ' / ' + TOUR_STEPS.length;
+  document.getElementById('tour-title').textContent = step.title;
+  document.getElementById('tour-description').textContent = step.description;
+  document.getElementById('tour-prev').disabled = state.tourStep === 0;
+  document.getElementById('tour-next').textContent = state.tourStep === TOUR_STEPS.length - 1 ? '完成导览' : '下一步';
+  showPage(step.page, {history:'replace',scroll:true});
+  if (step.scenario !== undefined) applyWorkbenchScenario(step.scenario, 'replace');
+  if (step.updateStep !== undefined) setUpdateStep(step.updateStep, 'replace');
+}
+
+function endTour() {
+  state.tourStep = -1;
+  document.getElementById('tour-bar').hidden = true;
+}
+
+function applyRouteFromLocation() {
+  const requested = routeState();
+  state.page = requested.page;
+  state.workbenchScenario = requested.scenario;
+  state.updateStep = requested.updateStep;
+  showPage(state.page, {history:null});
+}
+
 function init() {
   document.getElementById('source-count').textContent = '5';
-  const requestedPage = PAGES.findIndex(item => item.id === decodeURIComponent(window.location.hash.slice(1)));
-  if (requestedPage >= 0) state.page = requestedPage;
+  const requested = routeState();
+  state.page = requested.page;
+  state.workbenchScenario = requested.scenario;
+  state.updateStep = requested.updateStep;
+  bindTour();
   document.querySelectorAll('[data-page-target]').forEach(button => {
-    button.addEventListener('click', () => showPage(Number(button.dataset.pageTarget)));
+    button.addEventListener('click', () => showPage(Number(button.dataset.pageTarget), {history:'push',scroll:true}));
   });
-  showPage(state.page);
+  window.addEventListener('popstate', applyRouteFromLocation);
+  window.addEventListener('hashchange', applyRouteFromLocation);
+  showPage(state.page, {history:'replace'});
 }
 
 init();

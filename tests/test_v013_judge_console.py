@@ -9,7 +9,7 @@ from showcase.build_judge_console import _self_check, build_payload, render_html
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = PROJECT_ROOT / "docs/judge-console/index.html"
 EXPECTED_SHA256 = (
-    "9552ce42da2e9e843b1ccf758f692f0df1dee6008c325c750f759a6a7179fb7a"
+    "ea35e05bd384e4ab05dd8d0138ce1dedd3677ce509475cf437a260e00e193ff7"
 )
 
 
@@ -29,6 +29,10 @@ def test_judge_console_is_deterministic_self_contained_evidence_replay() -> None
     assert "10.17632/kxh42bfgtj.1" in first
     assert "10.5281/zenodo.6685365" in first
     assert "CC BY 4.0" in first
+    assert "复制固定链接" in first
+    assert "导出案例 JSON" in first
+    assert 'id="evidence-scale-list"' in first
+    assert 'id="source-list"' in first
 
 
 def test_every_console_case_abstains_and_carries_source_hashes() -> None:

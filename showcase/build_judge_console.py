@@ -811,6 +811,44 @@ HTML_TEMPLATE = r'''<!doctype html>
     .audit-summary-copy { flex: 1; }
     .audit-summary-copy span { display: block; margin-top: 2px; color: var(--muted); }
     .audit-detail { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+    .case-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 52px;
+      margin-bottom: 12px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .case-toolbar-copy strong { display: block; font-size: 12px; }
+    .case-toolbar-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .case-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    .action-button {
+      min-height: 32px;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .action-button.primary { border-color: var(--teal); background: var(--teal); color: #fff; }
+    .action-button:disabled { cursor: not-allowed; opacity: .45; }
+    .action-status { min-width: 110px; color: var(--teal); font-size: 10px; }
+    .evidence-scale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 11px; }
+    .evidence-scale-item { padding: 9px 10px; border-left: 3px solid var(--orange); background: #fff8f1; }
+    .evidence-scale-item strong { display: block; font-size: 11px; }
+    .evidence-scale-item span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .source-table-wrap { margin-top: 11px; overflow-x: auto; border: 1px solid var(--line); }
+    .source-table { width: 100%; min-width: 720px; border-collapse: collapse; background: #fff; }
+    .source-table th, .source-table td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; font-size: 10px; }
+    .source-table th { background: #f3f6f5; color: #52605c; }
+    .source-table tr:last-child td { border-bottom: 0; }
+    .source-table a { color: var(--teal); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .source-table code { font-family: Consolas, monospace; color: #34413e; }
     .top-actions, .scope-tags, .tabs { scrollbar-width: none; }
     .top-actions::-webkit-scrollbar, .scope-tags::-webkit-scrollbar, .tabs::-webkit-scrollbar { display: none; }
     @media (max-width: 980px) {
@@ -841,6 +879,11 @@ HTML_TEMPLATE = r'''<!doctype html>
       .decision-panel { min-height: 0; }
       .auditline summary { align-items: flex-start; }
       .auditline .provenance { text-align: right; }
+      .case-toolbar { display: block; }
+      .case-actions { justify-content: flex-start; margin-top: 9px; }
+      .action-button { flex: 1 1 auto; }
+      .action-status { flex: 1 0 100%; min-width: 0; }
+      .evidence-scale-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -881,6 +924,16 @@ HTML_TEMPLATE = r'''<!doctype html>
       </div>
     </section>
     <nav id="tabs" class="tabs" aria-label="预置证据案例" role="tablist"></nav>
+    <section class="case-toolbar" aria-label="案例操作">
+      <div class="case-toolbar-copy"><strong>当前冻结案例</strong><span id="case-identifier"></span></div>
+      <div class="case-actions">
+        <button id="case-prev" class="action-button" type="button">上一个案例</button>
+        <button id="case-next" class="action-button" type="button">下一个案例</button>
+        <button id="share-case" class="action-button" type="button">复制固定链接</button>
+        <button id="download-case" class="action-button primary" type="button">导出案例 JSON</button>
+        <span id="case-action-status" class="action-status" role="status"></span>
+      </div>
+    </section>
     <section class="workspace">
       <article class="panel visual-panel">
         <div class="visual-head">
@@ -940,6 +993,13 @@ HTML_TEMPLATE = r'''<!doctype html>
           <a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH/blob/main/NOTICE.md">NOTICE</a> 和
           <a href="https://github.com/packl686-arch/LifeTwin-LFP-SOH">证据仓库</a>。
         </div>
+        <div id="evidence-scale-list" class="evidence-scale-grid" aria-label="证据成熟度口径"></div>
+        <div class="source-table-wrap">
+          <table class="source-table">
+            <thead><tr><th>冻结来源</th><th>SHA-256</th></tr></thead>
+            <tbody id="source-list"></tbody>
+          </table>
+        </div>
       </div>
     </details>
   </main>
@@ -965,6 +1025,18 @@ HTML_TEMPLATE = r'''<!doctype html>
       return Number(value).toFixed(digits);
     }
 
+    function writeCaseHash(mode = "replace") {
+      const method = mode === "push" ? "pushState" : "replaceState";
+      window.history[method](null, "", `#${DATA.cases[state.active].id}`);
+    }
+
+    function activateCase(index, historyMode = "push") {
+      state.active = (index + DATA.cases.length) % DATA.cases.length;
+      state.truth = false;
+      writeCaseHash(historyMode);
+      render();
+    }
+
     function renderTabs() {
       const tabs = document.getElementById("tabs");
       tabs.replaceChildren();
@@ -986,20 +1058,12 @@ HTML_TEMPLATE = r'''<!doctype html>
         const status = document.createElement("em");
         status.textContent = index < 2 ? "拒绝签发" : "拒绝上线";
         button.append(small, strong, span, status);
-        button.addEventListener("click", () => {
-          state.active = index;
-          state.truth = false;
-          window.history.replaceState(null, "", `#${item.id}`);
-          render();
-        });
+        button.addEventListener("click", () => activateCase(index, "push"));
         button.addEventListener("keydown", event => {
           if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
           event.preventDefault();
           const step = event.key === "ArrowRight" ? 1 : -1;
-          state.active = (state.active + step + DATA.cases.length) % DATA.cases.length;
-          state.truth = false;
-          window.history.replaceState(null, "", `#${DATA.cases[state.active].id}`);
-          render();
+          activateCase(state.active + step, "replace");
           document.querySelectorAll(".tab")[state.active].focus();
         });
         tabs.appendChild(button);
@@ -1131,10 +1195,47 @@ HTML_TEMPLATE = r'''<!doctype html>
       }
     }
 
+    function renderAuditSources() {
+      const scaleList = document.getElementById("evidence-scale-list");
+      scaleList.replaceChildren();
+      Object.entries(DATA.evidence_scale).forEach(([grade, description]) => {
+        const item = document.createElement("div");
+        item.className = "evidence-scale-item";
+        const strong = document.createElement("strong");
+        strong.textContent = grade;
+        const span = document.createElement("span");
+        span.textContent = description;
+        item.append(strong, span);
+        scaleList.appendChild(item);
+      });
+
+      const sourceList = document.getElementById("source-list");
+      sourceList.replaceChildren();
+      DATA.sources.forEach(source => {
+        const row = document.createElement("tr");
+        const pathCell = document.createElement("td");
+        const link = document.createElement("a");
+        const encodedPath = source.path.split("/").map(part => encodeURIComponent(part)).join("/");
+        link.href = `https://github.com/packl686-arch/LifeTwin-LFP-SOH/blob/main/${encodedPath}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = source.path;
+        pathCell.appendChild(link);
+        const shaCell = document.createElement("td");
+        const code = document.createElement("code");
+        code.textContent = source.sha256;
+        shaCell.appendChild(code);
+        row.append(pathCell, shaCell);
+        sourceList.appendChild(row);
+      });
+    }
+
     function render() {
       const item = DATA.cases[state.active];
       renderTabs();
       document.title = `${item.title} · LifeTwin 评审证据控制台`;
+      document.getElementById("case-identifier").textContent = `${item.id} · ${item.evidence.grade} · ${DATA.sources.length} 个冻结来源`;
+      document.getElementById("case-action-status").textContent = "";
       document.getElementById("case-title").textContent = item.title;
       document.getElementById("case-subtitle").textContent = item.subtitle;
       document.getElementById("decision-title").textContent = item.decision.status;
@@ -1179,12 +1280,87 @@ HTML_TEMPLATE = r'''<!doctype html>
       document.getElementById("source-count").textContent = DATA.sources.length;
       document.getElementById("source-count-top").textContent = DATA.sources.length;
       document.getElementById("source-sha").textContent = `页面证据指纹 ${DATA.sources[0].sha256.slice(0, 12)}…`;
+      renderAuditSources();
+    }
+
+    function downloadJSON(filename, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    async function copyText(value) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+          return true;
+        }
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        textarea.remove();
+        return copied;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function exportCurrentCase() {
+      const item = DATA.cases[state.active];
+      return {
+        schema_version: "lifetwin_judge_case_export/1.0",
+        exported_at: new Date().toISOString(),
+        mode: DATA.mode,
+        case: item,
+        scope: DATA.scope,
+        evidence_scale: DATA.evidence_scale,
+        frozen_sources: DATA.sources,
+      };
+    }
+
+    function downloadCurrentCase() {
+      const item = DATA.cases[state.active];
+      downloadJSON(`lifetwin-${item.id}-evidence.json`, exportCurrentCase());
+      document.getElementById("case-action-status").textContent = "案例证据包已生成。";
+    }
+
+    async function copyCurrentCaseLink() {
+      writeCaseHash("replace");
+      const copied = await copyText(window.location.href);
+      document.getElementById("case-action-status").textContent = copied ? "固定链接已复制。" : "无法自动复制，请使用浏览器地址栏。";
+    }
+
+    function applyHashCase() {
+      const requested = decodeURIComponent(window.location.hash.slice(1));
+      const index = DATA.cases.findIndex(item => item.id === requested);
+      if (index < 0 || index === state.active) return;
+      state.active = index;
+      state.truth = false;
+      render();
     }
 
     document.getElementById("truth-toggle").addEventListener("change", event => {
       state.truth = event.target.checked;
       renderNaumannChart(DATA.cases[state.active]);
     });
+    document.getElementById("case-prev").addEventListener("click", () => activateCase(state.active - 1, "push"));
+    document.getElementById("case-next").addEventListener("click", () => activateCase(state.active + 1, "push"));
+    document.getElementById("share-case").addEventListener("click", copyCurrentCaseLink);
+    document.getElementById("download-case").addEventListener("click", downloadCurrentCase);
+    window.addEventListener("popstate", applyHashCase);
+    window.addEventListener("hashchange", applyHashCase);
+    writeCaseHash("replace");
     render();
   </script>
 </body>
@@ -1210,6 +1386,10 @@ def _self_check(html: str, payload: dict[str, Any]) -> None:
         "10.17632/kxh42bfgtj.1",
         "10.5281/zenodo.6685365",
         "CC BY 4.0",
+        "复制固定链接",
+        "导出案例 JSON",
+        'id="evidence-scale-list"',
+        'id="source-list"',
     )
     for token in required:
         if token not in html:
